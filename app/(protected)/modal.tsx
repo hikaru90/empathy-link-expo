@@ -1,10 +1,27 @@
 import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ActivityIndicator } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useAuthGuard } from '@/hooks/use-auth';
+import baseColors from '@/baseColors.config';
 
 export default function ModalScreen() {
+  const { isAuthenticated, isLoading } = useAuthGuard();
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <ActivityIndicator size="large" color={baseColors.primary} />
+        <ThemedText style={{ marginTop: 16 }}>Loading...</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will redirect to auth
+  }
+
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title">This is a modal</ThemedText>

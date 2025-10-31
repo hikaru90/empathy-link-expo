@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 202 203" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g transform="matrix(1,0,0,1,0,-480)">
+        <g id="inverted-border" transform="matrix(8.33333,0,0,8.33333,0,480.573)">
+            <rect x="0" y="0" width="24.183" height="24.183" style="fill:none;"/>
+            <clipPath id="_clip1">
+                <rect x="0" y="0" width="24.183" height="24.183"/>
+            </clipPath>
+            <g clip-path="url(#_clip1)">
+                <g transform="matrix(0.24,0,0,0.24,0,-139.521)">
+                    <path d="M100.765,682.102L0,682.102L0,581.338C0,636.951 45.151,682.102 100.765,682.102Z" style="fill:#f1efea;"/>
+                </g>
+                <g id="Ebene-1" serif:id="Ebene 1">
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,253 @@
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import baseColors from '@/baseColors.config';
+import Header from '@/components/Header';
+import StatsChatOverview from '@/components/stats/StatsChatOverview';
+import StatsFeelings from '@/components/stats/StatsFeelings';
+import StatsInsights from '@/components/stats/StatsInsights';
+import StatsMemories from '@/components/stats/StatsMemories';
+import StatsNeeds from '@/components/stats/StatsNeeds';
+import { useAuthGuard } from '@/hooks/use-auth';
+import { authClient } from '@/lib/auth';
+import { API_BASE_URL } from '@/lib/config';
+
+interface Analysis {
+  id: string;
+  title: string;
+  created: string;
+  feelings?: string[];
+  needs?: string[];
+}
+
+interface Memory {
+  id: string;
+  type: string;
+  key: string;
+  value: string;
+  confidence: 'certain' | 'likely' | 'uncertain';
+}
+
+interface StatsData {
+  analyses: Analysis[];
+  memories: Memory[];
+}
+
+// Removed menu tabs - now showing only overview content
+
+export default function StatsScreen() {
+  const { isAuthenticated, isLoading, user } = useAuthGuard();
+  const [statsData, setStatsData] = useState<StatsData | null>(null);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchStatsData();
+    }
+  }, [user]);
+
+  const fetchStatsData = async () => {
+    try {
+      setLoadingData(true);
+      console.log('Fetching stats with auth...');
+
+      // Use Better Auth's $fetch which returns {data, error} format
+      const result = await authClient.$fetch(`${API_BASE_URL}/api/stats`, {
+        method: 'GET',
+      });
+
+      console.log('Stats response received:', result);
+
+      // Better Auth returns {data: ..., error: ...}
+      if (result.error) {
+        console.error('Stats error:', result.error);
+        throw new Error(result.error.message || result.error);
+      }
+
+      const data = result.data as StatsData;
+      console.log('Stats data received:', {
+        analysesCount: data.analyses?.length || 0,
+        memoriesCount: data.memories?.length || 0,
+        sampleAnalysis: data.analyses?.[0],
+      });
+
+      setStatsData(data);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching stats:', err);
+      setError('Fehler beim Laden der Statistiken');
+      // Set mock data for development
+      setStatsData({
+        analyses: [],
+        memories: [],
+      });
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+
+  const getFeelings = () => {
+    console.log('getFeelings called, statsData:', statsData);
+
+    if (!statsData?.analyses) {
+      console.log('No analyses data available');
+      return [];
+    }
+
+    console.log('Number of analyses:', statsData.analyses.length);
+
+    // Extract all feelings from analyses
+    const feelings = statsData.analyses
+      .map((analysis) => {
+        console.log('Analysis feelings:', analysis.feelings);
+        return analysis.feelings || [];
+      })
+      .filter((f) => Array.isArray(f)); // Ensure it's an array
+
+    console.log('Extracted feelings arrays:', feelings);
+
+    const res = feelings.flat();
+    console.log('Flattened feelings:', res);
+
+    // Group and count feelings
+    const grouped = res.reduce((acc: { [key: string]: string[] }, feeling: string) => {
+      if (feeling) { // Ensure feeling is not empty
+        (acc[feeling] = acc[feeling] || []).push(feeling);
+      }
+      return acc;
+    }, {});
+
+    const countArray = Object.entries(grouped).map(([value, arr]) => ({
+      value,
+      count: arr.length,
+    }));
+
+    countArray.sort((a, b) => b.count - a.count);
+
+    console.log('Final feelings data:', countArray);
+    return countArray;
+  };
+
+  const getNeeds = () => {
+    if (!statsData?.analyses) return [];
+
+    // Extract all needs from analyses
+    const needs = statsData.analyses
+      .map((analysis) => analysis.needs || [])
+      .filter((n) => Array.isArray(n)); // Ensure it's an array
+
+    const res = needs.flat();
+
+    // Group and count needs
+    const grouped = res.reduce((acc: { [key: string]: string[] }, need: string) => {
+      if (need) { // Ensure need is not empty
+        (acc[need] = acc[need] || []).push(need);
+      }
+      return acc;
+    }, {});
+
+    const countArray = Object.entries(grouped).map(([value, arr]) => ({
+      value,
+      count: arr.length,
+    }));
+
+    countArray.sort((a, b) => b.count - a.count);
+
+    console.log('Needs data:', countArray);
+    return countArray;
+  };
+
+  if (isLoading || loadingData) {
+    return (
+      <View className="flex-1 justify-center items-center" style={{ backgroundColor: baseColors.background }}>
+        <ActivityIndicator size="large" color={baseColors.primary} />
+        <Text className="text-gray-600 mt-4">Loading...</Text>
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Will redirect to auth
+  }
+
+  return (
+    <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <Header />
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : (
+          <>
+            {/* Content */}
+            <View style={styles.contentContainer}>
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Deine Reflektionen im Überblick</Text>
+                  <Text style={styles.sectionDescription}>
+                    Jedes Gespräch ist ein Schritt zu mehr Klarheit. Entdecke hier deine Entwicklung und gewonnene Einsichten.
+                  </Text>
+                </View>
+                {statsData?.analyses && <StatsChatOverview data={statsData.analyses} />}
+
+                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
+                  <Text style={styles.sectionTitle}>Deine häufigsten Gefühle</Text>
+                  <Text style={styles.sectionDescription}>
+                    Diese Gefühle sind in deinen Reflexionen aufgetaucht. Je öfter du sie benennst, desto bewusster wirst du dir deiner emotionalen Muster.
+                  </Text>
+                </View>
+                <StatsFeelings data={getFeelings()} rawAnalyses={statsData?.analyses} />
+
+                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
+                  <Text style={styles.sectionTitle}>Deine wichtigsten Bedürfnisse</Text>
+                  <Text style={styles.sectionDescription}>
+                    Diese Bedürfnisse haben sich in deinen Gesprächen gezeigt. Sie zu kennen hilft dir, bewusstere Entscheidungen zu treffen und besser für dich zu sorgen.
+                  </Text>
+                </View>
+                <StatsNeeds data={getNeeds()} rawAnalyses={statsData?.analyses} />
+              </View>
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: Platform.OS === 'ios' ? 100 : 80, // Account for floating header
+    paddingBottom: 64,
+  },
+  contentContainer: {
+    paddingHorizontal: 20,
+  },
+  section: {
+    gap: 32,
+  },
+  sectionHeader: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 8,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#ef4444',
+    textAlign: 'center',
+    marginTop: 20,
+  },
+});
