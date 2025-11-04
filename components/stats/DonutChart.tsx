@@ -1,10 +1,17 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import Svg, { Circle, G, Path } from 'react-native-svg';
+import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 
 interface DonutChartProps {
   data: Array<{ value: string; count: number }>;
   colors?: string[]; // Made optional since we'll use default colors
+}
+
+interface Segment {
+  color: string;
+  angleDegrees: number;
+  value: string;
+  count: number;
 }
 
 // Default color palette
@@ -45,12 +52,15 @@ export default function DonutChart({ data, colors }: DonutChartProps) {
   const centerY = size / 2;
 
   // Define the middle radius (center of the ring)
-  const midRadius = (size - ringThickness) / 2;
-  const outerRadius = midRadius + ringThickness / 2;
-  const innerRadius = midRadius - ringThickness / 2;
+  const radius = (size - ringThickness) / 2;
+  const outerRadius = radius + ringThickness / 2;
+  const innerRadius = radius - ringThickness / 2;
 
   // Gap between segments in degrees
   const gapDegrees = 2;
+
+  // Border radius for rounded corners
+  const cornerRadius = 6;
 
   // Handle empty state
   if (data.length === 0) {
@@ -60,7 +70,7 @@ export default function DonutChart({ data, colors }: DonutChartProps) {
           <Circle
             cx={centerX}
             cy={centerY}
-            r={midRadius}
+            r={radius}
             stroke="#e5e5e5"
             strokeWidth={ringThickness}
             fill="transparent"
@@ -92,7 +102,7 @@ export default function DonutChart({ data, colors }: DonutChartProps) {
   const availableDegrees = 360 - totalGaps;
 
   // Calculate each segment's angle in degrees
-  const segments = data.map((item, index) => {
+  const segments: Segment[] = data.map((item, index) => {
     const percentage = item.count / total;
     const angleDegrees = percentage * availableDegrees;
 
@@ -104,92 +114,64 @@ export default function DonutChart({ data, colors }: DonutChartProps) {
     };
   });
 
-  // Function to create a rounded donut segment path
-  const createSegmentPath = (
-    startAngleDeg: number,
-    endAngleDeg: number,
-    borderRadius: number
-  ): string => {
-    // Convert to radians
-    const startAngle = (startAngleDeg - 90) * (Math.PI / 180);
-    const endAngle = (endAngleDeg - 90) * (Math.PI / 180);
+  // Helper to convert angle to radians
+  const toRadians = (angle: number) => ((angle - 90) * Math.PI) / 180;
 
-    // Calculate the actual arc length to determine if we need to reduce border radius
-    const arcLength = ((endAngleDeg - startAngleDeg) * Math.PI / 180) * midRadius;
-    const maxBorderRadius = Math.min(borderRadius, arcLength / 2, ringThickness / 2);
+  // Function to create a donut segment with properly integrated rounded corners
+  const createSegmentPath = (startAngleDeg: number, endAngleDeg: number): string => {
+    const startAngle = toRadians(startAngleDeg);
+    const endAngle = toRadians(endAngleDeg);
 
-    // Outer arc points
-    const outerStartX = centerX + outerRadius * Math.cos(startAngle);
-    const outerStartY = centerY + outerRadius * Math.sin(startAngle);
-    const outerEndX = centerX + outerRadius * Math.cos(endAngle);
-    const outerEndY = centerY + outerRadius * Math.sin(endAngle);
+    // Determine if this is a large arc
+    const largeArc = endAngleDeg - startAngleDeg > 180 ? 1 : 0;
 
-    // Inner arc points
-    const innerStartX = centerX + innerRadius * Math.cos(startAngle);
-    const innerStartY = centerY + innerRadius * Math.sin(startAngle);
-    const innerEndX = centerX + innerRadius * Math.cos(endAngle);
-    const innerEndY = centerY + innerRadius * Math.sin(endAngle);
+    // Calculate how much angle the corner radius takes up
+    // We need to inset the path by the corner radius
+    const angleInsetOuter = cornerRadius / outerRadius;
+    const angleInsetInner = cornerRadius / innerRadius;
 
-    // Determine if we need a large arc flag
-    const largeArcFlag = (endAngleDeg - startAngleDeg) > 180 ? 1 : 0;
+    // Adjusted angles - inset from the true corners
+    const startAngleOuterInset = startAngle + angleInsetOuter;
+    const endAngleOuterInset = endAngle - angleInsetOuter;
+    const startAngleInnerInset = startAngle + angleInsetInner;
+    const endAngleInnerInset = endAngle - angleInsetInner;
 
-    // If border radius is very small or zero, use simple path
-    if (maxBorderRadius < 0.5) {
-      return `
-        M ${outerStartX} ${outerStartY}
-        A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${outerEndX} ${outerEndY}
-        L ${innerEndX} ${innerEndY}
-        A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${innerStartX} ${innerStartY}
-        Z
-      `.trim().replace(/\s+/g, ' ');
-    }
+    // Main arc points (inset from corners)
+    const ox1 = centerX + outerRadius * Math.cos(startAngleOuterInset);
+    const oy1 = centerY + outerRadius * Math.sin(startAngleOuterInset);
+    const ox2 = centerX + outerRadius * Math.cos(endAngleOuterInset);
+    const oy2 = centerY + outerRadius * Math.sin(endAngleOuterInset);
+    const ix1 = centerX + innerRadius * Math.cos(endAngleInnerInset);
+    const iy1 = centerY + innerRadius * Math.sin(endAngleInnerInset);
+    const ix2 = centerX + innerRadius * Math.cos(startAngleInnerInset);
+    const iy2 = centerY + innerRadius * Math.sin(startAngleInnerInset);
 
-    // Calculate offset for border radius on the arcs
-    const outerOffsetAngle = (maxBorderRadius / outerRadius);
-    const innerOffsetAngle = (maxBorderRadius / innerRadius);
+    // Radial inset points (moved inward by cornerRadius along the radial direction)
+    const startRadialOuterInsetR = outerRadius - cornerRadius;
+    const startRadialInnerInsetR = innerRadius + cornerRadius;
+    const endRadialOuterInsetR = outerRadius - cornerRadius;
+    const endRadialInnerInsetR = innerRadius + cornerRadius;
 
-    // Adjusted angles for rounded corners
-    const outerStartAngleAdj = startAngle + outerOffsetAngle;
-    const outerEndAngleAdj = endAngle - outerOffsetAngle;
-    const innerStartAngleAdj = startAngle + innerOffsetAngle;
-    const innerEndAngleAdj = endAngle - innerOffsetAngle;
+    const rso_x = centerX + startRadialOuterInsetR * Math.cos(startAngle);
+    const rso_y = centerY + startRadialOuterInsetR * Math.sin(startAngle);
+    const rsi_x = centerX + startRadialInnerInsetR * Math.cos(startAngle);
+    const rsi_y = centerY + startRadialInnerInsetR * Math.sin(startAngle);
+    const reo_x = centerX + endRadialOuterInsetR * Math.cos(endAngle);
+    const reo_y = centerY + endRadialOuterInsetR * Math.sin(endAngle);
+    const rei_x = centerX + endRadialInnerInsetR * Math.cos(endAngle);
+    const rei_y = centerY + endRadialInnerInsetR * Math.sin(endAngle);
 
-    // Adjusted outer arc points
-    const outerStartXAdj = centerX + outerRadius * Math.cos(outerStartAngleAdj);
-    const outerStartYAdj = centerY + outerRadius * Math.sin(outerStartAngleAdj);
-    const outerEndXAdj = centerX + outerRadius * Math.cos(outerEndAngleAdj);
-    const outerEndYAdj = centerY + outerRadius * Math.sin(outerEndAngleAdj);
-
-    // Adjusted inner arc points
-    const innerStartXAdj = centerX + innerRadius * Math.cos(innerStartAngleAdj);
-    const innerStartYAdj = centerY + innerRadius * Math.sin(innerStartAngleAdj);
-    const innerEndXAdj = centerX + innerRadius * Math.cos(innerEndAngleAdj);
-    const innerEndYAdj = centerY + innerRadius * Math.sin(innerEndAngleAdj);
-
-    // Calculate the radial direction vectors for the corners
-    const startRadialX = Math.cos(startAngle);
-    const startRadialY = Math.sin(startAngle);
-    const endRadialX = Math.cos(endAngle);
-    const endRadialY = Math.sin(endAngle);
-
-    // Corner centers (for the rounded corners)
-    const startOuterCornerX = centerX + (outerRadius - maxBorderRadius) * startRadialX;
-    const startOuterCornerY = centerY + (outerRadius - maxBorderRadius) * startRadialY;
-    const startInnerCornerX = centerX + (innerRadius + maxBorderRadius) * startRadialX;
-    const startInnerCornerY = centerY + (innerRadius + maxBorderRadius) * startRadialY;
-
-    const endOuterCornerX = centerX + (outerRadius - maxBorderRadius) * endRadialX;
-    const endOuterCornerY = centerY + (outerRadius - maxBorderRadius) * endRadialY;
-    const endInnerCornerX = centerX + (innerRadius + maxBorderRadius) * endRadialX;
-    const endInnerCornerY = centerY + (innerRadius + maxBorderRadius) * endRadialY;
-
-    // Build path with rounded corners
+    // Build path with rounded corners using small arc segments
     return `
-      M ${outerStartXAdj} ${outerStartYAdj}
-      A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${outerEndXAdj} ${outerEndYAdj}
-      A ${maxBorderRadius} ${maxBorderRadius} 0 0 1 ${innerEndXAdj} ${innerEndYAdj}
-      A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${innerStartXAdj} ${innerStartYAdj}
-      A ${maxBorderRadius} ${maxBorderRadius} 0 0 1 ${outerStartXAdj} ${outerStartYAdj}
+      M ${ox1},${oy1}
+      A ${outerRadius},${outerRadius} 0 ${largeArc} 1 ${ox2},${oy2}
+      A ${cornerRadius},${cornerRadius} 0 0 1 ${reo_x},${reo_y}
+      L ${rei_x},${rei_y}
+      A ${cornerRadius},${cornerRadius} 0 0 1 ${ix1},${iy1}
+      A ${innerRadius},${innerRadius} 0 ${largeArc} 0 ${ix2},${iy2}
+      A ${cornerRadius},${cornerRadius} 0 0 1 ${rsi_x},${rsi_y}
+      L ${rso_x},${rso_y}
+      A ${cornerRadius},${cornerRadius} 0 0 1 ${ox1},${oy1}
       Z
     `.trim().replace(/\s+/g, ' ');
   };
@@ -203,20 +185,7 @@ export default function DonutChart({ data, colors }: DonutChartProps) {
           const startAngle = currentAngle;
           const endAngle = currentAngle + segment.angleDegrees;
 
-          // Calculate border radius based on segment size
-          // Full border radius for segments with enough space
-          const fullBorderRadius = 8;
-          const minSegmentDegreesForFullRadius = 15;
-
-          let borderRadius: number;
-          if (segment.angleDegrees >= minSegmentDegreesForFullRadius) {
-            borderRadius = fullBorderRadius;
-          } else {
-            // Scale down border radius proportionally for smaller segments
-            borderRadius = (segment.angleDegrees / minSegmentDegreesForFullRadius) * fullBorderRadius;
-          }
-
-          const pathData = createSegmentPath(startAngle, endAngle, borderRadius);
+          const pathData = createSegmentPath(startAngle, endAngle);
 
           // Move to next segment (add gap)
           currentAngle = endAngle + gapDegrees;
