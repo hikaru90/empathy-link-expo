@@ -1,7 +1,9 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import baseColors from '@/baseColors.config';
 
 interface Analysis {
   id: string;
@@ -15,9 +17,8 @@ interface StatsChatOverviewProps {
 
 export default function StatsChatOverview({ data }: StatsChatOverviewProps) {
   const router = useRouter();
-  const [showMore, setShowMore] = React.useState(false);
 
-  const displayedData = showMore ? data : data.slice(0, 5);
+  const displayedData = data.slice(0, 5);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -33,9 +34,14 @@ export default function StatsChatOverview({ data }: StatsChatOverviewProps) {
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <Text style={styles.title}>Meine Reflektionen</Text>
-            <TouchableOpacity style={styles.seeAllButton}>
-              <Text style={styles.seeAllText}>Alle anzeigen</Text>
-            </TouchableOpacity>
+            {data.length > 0 && (
+              <TouchableOpacity
+                style={styles.seeAllButton}
+                onPress={() => router.push('/analyses')}
+              >
+                <Text style={styles.seeAllText}>Alle anzeigen</Text>
+              </TouchableOpacity>
+            )}
           </View>
           <View style={styles.tableHeader}>
             <Text style={[styles.headerText, { width: '20%' }]}>Datum</Text>
@@ -80,7 +86,7 @@ export default function StatsChatOverview({ data }: StatsChatOverviewProps) {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: baseColors.offwhite,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,

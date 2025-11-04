@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Heart } from 'lucide-react-native';
-import DonutChart from './DonutChart';
-import DateRangePicker from './DateRangePicker';
 import baseColors from '@/baseColors.config';
+import { Heart } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import DateRangePicker from './DateRangePicker';
+import DonutChart from './DonutChart';
 
 interface FeelingsData {
   value: string;
@@ -22,23 +22,6 @@ const timeframeOptions = [
   { value: 'lastYear', label: 'Letztes Jahr' },
 ];
 
-// Generate colors for the chart
-const generateColors = (count: number): string[] => {
-  const baseColorsArray = [
-    '#f43f5e', // rose
-    '#c084fc', // lilac
-    '#000000', // black
-    '#10b981', // forest/green
-    '#f97316', // orange
-  ];
-
-  const colors: string[] = [];
-  for (let i = 0; i < count; i++) {
-    colors.push(baseColorsArray[i % baseColorsArray.length]);
-  }
-  return colors;
-};
-
 export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps) {
   const [showMore, setShowMore] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState('lastWeek');
@@ -50,15 +33,21 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
     switch (timeframe) {
       case 'today':
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        startDate.setHours(0, 0, 0, 0);
         break;
       case 'lastWeek':
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        startDate.setHours(0, 0, 0, 0);
         break;
       case 'lastMonth':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        // Use first day of last month to avoid date overflow issues
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        startDate.setHours(0, 0, 0, 0);
         break;
       case 'lastYear':
-        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        // Use first day of the same month last year to avoid date overflow issues
+        startDate = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+        startDate.setHours(0, 0, 0, 0);
         break;
       default:
         startDate = new Date(0);
@@ -68,10 +57,12 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
   };
 
   const filteredData = React.useMemo(() => {
-    if (!rawAnalyses) return data || [];
+    if (!rawAnalyses || rawAnalyses.length === 0) return [];
 
     const startDate = getDateFilter(selectedTimeframe);
+
     const filteredAnalyses = rawAnalyses.filter((analysis) => {
+      if (!analysis.created) return false;
       const analysisDate = new Date(analysis.created);
       return analysisDate >= startDate;
     });
@@ -80,20 +71,37 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
       .map((analysis) => analysis.feelings)
       .filter(Boolean);
     const res = feelings.flat();
+
     const grouped = res.reduce((acc: { [key: string]: string[] }, feeling: string) => {
-      (acc[feeling] = acc[feeling] || []).push(feeling);
+      if (feeling) { // Ensure feeling is not empty
+        (acc[feeling] = acc[feeling] || []).push(feeling);
+      }
       return acc;
     }, {});
     const countArray = Object.entries(grouped).map(([value, arr]) => ({
       value,
-      count: arr.length,
+      count: (arr as string[]).length,
     }));
     countArray.sort((a, b) => b.count - a.count);
-    return countArray;
-  }, [rawAnalyses, selectedTimeframe, data]);
 
-  const colors = generateColors(filteredData.length);
+    return countArray;
+  }, [rawAnalyses, selectedTimeframe]);
+
   const displayedData = showMore ? filteredData : filteredData.slice(0, 3);
+
+  // Generate color array for legend to match DonutChart's default colors
+  const defaultColors = [
+    '#F0BADA', '#DB79AA', '#080638', '#17545A', '#D6BBFF', '#A366FF', '#FF9C34',
+  ];
+  const legendColors: string[] = [];
+  for (let i = 0; i < filteredData.length; i++) {
+    const colorIndex = i % defaultColors.length;
+    if (i < defaultColors.length) {
+      legendColors.push(defaultColors[colorIndex]);
+    } else {
+      legendColors.push(`${defaultColors[colorIndex]}80`);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -112,7 +120,7 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
         </View>
 
         <View style={styles.chartContainer}>
-          <DonutChart data={filteredData} colors={colors} />
+          <DonutChart data={filteredData} />
         </View>
 
         <View style={styles.listContainer}>
@@ -127,7 +135,7 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
                 >
                   <View style={styles.listItemLeft}>
                     <View
-                      style={[styles.colorDot, { backgroundColor: colors[index] }]}
+                      style={[styles.colorDot, { backgroundColor: legendColors[filteredData.indexOf(feeling)] }]}
                     />
                     <Text style={styles.listItemText}>{feeling.value}</Text>
                   </View>
@@ -158,7 +166,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: baseColors.offwhite,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,

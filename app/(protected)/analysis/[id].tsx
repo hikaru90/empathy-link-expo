@@ -5,6 +5,7 @@ import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, T
 
 import baseColors from '@/baseColors.config';
 import Header from '@/components/Header';
+import TabBar from '@/components/TabBar';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { useChat } from '@/hooks/use-chat';
 import { getAnalysisById } from '@/lib/api/analysis';
@@ -384,6 +385,7 @@ export default function AnalysisDetailScreen() {
           )}
         </View>
       </ScrollView>
+      <TabBar />
     </View>
   );
 }
@@ -432,7 +434,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: Platform.OS === 'ios' ? 100 : 80,
-    paddingBottom: 40,
+    paddingBottom: Platform.OS === 'ios' ? 120 : 110, // Extra padding for tab bar
   },
   backButtonInline: {
     flexDirection: 'row',

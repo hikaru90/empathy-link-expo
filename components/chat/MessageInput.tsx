@@ -8,7 +8,7 @@ import { useChat } from '@/hooks/use-chat';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { Heart, Send } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import GroupedFeelingsSelector from './GroupedFeelingsSelector';
 import GroupedNeedsSelector from './GroupedNeedsSelector';
 
@@ -148,8 +148,10 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
           onKeyPress={handleKeyPress}
           placeholder="Schreibe eine Nachricht..."
           placeholderTextColor="rgba(0, 0, 0, 0.5)"
-          className="flex-1 bg-white/90 rounded-2xl p-3 text-base max-h-30 min-h-11 "
+          className="flex-1 bg-white/90 rounded-2xl p-3 text-base"
+          style={styles.textInput}
           multiline
+          scrollEnabled={true}
           maxLength={2000}
           editable={!isSending}
           returnKeyType="send"
@@ -220,4 +222,13 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  textInput: {
+    minHeight: 44, // min-h-11 equivalent
+    maxHeight: 104, // 4 lines: (4 * 20px line height) + (12px top padding) + (12px bottom padding) = 104px
+    fontSize: 16, // text-base
+    lineHeight: 20, // Approximate line height for calculation
+  },
+});
 

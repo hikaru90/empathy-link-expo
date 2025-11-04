@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import baseColors from '@/baseColors.config';
 import { Sparkles } from 'lucide-react-native';
-import DonutChart from './DonutChart';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DateRangePicker from './DateRangePicker';
+import DonutChart from './DonutChart';
 
 interface NeedsData {
   value: string;
@@ -21,23 +22,6 @@ const timeframeOptions = [
   { value: 'lastYear', label: 'Letztes Jahr' },
 ];
 
-// Generate colors for the chart
-const generateColors = (count: number): string[] => {
-  const baseColorsArray = [
-    '#f43f5e', // rose
-    '#c084fc', // lilac
-    '#000000', // black
-    '#10b981', // forest/green
-    '#f97316', // orange
-  ];
-
-  const colors: string[] = [];
-  for (let i = 0; i < count; i++) {
-    colors.push(baseColorsArray[i % baseColorsArray.length]);
-  }
-  return colors;
-};
-
 export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
   const [showMore, setShowMore] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState('lastWeek');
@@ -49,15 +33,21 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
     switch (timeframe) {
       case 'today':
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        startDate.setHours(0, 0, 0, 0);
         break;
       case 'lastWeek':
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        startDate.setHours(0, 0, 0, 0);
         break;
       case 'lastMonth':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        // Use first day of last month to avoid date overflow issues
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        startDate.setHours(0, 0, 0, 0);
         break;
       case 'lastYear':
-        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        // Use first day of the same month last year to avoid date overflow issues
+        startDate = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+        startDate.setHours(0, 0, 0, 0);
         break;
       default:
         startDate = new Date(0);
@@ -67,7 +57,7 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
   };
 
   const filteredData = React.useMemo(() => {
-    if (!rawAnalyses) return data || [];
+    if (!rawAnalyses || rawAnalyses.length === 0) return [];
 
     const startDate = getDateFilter(selectedTimeframe);
     const filteredAnalyses = rawAnalyses.filter((analysis) => {
@@ -78,19 +68,34 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
     const needs = filteredAnalyses.map((analysis) => analysis.needs).filter(Boolean);
     const res = needs.flat();
     const grouped = res.reduce((acc: { [key: string]: string[] }, need: string) => {
-      (acc[need] = acc[need] || []).push(need);
+      if (need) { // Ensure need is not empty
+        (acc[need] = acc[need] || []).push(need);
+      }
       return acc;
     }, {});
     const countArray = Object.entries(grouped).map(([value, arr]) => ({
       value,
-      count: arr.length,
+      count: (arr as string[]).length,
     }));
     countArray.sort((a, b) => b.count - a.count);
     return countArray;
-  }, [rawAnalyses, selectedTimeframe, data]);
+  }, [rawAnalyses, selectedTimeframe]);
 
-  const colors = generateColors(filteredData.length);
   const displayedData = showMore ? filteredData : filteredData.slice(0, 3);
+
+  // Generate color array for legend to match DonutChart's default colors
+  const defaultColors = [
+    '#F0BADA', '#DB79AA', '#080638', '#17545A', '#D6BBFF', '#A366FF', '#FF9C34',
+  ];
+  const legendColors: string[] = [];
+  for (let i = 0; i < filteredData.length; i++) {
+    const colorIndex = i % defaultColors.length;
+    if (i < defaultColors.length) {
+      legendColors.push(defaultColors[colorIndex]);
+    } else {
+      legendColors.push(`${defaultColors[colorIndex]}80`);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -109,7 +114,7 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
         </View>
 
         <View style={styles.chartContainer}>
-          <DonutChart data={filteredData} colors={colors} />
+          <DonutChart data={displayedData} />
         </View>
 
         <View style={styles.listContainer}>
@@ -124,7 +129,7 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
                 >
                   <View style={styles.listItemLeft}>
                     <View
-                      style={[styles.colorDot, { backgroundColor: colors[index] }]}
+                      style={[styles.colorDot, { backgroundColor: legendColors[filteredData.indexOf(need)] }]}
                     />
                     <Text style={styles.listItemText}>{need.value}</Text>
                   </View>
@@ -155,7 +160,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: baseColors.offwhite,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,

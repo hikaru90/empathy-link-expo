@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
 import Header from '@/components/Header';
 import StatsChatOverview from '@/components/stats/StatsChatOverview';
+import StatsConflictResolution from '@/components/stats/StatsConflictResolution';
 import StatsFeelings from '@/components/stats/StatsFeelings';
-import StatsInsights from '@/components/stats/StatsInsights';
-import StatsMemories from '@/components/stats/StatsMemories';
+import StatsInspiration from '@/components/stats/StatsInspiration';
 import StatsNeeds from '@/components/stats/StatsNeeds';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { authClient } from '@/lib/auth';
@@ -18,6 +18,7 @@ interface Analysis {
   created: string;
   feelings?: string[];
   needs?: string[];
+  request?: string;
 }
 
 interface Memory {
@@ -60,12 +61,15 @@ export default function StatsScreen() {
       console.log('Stats response received:', result);
 
       // Better Auth returns {data: ..., error: ...}
-      if (result.error) {
-        console.error('Stats error:', result.error);
-        throw new Error(result.error.message || result.error);
+      if ((result as any).error) {
+        console.error('Stats error:', (result as any).error);
+        const errorMessage = typeof (result as any).error === 'string' 
+          ? (result as any).error 
+          : (result as any).error?.message || 'Unknown error';
+        throw new Error(errorMessage);
       }
 
-      const data = result.data as StatsData;
+      const data = (result as any).data as StatsData;
       console.log('Stats data received:', {
         analysesCount: data.analyses?.length || 0,
         memoriesCount: data.memories?.length || 0,
@@ -86,7 +90,6 @@ export default function StatsScreen() {
       setLoadingData(false);
     }
   };
-
 
   const getFeelings = () => {
     console.log('getFeelings called, statsData:', statsData);
@@ -159,10 +162,25 @@ export default function StatsScreen() {
     return countArray;
   };
 
+  const getRequests = () => {
+    if (!statsData?.analyses) return [];
+
+    // Extract all analyses with requests
+    return statsData.analyses
+      .filter((analysis) => analysis.request && analysis.request.trim().length > 0)
+      .map((analysis) => ({
+        id: analysis.id,
+        analysisId: analysis.id,
+        request: analysis.request!,
+        title: analysis.title,
+        created: analysis.created,
+      }));
+  };
+
   if (isLoading || loadingData) {
     return (
       <View className="flex-1 justify-center items-center" style={{ backgroundColor: baseColors.background }}>
-        <ActivityIndicator size="large" color={baseColors.primary} />
+        <ActivityIndicator size="large" color={baseColors.lilac} />
         <Text className="text-gray-600 mt-4">Loading...</Text>
       </View>
     );
@@ -184,6 +202,8 @@ export default function StatsScreen() {
             {/* Content */}
             <View style={styles.contentContainer}>
               <View style={styles.section}>
+
+              <StatsInspiration />
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Deine Reflektionen im Überblick</Text>
                   <Text style={styles.sectionDescription}>
@@ -191,6 +211,14 @@ export default function StatsScreen() {
                   </Text>
                 </View>
                 {statsData?.analyses && <StatsChatOverview data={statsData.analyses} />}
+
+                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
+                  <Text style={styles.sectionTitle}>Konfliktlösung</Text>
+                  <Text style={styles.sectionDescription}>
+                    Verfolge deine Bitten und markiere gelöste Konflikte als erledigt.
+                  </Text>
+                </View>
+                <StatsConflictResolution requests={getRequests()} />
 
                 <View style={[styles.sectionHeader, { marginTop: 32 }]}>
                   <Text style={styles.sectionTitle}>Deine häufigsten Gefühle</Text>
@@ -228,10 +256,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   section: {
-    gap: 32,
+    gap: 16,
   },
   sectionHeader: {
-    marginBottom: 16,
+    marginBottom: 6,
   },
   sectionTitle: {
     fontSize: 20,

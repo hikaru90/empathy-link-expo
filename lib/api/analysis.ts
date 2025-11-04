@@ -90,3 +90,18 @@ export async function getAllAnalyses(): Promise<AnalysisDetail[]> {
 
   return response.analyses;
 }
+
+/**
+ * Delete an analysis by ID
+ */
+export async function deleteAnalysis(analysisId: string): Promise<{ success: boolean }> {
+  return authenticatedFetch<{ success: boolean }>(
+    `${API_BASE}/api/analyses/${analysisId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+}
