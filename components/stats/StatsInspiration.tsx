@@ -2,7 +2,7 @@ import baseColors from '@/baseColors.config';
 import { getInspirationalQuote, type InspirationalQuote } from '@/lib/api/stats';
 import { Quote } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 
 export default function StatsInspiration() {
   const [quote, setQuote] = useState<InspirationalQuote | null>(null);
@@ -26,16 +26,21 @@ export default function StatsInspiration() {
   };
 
   return (
-    <View style={styles.quoteContainer}>
+    <View 
+      className="rounded-2xl p-5 mb-8 min-h-[80px] justify-center shadow-lg shadow-black/10"
+      style={{ backgroundColor: baseColors.offwhite }}
+    >
       {loadingQuote ? (
-        <View style={styles.quoteLoadingContainer}>
+        <View className="items-center justify-center py-5">
           <ActivityIndicator size="small" color={baseColors.lilac} />
         </View>
       ) : quote ? (
         <>
-          <Quote size={32} color="transparent" fill={baseColors.lilac} style={styles.quoteIcon} />
-          <Text style={styles.quoteText}>{quote.quote}</Text>
-          <Text style={styles.quoteAuthor}>
+          <View className="mb-3">
+            <Quote size={24} color="transparent" fill={baseColors.lilac} />
+          </View>
+          <Text className="text-base leading-6 text-gray-800 italic mb-2">{quote.quote}</Text>
+          <Text className="text-sm text-black/40 text-right mt-2">
             — {quote.author || 'Unbekannt'}
           </Text>
         </>
@@ -43,42 +48,3 @@ export default function StatsInspiration() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  quoteContainer: {
-    backgroundColor: baseColors.offwhite,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 32,
-    minHeight: 80,
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  quoteLoadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-  },
-  quoteIcon: {
-    marginBottom: 12,
-  },
-  quoteText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#333',
-    fontStyle: 'italic',
-    marginBottom: 8,
-  },
-  quoteAuthor: {
-    fontSize: 13,
-    color: '#666',
-    fontWeight: '500',
-    textAlign: 'right',
-    marginTop: 8,
-    fontStyle: 'normal',
-  },
-});

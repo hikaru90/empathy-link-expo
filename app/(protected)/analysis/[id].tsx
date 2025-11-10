@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: Platform.OS === 'ios' ? 100 : 80,
+    paddingTop: Platform.OS === 'ios' ? 100 : Platform.OS === 'android' ? 120 : 80,
     paddingBottom: Platform.OS === 'ios' ? 120 : 110, // Extra padding for tab bar
   },
   backButtonInline: {

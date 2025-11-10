@@ -29,6 +29,8 @@ export interface AnalysisDetail {
   feelings?: string[];
   needs?: string[];
   request?: string;
+  requestResolved?: boolean;
+  requestArchived?: boolean;
   conversationGoal?: string;
   dailyWin?: string;
   emotionalShift?: string;
@@ -102,6 +104,28 @@ export async function deleteAnalysis(analysisId: string): Promise<{ success: boo
       headers: {
         'Content-Type': 'application/json',
       },
+    }
+  );
+}
+
+/**
+ * Update an analysis (specifically request_resolved and request_archived)
+ */
+export async function updateAnalysis(
+  analysisId: string,
+  updates: {
+    requestResolved?: boolean;
+    requestArchived?: boolean;
+  }
+): Promise<AnalysisDetail> {
+  return authenticatedFetch<AnalysisDetail>(
+    `${API_BASE}/api/analyses/${analysisId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
     }
   );
 }

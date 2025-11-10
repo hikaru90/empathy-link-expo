@@ -1,6 +1,5 @@
 import baseColors from '@/baseColors.config';
-import { Sparkles } from 'lucide-react-native';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DateRangePicker from './DateRangePicker';
 import DonutChart from './DonutChart';
@@ -35,6 +34,18 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         startDate.setHours(0, 0, 0, 0);
         break;
+      case 'yesterday':
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'dayBeforeYesterday':
+        const dayBeforeYesterday = new Date(now);
+        dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2);
+        startDate = new Date(dayBeforeYesterday.getFullYear(), dayBeforeYesterday.getMonth(), dayBeforeYesterday.getDate());
+        startDate.setHours(0, 0, 0, 0);
+        break;
       case 'lastWeek':
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         startDate.setHours(0, 0, 0, 0);
@@ -56,13 +67,24 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
     return startDate;
   };
 
-  const filteredData = React.useMemo(() => {
+  const filteredData = useMemo(() => {
     if (!rawAnalyses || rawAnalyses.length === 0) return [];
 
     const startDate = getDateFilter(selectedTimeframe);
+    
+    // For single-day filters, set end date to end of that day
+    let endDate: Date | null = null;
+    if (selectedTimeframe === 'today' || selectedTimeframe === 'yesterday' || selectedTimeframe === 'dayBeforeYesterday') {
+      endDate = new Date(startDate);
+      endDate.setHours(23, 59, 59, 999);
+    }
+
     const filteredAnalyses = rawAnalyses.filter((analysis) => {
+      if (!analysis.created) return false;
       const analysisDate = new Date(analysis.created);
-      return analysisDate >= startDate;
+      const isAfterStart = analysisDate >= startDate;
+      const isBeforeEnd = endDate ? analysisDate <= endDate : true;
+      return isAfterStart && isBeforeEnd;
     });
 
     const needs = filteredAnalyses.map((analysis) => analysis.needs).filter(Boolean);
@@ -102,9 +124,6 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
       <View style={styles.card}>
         <View style={styles.header}>
           <View style={styles.titleContainer}>
-            <View style={styles.iconContainer}>
-              <Sparkles size={14} color="#fff" fill="#fff" />
-            </View>
             <Text style={styles.title}>Bedürfnisse</Text>
           </View>
           <DateRangePicker
@@ -114,7 +133,7 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
         </View>
 
         <View style={styles.chartContainer}>
-          <DonutChart data={displayedData} />
+          <DonutChart data={filteredData} />
         </View>
 
         <View style={styles.listContainer}>
@@ -248,7 +267,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   toggleButtonText: {
     fontSize: 12,

@@ -3,14 +3,20 @@ import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, V
 
 import baseColors from '@/baseColors.config';
 import Header from '@/components/Header';
+import StatsBlindSpots from '@/components/stats/StatsBlindSpots';
 import StatsChatOverview from '@/components/stats/StatsChatOverview';
 import StatsConflictResolution from '@/components/stats/StatsConflictResolution';
 import StatsFeelings from '@/components/stats/StatsFeelings';
 import StatsInspiration from '@/components/stats/StatsInspiration';
 import StatsNeeds from '@/components/stats/StatsNeeds';
+import StatsSuperCommunicator, { type SuperCommunicatorData } from '@/components/stats/StatsSuperCommunicator';
+import StatsTrackedNeeds from '@/components/stats/StatsTrackedNeeds';
 import { useAuthGuard } from '@/hooks/use-auth';
+import { getAllAnalyses } from '@/lib/api/analysis';
+import { getSuperCommunicatorData } from '@/lib/api/stats';
 import { authClient } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/config';
+import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-calculator';
 
 interface Analysis {
   id: string;
@@ -41,10 +47,12 @@ export default function StatsScreen() {
   const [statsData, setStatsData] = useState<StatsData | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [superCommunicatorData, setSuperCommunicatorData] = useState<SuperCommunicatorData | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchStatsData();
+      fetchSuperCommunicatorData();
     }
   }, [user]);
 
@@ -63,8 +71,8 @@ export default function StatsScreen() {
       // Better Auth returns {data: ..., error: ...}
       if ((result as any).error) {
         console.error('Stats error:', (result as any).error);
-        const errorMessage = typeof (result as any).error === 'string' 
-          ? (result as any).error 
+        const errorMessage = typeof (result as any).error === 'string'
+          ? (result as any).error
           : (result as any).error?.message || 'Unknown error';
         throw new Error(errorMessage);
       }
@@ -112,7 +120,6 @@ export default function StatsScreen() {
     console.log('Extracted feelings arrays:', feelings);
 
     const res = feelings.flat();
-    console.log('Flattened feelings:', res);
 
     // Group and count feelings
     const grouped = res.reduce((acc: { [key: string]: string[] }, feeling: string) => {
@@ -129,7 +136,6 @@ export default function StatsScreen() {
 
     countArray.sort((a, b) => b.count - a.count);
 
-    console.log('Final feelings data:', countArray);
     return countArray;
   };
 
@@ -158,7 +164,6 @@ export default function StatsScreen() {
 
     countArray.sort((a, b) => b.count - a.count);
 
-    console.log('Needs data:', countArray);
     return countArray;
   };
 
@@ -175,6 +180,46 @@ export default function StatsScreen() {
         title: analysis.title,
         created: analysis.created,
       }));
+  };
+
+  const fetchSuperCommunicatorData = async () => {
+    try {
+      // Try to fetch from backend first
+      const backendData = await getSuperCommunicatorData();
+      
+      if (backendData) {
+        setSuperCommunicatorData(backendData);
+        return;
+      }
+
+      // Fallback: Calculate from analyses on frontend
+      // Fetch full analysis details to get all metrics
+      const allAnalyses = await getAllAnalyses();
+      
+      // Always calculate data, even if there are no analyses (will show 0 points)
+      const calculatedData = calculateSuperCommunicatorData(allAnalyses || []);
+      setSuperCommunicatorData(calculatedData);
+    } catch (err) {
+      console.error('Error fetching super communicator data:', err);
+      // Try fallback calculation if we have analyses
+      if (statsData?.analyses && statsData.analyses.length > 0) {
+        // We need full analysis details, so fetch them
+        try {
+          const allAnalyses = await getAllAnalyses();
+          const calculatedData = calculateSuperCommunicatorData(allAnalyses || []);
+          setSuperCommunicatorData(calculatedData);
+        } catch (fallbackErr) {
+          console.error('Fallback calculation also failed:', fallbackErr);
+          // Even on error, show empty state with 0 points
+          const emptyData = calculateSuperCommunicatorData([]);
+          setSuperCommunicatorData(emptyData);
+        }
+      } else {
+        // No analyses, but still show the component with 0 points
+        const emptyData = calculateSuperCommunicatorData([]);
+        setSuperCommunicatorData(emptyData);
+      }
+    }
   };
 
   if (isLoading || loadingData) {
@@ -203,14 +248,23 @@ export default function StatsScreen() {
             <View style={styles.contentContainer}>
               <View style={styles.section}>
 
-              <StatsInspiration />
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Deine Reflektionen im Überblick</Text>
+                <StatsInspiration />
+
+                <View style={[styles.sectionHeader, { marginTop: 0 }]}>
+                  <Text style={styles.sectionTitle}>Super-Kommunikator</Text>
                   <Text style={styles.sectionDescription}>
-                    Jedes Gespräch ist ein Schritt zu mehr Klarheit. Entdecke hier deine Entwicklung und gewonnene Einsichten.
+                    Verfolge deinen Fortschritt auf dem Weg zur Kommunikationsmeisterschaft. Jeder Chat und jede Lerneinheit bringt dich weiter.
                   </Text>
                 </View>
-                {statsData?.analyses && <StatsChatOverview data={statsData.analyses} />}
+                <StatsSuperCommunicator data={superCommunicatorData} />
+
+                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
+                  <Text style={styles.sectionTitle}>Wiederkehrende Muster</Text>
+                  <Text style={styles.sectionDescription}>
+                    Erkenne Blind Spots und wiederkehrende Muster in deinen Gesprächen. In welchen Situationen treten sie auf?
+                  </Text>
+                </View>
+                <StatsBlindSpots />
 
                 <View style={[styles.sectionHeader, { marginTop: 32 }]}>
                   <Text style={styles.sectionTitle}>Konfliktlösung</Text>
@@ -229,12 +283,25 @@ export default function StatsScreen() {
                 <StatsFeelings data={getFeelings()} rawAnalyses={statsData?.analyses} />
 
                 <View style={[styles.sectionHeader, { marginTop: 32 }]}>
-                  <Text style={styles.sectionTitle}>Deine wichtigsten Bedürfnisse</Text>
+                  <Text style={styles.sectionTitle}>Bedürfnisse</Text>
                   <Text style={styles.sectionDescription}>
                     Diese Bedürfnisse haben sich in deinen Gesprächen gezeigt. Sie zu kennen hilft dir, bewusstere Entscheidungen zu treffen und besser für dich zu sorgen.
                   </Text>
                 </View>
                 <StatsNeeds data={getNeeds()} rawAnalyses={statsData?.analyses} />
+
+                <StatsTrackedNeeds />
+
+
+                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
+                  <Text style={styles.sectionTitle}>Deine Reflektionen im Überblick</Text>
+                  <Text style={styles.sectionDescription}>
+                    Jedes Gespräch ist ein Schritt zu mehr Klarheit. Entdecke hier deine Entwicklung und gewonnene Einsichten.
+                  </Text>
+                </View>
+                {statsData?.analyses && <StatsChatOverview data={statsData.analyses} />}
+
+
               </View>
             </View>
           </>
@@ -249,7 +316,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: Platform.OS === 'ios' ? 100 : 80, // Account for floating header
+    paddingTop: Platform.OS === 'web' ? 80 : 120, // Account for floating header
     paddingBottom: 64,
   },
   contentContainer: {

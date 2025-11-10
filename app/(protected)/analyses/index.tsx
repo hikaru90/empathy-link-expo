@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: Platform.OS === 'ios' ? 100 : 80,
+    paddingTop: Platform.OS === 'web' ? 80 : Platform.OS === 'android' ? 160 : 120,
     paddingBottom: Platform.OS === 'ios' ? 120 : 110,
   },
   backButton: {

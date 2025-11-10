@@ -25,20 +25,28 @@ const defaultColors = [
   '#FF9C34', // orange
 ];
 
-// Generate extended color array with reduced opacity versions
+// Generate extended color array with progressively reduced opacity
 const generateColorArray = (baseColors: string[], count: number): string[] => {
   const colors: string[] = [];
 
   for (let i = 0; i < count; i++) {
     const colorIndex = i % baseColors.length;
     const color = baseColors[colorIndex];
+    const cycle = Math.floor(i / baseColors.length);
 
-    // First cycle: use original colors
-    if (i < baseColors.length) {
+    // Progressive opacity dropoff for each cycle - more pronounced
+    if (cycle === 0) {
+      // First cycle: 100% opacity (original colors)
       colors.push(color);
-    } else {
-      // Second cycle and beyond: add with 50% opacity
+    } else if (cycle === 1) {
+      // Second cycle: 50% opacity
       colors.push(`${color}80`); // 80 in hex = 50% opacity
+    } else if (cycle === 2) {
+      // Third cycle: 30% opacity
+      colors.push(`${color}4D`); // 4D in hex = 30% opacity
+    } else {
+      // Fourth cycle and beyond: 15% opacity
+      colors.push(`${color}26`); // 26 in hex = 15% opacity
     }
   }
 

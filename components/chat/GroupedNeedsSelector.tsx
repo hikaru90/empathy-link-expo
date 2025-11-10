@@ -12,6 +12,7 @@ interface GroupedNeedsProps {
   needs: Need[];
   onNeedPress: (needName: string) => void;
   isLoading?: boolean;
+  selectedNeedIds?: string[]; // Optional: IDs of selected needs to highlight
 }
 
 interface GroupedCategory {
@@ -38,7 +39,8 @@ const groupBy = <T extends Record<string, any>>(array: T[], key: keyof T): Recor
 export default function GroupedNeedsSelector({
   needs,
   onNeedPress,
-  isLoading = false
+  isLoading = false,
+  selectedNeedIds = []
 }: GroupedNeedsProps) {
   const [groupedNeeds, setGroupedNeeds] = useState<GroupedCategory[]>([]);
 
@@ -126,19 +128,30 @@ export default function GroupedNeedsSelector({
             </TouchableOpacity>
 
             {/* Category Needs */}
-            {category.visible && category.needs.map((need) => (
-              <TouchableOpacity
-                key={need.id}
-                onPress={() => onNeedPress(need.nameDE)}
-                className="rounded-full py-1 px-1 flex-row items-center gap-1"
-                style={{ backgroundColor: 'transparent' }}
-              >
-                <View className="">
-                  <Text className="text-xs text-black">+</Text>
-                </View>
-                <Text className="text-black">{need.nameDE}</Text>
-              </TouchableOpacity>
-            ))}
+            {category.visible && category.needs.map((need) => {
+              const isSelected = selectedNeedIds.includes(need.id);
+              return (
+                <TouchableOpacity
+                  key={need.id}
+                  onPress={() => onNeedPress(need.nameDE)}
+                  className="rounded-full py-1 px-2 flex-row items-center gap-1"
+                  style={{
+                    backgroundColor: isSelected ? '#86efac' : 'transparent',
+                    borderWidth: isSelected ? 2 : 0,
+                    borderColor: '#000',
+                  }}
+                >
+                  <View className="">
+                    <Text className={`text-xs ${isSelected ? 'text-black' : 'text-black'}`}>
+                      {isSelected ? '✓' : '+'}
+                    </Text>
+                  </View>
+                  <Text className={`text-black ${isSelected ? 'font-semibold' : ''}`}>
+                    {need.nameDE}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </React.Fragment>
         ))}
       </View>

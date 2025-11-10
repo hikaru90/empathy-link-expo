@@ -1,23 +1,22 @@
 import baseColors from '@/baseColors.config';
-import { Calendar, ChevronsUpDown } from 'lucide-react-native';
+import { ListFilter } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-interface DateRangePickerProps {
-  onTimeframeChange?: (timeframe: string) => void;
-  selectedTimeframe?: string;
+export type FeelingTypeFilter = 'all' | 'positive' | 'negative';
+
+interface FeelingTypeFilterProps {
+  value: FeelingTypeFilter;
+  onChange: (value: FeelingTypeFilter) => void;
 }
 
-const timeframeOptions = [
-  { value: 'today', label: 'Heute' },
-  { value: 'yesterday', label: 'Gestern' },
-  { value: 'dayBeforeYesterday', label: 'Vorgestern' },
-  { value: 'lastWeek', label: 'Letzte Woche' },
-  { value: 'lastMonth', label: 'Letzter Monat' },
-  { value: 'lastYear', label: 'Letztes Jahr' },
+const filterOptions: Array<{ value: FeelingTypeFilter; label: string }> = [
+  { value: 'all', label: 'Alle Gefühle' },
+  { value: 'positive', label: 'Positive Gefühle' },
+  { value: 'negative', label: 'Negative Gefühle' },
 ];
 
-export default function DateRangePicker({ onTimeframeChange, selectedTimeframe = 'lastWeek' }: DateRangePickerProps) {
+export default function FeelingTypeFilter({ value, onChange }: FeelingTypeFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [buttonLayout, setButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const buttonRef = useRef<View>(null);
@@ -25,7 +24,6 @@ export default function DateRangePicker({ onTimeframeChange, selectedTimeframe =
 
   useEffect(() => {
     if (isOpen) {
-      // Animate tooltip fade in
       Animated.spring(tooltipOpacity, {
         toValue: 1,
         useNativeDriver: true,
@@ -33,7 +31,6 @@ export default function DateRangePicker({ onTimeframeChange, selectedTimeframe =
         friction: 11,
       }).start();
     } else {
-      // Animate tooltip fade out
       Animated.spring(tooltipOpacity, {
         toValue: 0,
         useNativeDriver: true,
@@ -43,8 +40,8 @@ export default function DateRangePicker({ onTimeframeChange, selectedTimeframe =
     }
   }, [isOpen]);
 
-  const handleSelect = (value: string) => {
-    onTimeframeChange?.(value);
+  const handleSelect = (selectedValue: FeelingTypeFilter) => {
+    onChange(selectedValue);
     setIsOpen(false);
   };
 
@@ -55,15 +52,17 @@ export default function DateRangePicker({ onTimeframeChange, selectedTimeframe =
     });
   };
 
-  const selectedLabel = timeframeOptions.find((opt) => opt.value === selectedTimeframe)?.label || 'Zeitraum wählen';
+  // Calculate tooltip position - center it on the button
+  const tooltipWidth = 180; // minWidth from styles
+  const tooltipLeft = buttonLayout.x + buttonLayout.width / 2 - tooltipWidth / 2;
+
+  const selectedLabel = filterOptions.find((opt) => opt.value === value)?.label || 'Filter';
 
   return (
     <>
       <View ref={buttonRef} collapsable={false}>
-        <TouchableOpacity style={styles.triggerButton} onPress={handleButtonPress}>
-          <Calendar size={12} color={baseColors.black} />
-          <Text style={styles.triggerText}>{selectedLabel}</Text>
-          <ChevronsUpDown size={14} color={baseColors.black} />
+        <TouchableOpacity className="flex-row items-center gap-1.5 py-1.5 px-2 rounded-lg" onPress={handleButtonPress}>
+          <ListFilter size={14} color={baseColors.black} />
         </TouchableOpacity>
       </View>
 
@@ -75,7 +74,8 @@ export default function DateRangePicker({ onTimeframeChange, selectedTimeframe =
       >
         <TouchableOpacity
           activeOpacity={1}
-          style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0)' }}
+          className="flex-1"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0)' }}
           onPress={() => setIsOpen(false)}
         >
           <Animated.View
@@ -84,34 +84,33 @@ export default function DateRangePicker({ onTimeframeChange, selectedTimeframe =
               {
                 opacity: tooltipOpacity,
                 top: buttonLayout.y + buttonLayout.height + 8,
-                left: buttonLayout.x + buttonLayout.width / 2 - 120, // Center the tooltip on the button
+                left: tooltipLeft,
                 maxWidth: 240,
               },
             ]}
             onStartShouldSetResponder={() => true}
           >
-            {/* Tooltip arrow */}
             <View style={styles.tooltipArrow} />
 
             <View style={styles.optionsList}>
-              {timeframeOptions.map((option) => (
+              {filterOptions.map((option) => (
                 <TouchableOpacity
                   key={option.value}
                   style={[
                     styles.option,
-                    selectedTimeframe === option.value && styles.selectedOption,
+                    value === option.value && styles.selectedOption,
                   ]}
                   onPress={() => handleSelect(option.value)}
                 >
                   <Text
                     style={[
                       styles.optionText,
-                      selectedTimeframe === option.value && styles.selectedOptionText,
+                      value === option.value && styles.selectedOptionText,
                     ]}
                   >
                     {option.label}
                   </Text>
-                  {selectedTimeframe === option.value && (
+                  {value === option.value && (
                     <View style={styles.checkmark}>
                       <Text style={styles.checkmarkText}>✓</Text>
                     </View>
@@ -127,18 +126,6 @@ export default function DateRangePicker({ onTimeframeChange, selectedTimeframe =
 }
 
 const styles = StyleSheet.create({
-  triggerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  triggerText: {
-    fontSize: 12,
-    color: baseColors.black,
-    marginRight: 4,
-  },
   tooltipContent: {
     position: 'absolute',
     backgroundColor: '#fff',
@@ -201,3 +188,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+

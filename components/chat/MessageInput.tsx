@@ -8,7 +8,7 @@ import { useChat } from '@/hooks/use-chat';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { Heart, Send } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Keyboard, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import GroupedFeelingsSelector from './GroupedFeelingsSelector';
 import GroupedNeedsSelector from './GroupedNeedsSelector';
 
@@ -23,8 +23,26 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
   const [feelingSelectorVisible, setFeelingSelectorVisible] = useState(false);
   const [needSelectorVisible, setNeedSelectorVisible] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const { sendMessage, isSending } = useChat();
   const textInputRef = useRef<TextInput>(null);
+
+  // Handle keyboard show/hide on Android
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      });
+      const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+        setKeyboardHeight(0);
+      });
+
+      return () => {
+        showSubscription.remove();
+        hideSubscription.remove();
+      };
+    }
+  }, []);
 
   // Load feelings and needs data
   useEffect(() => {
@@ -110,7 +128,11 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
       className="bg-white border-t border-gray-200 rounded-3xl shadow-lg shadow-black/10 flex flex-col gap-2"
       style={{
         position: 'absolute',
-        bottom: Platform.OS === 'ios' ? 88 : 16, // More space on iOS for home indicator
+        bottom: Platform.OS === 'ios' 
+          ? 88 
+          : keyboardHeight > 0 
+            ? keyboardHeight + 16 // When keyboard is visible, position above keyboard
+            : 16, // When keyboard is hidden, use original position
         left: 16,
         right: 16,
         zIndex: 1000,

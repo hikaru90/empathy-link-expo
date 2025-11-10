@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, ActivityIndicator, Platform } from 'react-native';
-import { CheckCircle, Circle, ChevronLeft, Archive, ArchiveRestore } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
 import baseColors from '@/baseColors.config';
 import Header from '@/components/Header';
 import { useAuthGuard } from '@/hooks/use-auth';
+import { getConflictResolutions, updateConflictResolution, type ConflictResolution } from '@/lib/api/conflict-resolution';
 import { authClient } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/config';
-import { getConflictResolutions, updateConflictResolution, upsertConflictResolution, type ConflictResolution } from '@/lib/api/conflict-resolution';
+import { useRouter } from 'expo-router';
+import { Archive, ArchiveRestore, CheckCircle, ChevronLeft, Circle } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface RequestItem {
   id: string;
@@ -33,6 +33,7 @@ export default function ConflictResolutionsScreen() {
   const [resolutions, setResolutions] = useState<ConflictResolution[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
+  const [activeFilter, setActiveFilter] = useState<'active' | 'resolved' | 'open' | 'archived'>('active');
 
   useEffect(() => {
     if (user) {
@@ -93,31 +94,10 @@ export default function ConflictResolutionsScreen() {
     setUpdatingIds(prev => new Set(prev).add(request.analysisId));
 
     try {
-      if (existingResolution) {
-        await updateConflictResolution(existingResolution.id, {
-          resolved: newResolvedState,
-        });
-      } else {
-        try {
-          await upsertConflictResolution(
-            request.analysisId,
-            request.request,
-            undefined,
-            false
-          );
-          const updated = await getConflictResolutions();
-          const newResolution = Array.isArray(updated) 
-            ? updated.find(r => r.analysisId === request.analysisId)
-            : undefined;
-          if (newResolution) {
-            await updateConflictResolution(newResolution.id, {
-              resolved: newResolvedState,
-            });
-          }
-        } catch (createError) {
-          console.warn('Could not create conflict resolution:', createError);
-        }
-      }
+      // Update the analysis directly
+      await updateConflictResolution(request.analysisId, {
+        resolved: newResolvedState,
+      });
       await loadData();
     } catch (error) {
       console.error('Failed to update conflict resolution:', error);
@@ -143,31 +123,10 @@ export default function ConflictResolutionsScreen() {
     setUpdatingIds(prev => new Set(prev).add(request.analysisId));
 
     try {
-      if (existingResolution) {
-        await updateConflictResolution(existingResolution.id, {
-          archived: newArchivedState,
-        });
-      } else {
-        try {
-          await upsertConflictResolution(
-            request.analysisId,
-            request.request,
-            undefined,
-            false
-          );
-          const updated = await getConflictResolutions();
-          const newResolution = Array.isArray(updated) 
-            ? updated.find(r => r.analysisId === request.analysisId)
-            : undefined;
-          if (newResolution) {
-            await updateConflictResolution(newResolution.id, {
-              archived: newArchivedState,
-            });
-          }
-        } catch (createError) {
-          console.warn('Could not create conflict resolution:', createError);
-        }
-      }
+      // Update the analysis directly
+      await updateConflictResolution(request.analysisId, {
+        archived: newArchivedState,
+      });
       await loadData();
     } catch (error) {
       console.error('Failed to archive conflict resolution:', error);
@@ -201,6 +160,22 @@ export default function ConflictResolutionsScreen() {
     const resolution = getResolutionForRequest(req.analysisId);
     return resolution?.resolved || false;
   });
+
+  // Filter requests based on active filter
+  const filteredRequests = React.useMemo(() => {
+    switch (activeFilter) {
+      case 'active':
+        return nonArchivedRequests;
+      case 'resolved':
+        return resolvedRequests;
+      case 'open':
+        return unresolvedRequests;
+      case 'archived':
+        return archivedRequests;
+      default:
+        return nonArchivedRequests;
+    }
+  }, [activeFilter, nonArchivedRequests, resolvedRequests, unresolvedRequests, archivedRequests]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -242,144 +217,109 @@ export default function ConflictResolutionsScreen() {
             <View style={{ width: 24 }} />
           </View>
 
-          {/* Statistics */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{nonArchivedRequests.length}</Text>
-              <Text style={styles.statLabel}>Aktiv</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, styles.statNumberResolved]}>{resolvedRequests.length}</Text>
-              <Text style={styles.statLabel}>Gelöst</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, styles.statNumberUnresolved]}>{unresolvedRequests.length}</Text>
-              <Text style={styles.statLabel}>Offen</Text>
-            </View>
-            {archivedRequests.length > 0 && (
-              <View style={styles.statItem}>
-                <Text style={[styles.statNumber, styles.statNumberArchived]}>{archivedRequests.length}</Text>
-                <Text style={styles.statLabel}>Archiviert</Text>
-              </View>
-            )}
+          {/* Filter Tabs */}
+          <View style={styles.filterContainer}>
+            <TouchableOpacity
+              onPress={() => setActiveFilter('active')}
+              style={[
+                styles.filterPill,
+                activeFilter === 'active' && styles.filterPillActive
+              ]}
+            >
+              <Text style={[
+                styles.filterPillText,
+                activeFilter === 'active' && styles.filterPillTextActive
+              ]}>
+                Aktiv ({nonArchivedRequests.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setActiveFilter('open')}
+              style={[
+                styles.filterPill,
+                activeFilter === 'open' && styles.filterPillActive
+              ]}
+            >
+              <Text style={[
+                styles.filterPillText,
+                activeFilter === 'open' && styles.filterPillTextActive
+              ]}>
+                Offen ({unresolvedRequests.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setActiveFilter('resolved')}
+              style={[
+                styles.filterPill,
+                activeFilter === 'resolved' && styles.filterPillActive
+              ]}
+            >
+              <Text style={[
+                styles.filterPillText,
+                activeFilter === 'resolved' && styles.filterPillTextActive
+              ]}>
+                Gelöst ({resolvedRequests.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setActiveFilter('archived')}
+              style={[
+                styles.filterPill,
+                activeFilter === 'archived' && styles.filterPillActive
+              ]}
+            >
+              <Text style={[
+                styles.filterPillText,
+                activeFilter === 'archived' && styles.filterPillTextActive
+              ]}>
+                Archiviert ({archivedRequests.length})
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Unresolved Section */}
-          {unresolvedRequests.length > 0 && (
+          {/* Filtered Content */}
+          {filteredRequests.length > 0 ? (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Offene Konflikte</Text>
               <View style={styles.todoContainer}>
-                {unresolvedRequests.map((item) => {
-                  const isUpdating = updatingIds.has(item.analysisId);
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={styles.todoItem}
-                      onPress={() => handleToggleResolved(item)}
-                      disabled={isUpdating}
-                    >
-                      <View style={styles.todoContent}>
-                        {isUpdating ? (
-                          <ActivityIndicator size="small" color={baseColors.lilac} style={styles.checkbox} />
-                        ) : (
-                          <View style={styles.checkbox}>
-                            <Circle size={24} color={baseColors.lilac} strokeWidth={2} />
-                          </View>
-                        )}
-                        <View style={styles.todoTextContainer}>
-                          <Text style={styles.todoText}>{item.request}</Text>
-                          <Text style={styles.todoTitle}>{item.title}</Text>
-                          <Text style={styles.todoDate}>{formatDate(item.created)}</Text>
-                        </View>
-                        <TouchableOpacity
-                          onPress={(e) => handleToggleArchive(item, e)}
-                          style={styles.archiveButton}
-                          disabled={isUpdating}
-                        >
-                          <Archive size={18} color="#999" />
-                        </TouchableOpacity>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* Resolved Section */}
-          {resolvedRequests.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Gelöste Konflikte</Text>
-              <View style={styles.todoContainer}>
-                {resolvedRequests.map((item) => {
-                  const isUpdating = updatingIds.has(item.analysisId);
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[styles.todoItem, styles.todoItemResolved]}
-                      onPress={() => handleToggleResolved(item)}
-                      disabled={isUpdating}
-                    >
-                      <View style={styles.todoContent}>
-                        {isUpdating ? (
-                          <ActivityIndicator size="small" color={baseColors.lilac} style={styles.checkbox} />
-                        ) : (
-                          <View style={styles.checkbox}>
-                            <CheckCircle size={24} color="#10b981" fill="#10b981" />
-                          </View>
-                        )}
-                        <View style={styles.todoTextContainer}>
-                          <Text style={[styles.todoText, styles.todoTextResolved]}>
-                            {item.request}
-                          </Text>
-                          <Text style={styles.todoTitle}>{item.title}</Text>
-                          <Text style={styles.todoDate}>{formatDate(item.created)}</Text>
-                        </View>
-                        <TouchableOpacity
-                          onPress={(e) => handleToggleArchive(item, e)}
-                          style={styles.archiveButton}
-                          disabled={isUpdating}
-                        >
-                          <Archive size={18} color="#999" />
-                        </TouchableOpacity>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
-          {/* Archived Section */}
-          {archivedRequests.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Archivierte Konflikte</Text>
-              <View style={styles.todoContainer}>
-                {archivedRequests.map((item) => {
+                {filteredRequests.map((item: RequestItem) => {
                   const isUpdating = updatingIds.has(item.analysisId);
                   const resolution = getResolutionForRequest(item.analysisId);
                   const isResolved = resolution?.resolved || false;
+                  const isArchived = resolution?.archived || false;
+                  
                   return (
-                    <TouchableOpacity
+                    <View
                       key={item.id}
-                      style={[styles.todoItem, styles.todoItemArchived]}
-                      onPress={() => handleToggleResolved(item)}
-                      disabled={isUpdating}
+                      style={[
+                        styles.todoItem,
+                        isResolved && styles.todoItemResolved,
+                        isArchived && styles.todoItemArchived
+                      ]}
                     >
                       <View style={styles.todoContent}>
-                        {isUpdating ? (
-                          <ActivityIndicator size="small" color={baseColors.lilac} style={styles.checkbox} />
-                        ) : (
-                          <View style={styles.checkbox}>
-                            {isResolved ? (
-                              <CheckCircle size={24} color="#10b981" fill="#10b981" />
-                            ) : (
-                              <Circle size={24} color="#999" strokeWidth={2} />
-                            )}
-                          </View>
-                        )}
+                        <TouchableOpacity
+                          onPress={() => handleToggleResolved(item)}
+                          disabled={isUpdating}
+                          style={styles.checkbox}
+                        >
+                          {isUpdating ? (
+                            <ActivityIndicator size="small" color={baseColors.lilac} />
+                          ) : (
+                            <>
+                              {isResolved ? (
+                                <CheckCircle size={24} color="#10b981" fill="#10b981" />
+                              ) : (
+                                <Circle size={24} color={isArchived ? "#999" : baseColors.lilac} strokeWidth={2} />
+                              )}
+                            </>
+                          )}
+                        </TouchableOpacity>
                         <View style={styles.todoTextContainer}>
-                          <Text style={[styles.todoText, styles.todoTextArchived]}>
+                          <Text style={[
+                            styles.todoText,
+                            isResolved && styles.todoTextResolved,
+                            isArchived && styles.todoTextArchived
+                          ]}>
                             {item.request}
                           </Text>
                           <Text style={styles.todoTitle}>{item.title}</Text>
@@ -390,20 +330,25 @@ export default function ConflictResolutionsScreen() {
                           style={styles.archiveButton}
                           disabled={isUpdating}
                         >
-                          <ArchiveRestore size={18} color="#999" />
+                          {isArchived ? (
+                            <ArchiveRestore size={18} color="#999" />
+                          ) : (
+                            <Archive size={18} color="#999" />
+                          )}
                         </TouchableOpacity>
                       </View>
-                    </TouchableOpacity>
+                    </View>
                   );
                 })}
               </View>
             </View>
-          )}
-
-          {requests.length === 0 && (
+          ) : (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                Noch keine Bitten in deinen Gesprächen.
+                {activeFilter === 'active' && 'Noch keine aktiven Bitten in deinen Gesprächen.'}
+                {activeFilter === 'open' && 'Keine offenen Konflikte.'}
+                {activeFilter === 'resolved' && 'Keine gelösten Konflikte.'}
+                {activeFilter === 'archived' && 'Keine archivierten Konflikte.'}
               </Text>
             </View>
           )}
@@ -418,7 +363,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: Platform.OS === 'ios' ? 100 : 80,
+    paddingTop: Platform.OS === 'web' ? 80 : Platform.OS === 'android' ? 160 : 120,
     paddingBottom: 64,
   },
   container: {
@@ -437,6 +382,33 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#000',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 24,
+    flexWrap: 'wrap',
+  },
+  filterPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e5e5e5',
+  },
+  filterPillActive: {
+    backgroundColor: baseColors.lilac,
+    borderColor: baseColors.lilac,
+  },
+  filterPillText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  filterPillTextActive: {
+    color: '#fff',
+    fontWeight: '600',
   },
   statsContainer: {
     flexDirection: 'row',

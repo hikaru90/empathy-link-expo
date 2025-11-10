@@ -141,6 +141,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? 40 : 0,
     paddingBottom: 40,
   },
   loadingContainer: {

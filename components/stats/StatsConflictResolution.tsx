@@ -1,9 +1,9 @@
 import baseColors from '@/baseColors.config';
-import { getConflictResolutions, updateConflictResolution, upsertConflictResolution, type ConflictResolution } from '@/lib/api/conflict-resolution';
+import { getConflictResolutions, updateConflictResolution, type ConflictResolution } from '@/lib/api/conflict-resolution';
 import { useRouter } from 'expo-router';
 import { Archive, CheckCircle, Circle } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 
 interface RequestItem {
@@ -36,7 +36,7 @@ function SwipeableRow({ item, isResolved, isUpdating, onToggleResolved, onArchiv
 
   const onGestureEvent = Animated.event(
     [{ nativeEvent: { translationX: translateX } }],
-    { 
+    {
       useNativeDriver: true,
     }
   );
@@ -88,13 +88,19 @@ function SwipeableRow({ item, isResolved, isUpdating, onToggleResolved, onArchiv
   };
 
   return (
-    <View style={[styles.rowWrapper, isLast && styles.lastRowWrapper]}>
+    <View className={`overflow-hidden relative ${isLast ? '' : 'border-b border-black/5'}`}>
       {/* Archive background that shows when swiping */}
-      <View style={styles.archiveBackground}>
+      <View
+        className="absolute right-0 top-0 bottom-0 flex-row items-center justify-end pr-5 gap-2 rounded-lg"
+        style={{
+          width: '100%',
+          backgroundColor: baseColors.lilac
+        }}
+      >
         <Archive size={20} color="#fff" />
-        <Text style={styles.archiveText}>Archivieren</Text>
+        <Text className="text-white text-sm font-semibold">Archivieren</Text>
       </View>
-      
+
       <PanGestureHandler
         onGestureEvent={onGestureEvent}
         onHandlerStateChange={onHandlerStateChange}
@@ -102,30 +108,31 @@ function SwipeableRow({ item, isResolved, isUpdating, onToggleResolved, onArchiv
         failOffsetY={[-5, 5]}
       >
         <Animated.View
-          style={[
-            styles.row,
-            isLast && styles.lastRow,
-            {
-              transform: [{ translateX }],
-            },
-          ]}
+          style={{
+            transform: [{ translateX }],
+            backgroundColor: baseColors.offwhite,
+            flex: 1,
+            alignItems: 'center',
+            paddingHorizontal: 8,
+            paddingVertical: 16,
+            gap: 12,
+            borderRadius: 8,
+            position: 'relative',
+          }}
         >
           <TouchableOpacity
-            style={styles.rowContent}
+            className="flex-row items-center gap-3 flex-1 w-full"
             onPress={onToggleResolved}
             disabled={isUpdating}
-            activeOpacity={0.7}
           >
-            <View style={styles.textContainer}>
+            <View className="flex-1 gap-1">
               <Text
-                style={[styles.cellText, isResolved && styles.cellTextResolved]}
-                numberOfLines={2}
-                ellipsizeMode="tail"
+                className={`text-sm text-black mb-2 ${isResolved ? 'line-through text-black/60 opacity-60' : ''}`}
               >
                 {item.request}
               </Text>
-              <Text style={styles.titleText} numberOfLines={1} ellipsizeMode="tail">
-                {item.title}
+              <Text className="text-xs text-black/60" numberOfLines={1} ellipsizeMode="tail">
+                {new Date(item.created).toLocaleDateString()} - {item.title}
               </Text>
             </View>
             {CheckboxComponent}
@@ -143,12 +150,14 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadResolutions();
+    loadResolutions(true);
   }, []);
 
-  const loadResolutions = async () => {
+  const loadResolutions = async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      }
       const data = await getConflictResolutions();
       // Ensure data is always an array
       setResolutions(Array.isArray(data) ? data : []);
@@ -157,7 +166,9 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
       // Ensure resolutions remains an array even on error
       setResolutions([]);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      }
     }
   };
 
@@ -176,39 +187,13 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
     setUpdatingIds(prev => new Set(prev).add(request.analysisId));
 
     try {
-      if (existingResolution) {
-        // Update existing resolution
-        await updateConflictResolution(existingResolution.id, {
-          resolved: newResolvedState,
-        });
-      } else {
-        // For now, just create it as resolved/unresolved
-        // The backend should handle creating with resolved state
-        // If backend doesn't support this yet, we'll create then update
-        try {
-          await upsertConflictResolution(
-            request.analysisId,
-            request.request,
-            undefined,
-            false
-          );
-          // Try to update if creation succeeded
-          const updated = await getConflictResolutions();
-          const newResolution = Array.isArray(updated) 
-            ? updated.find(r => r.analysisId === request.analysisId)
-            : undefined;
-          if (newResolution) {
-            await updateConflictResolution(newResolution.id, {
-              resolved: newResolvedState,
-            });
-          }
-        } catch (createError) {
-          // If endpoint doesn't exist yet, just update local state optimistically
-          console.warn('Could not create conflict resolution, endpoint may not exist:', createError);
-        }
-      }
-      // Reload resolutions to get updated state
-      await loadResolutions();
+      // Update the analysis directly - no need to check if resolution exists
+      // since analyses with requests always have resolution data
+      await updateConflictResolution(request.analysisId, {
+        resolved: newResolvedState,
+      });
+      // Reload resolutions to get updated state (without showing loading spinner)
+      await loadResolutions(false);
     } catch (error) {
       console.error('Failed to update conflict resolution:', error);
     } finally {
@@ -232,35 +217,27 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
 
     setUpdatingIds(prev => new Set(prev).add(request.analysisId));
 
-    try {
-      if (existingResolution) {
-        await updateConflictResolution(existingResolution.id, {
-          archived: newArchivedState,
-        });
-      } else {
-        try {
-          await upsertConflictResolution(
-            request.analysisId,
-            request.request,
-            undefined,
-            false
-          );
-          const updated = await getConflictResolutions();
-          const newResolution = Array.isArray(updated) 
-            ? updated.find(r => r.analysisId === request.analysisId)
-            : undefined;
-          if (newResolution) {
-            await updateConflictResolution(newResolution.id, {
-              archived: newArchivedState,
-            });
-          }
-        } catch (createError) {
-          console.warn('Could not create conflict resolution:', createError);
-        }
+    // Optimistically update the resolutions state immediately
+    setResolutions(prev => {
+      const updated = [...prev];
+      const index = updated.findIndex(r => r.analysisId === request.analysisId);
+      if (index !== -1) {
+        // Update existing resolution
+        updated[index] = { ...updated[index], archived: newArchivedState };
       }
-      await loadResolutions();
+      return updated;
+    });
+
+    try {
+      // Update the analysis directly
+      await updateConflictResolution(request.analysisId, {
+        archived: newArchivedState,
+      });
+      await loadResolutions(false);
     } catch (error) {
       console.error('Failed to archive conflict resolution:', error);
+      // Revert optimistic update on error
+      await loadResolutions(false);
     } finally {
       setUpdatingIds(prev => {
         const newSet = new Set(prev);
@@ -272,7 +249,7 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View className="p-5 items-center">
         <ActivityIndicator size="small" color={baseColors.lilac} />
       </View>
     );
@@ -280,8 +257,8 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
 
   if (requests.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>
+      <View className="p-5 rounded-xl items-center" style={{ backgroundColor: baseColors.offwhite }}>
+        <Text className="text-sm text-gray-600 text-center leading-5">
           Noch keine Bitten in deinen Gesprächen. Bitten sind wichtig für konkrete Konfliktlösungen.
         </Text>
       </View>
@@ -289,23 +266,34 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
   }
 
   // Filter out archived conflicts for display
+  // Keep items that are updating visible to prevent layout shift
   const nonArchivedRequests = requests.filter(req => {
     const resolution = getResolutionForRequest(req.analysisId);
-    return !resolution?.archived;
+    const isArchived = resolution?.archived || false;
+    const isUpdating = updatingIds.has(req.analysisId);
+    // Keep items that are updating in the list to prevent layout shift
+    return !isArchived || isUpdating;
   });
 
-  // Calculate statistics (excluding archived)
+  // Calculate statistics (excluding archived, but including items being updated)
   const resolvedCount = nonArchivedRequests.filter(req => {
     const resolution = getResolutionForRequest(req.analysisId);
     return resolution?.resolved || false;
   }).length;
-  const totalCount = nonArchivedRequests.length;
+  const totalCount = nonArchivedRequests.filter(req => {
+    const resolution = getResolutionForRequest(req.analysisId);
+    // Don't count items being archived in total
+    return !resolution?.archived || updatingIds.has(req.analysisId);
+  }).length;
   const unresolvedCount = totalCount - resolvedCount;
 
-  // Separate resolved and unresolved requests (excluding archived)
+  // Separate resolved and unresolved requests
+  // Keep updating items visible to prevent layout shift
   const unresolvedRequests = nonArchivedRequests.filter(req => {
     const resolution = getResolutionForRequest(req.analysisId);
-    return !resolution?.resolved;
+    const isUpdating = updatingIds.has(req.analysisId);
+    // Show unresolved items, or items that are currently updating (to prevent layout shift)
+    return !resolution?.resolved || isUpdating;
   });
 
   // Show only 3 unresolved by default
@@ -313,54 +301,56 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
 
   return (
     <View>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>Deine Bitten</Text>
+      <View
+        className="rounded-2xl overflow-hidden shadow-lg shadow-black/10"
+        style={{ backgroundColor: baseColors.offwhite }}
+      >
+        <View className="px-5 pt-4 pb-3 border-b border-black/5">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text className="text-base font-semibold text-black">Deine Bitten</Text>
             {totalCount > 0 && (
-              <TouchableOpacity
-                style={styles.seeAllButton}
-                onPress={() => router.push('/(protected)/conflict-resolutions')}
-              >
-                <Text style={styles.seeAllText}>Alle anzeigen</Text>
-              </TouchableOpacity>
+              <View className="flex-row items-center gap-2">
+                {updatingIds.size > 0 && (
+                  <ActivityIndicator size="small" color={baseColors.lilac} />
+                )}
+                <TouchableOpacity
+                  className="px-3 py-1 rounded-full border border-black/10"
+                  onPress={() => router.push('/(protected)/conflict-resolutions')}
+                >
+                  <Text className="text-xs text-black">Alle anzeigen</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
           {/* Statistics row */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{totalCount}</Text>
-              <Text style={styles.statLabel}>Gesamt</Text>
+          <View className="flex-row gap-2 mt-1">
+            <View className="flex-1 items-center py-2 px-2 bg-white rounded-lg">
+              <Text className="text-lg font-bold text-black mb-0.5">{totalCount}</Text>
+              <Text className="text-[10px] text-gray-600 font-medium">Gesamt</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, styles.statNumberResolved]}>{resolvedCount}</Text>
-              <Text style={styles.statLabel}>Gelöst</Text>
+            <View className="flex-1 items-center py-2 px-2 bg-white rounded-lg">
+              <Text className="text-lg font-bold text-emerald-500 mb-0.5">{resolvedCount}</Text>
+              <Text className="text-[10px] text-gray-600 font-medium">Gelöst</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={[styles.statNumber, styles.statNumberUnresolved]}>{unresolvedCount}</Text>
-              <Text style={styles.statLabel}>Offen</Text>
+            <View className="flex-1 items-center py-2 px-2 bg-white rounded-lg">
+              <Text className="text-lg font-bold mb-0.5" style={{ color: baseColors.lilac }}>{unresolvedCount}</Text>
+              <Text className="text-[10px] text-gray-600 font-medium">Offen</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.body}>
+        <View className="px-4 pt-2 pb-3">
           {displayedUnresolved.map((item, index) => {
             const resolution = getResolutionForRequest(item.analysisId);
             const isResolved = resolution?.resolved || false;
             const isUpdating = updatingIds.has(item.analysisId);
 
             const checkboxComponent = (
-              <View style={styles.checkboxContainer}>
-                {isUpdating ? (
-                  <ActivityIndicator size="small" color={baseColors.lilac} />
+              <View className="w-6 items-center justify-center">
+                {isResolved ? (
+                  <CheckCircle size={20} color="#10b981" fill="#10b981" />
                 ) : (
-                  <>
-                    {isResolved ? (
-                      <CheckCircle size={20} color="#10b981" fill="#10b981" />
-                    ) : (
-                      <Circle size={20} color={baseColors.lilac} strokeWidth={2} />
-                    )}
-                  </>
+                  <Circle size={20} color={baseColors.lilac} strokeWidth={2} />
                 )}
               </View>
             );
@@ -384,164 +374,4 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
   );
 }
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  emptyContainer: {
-    padding: 20,
-    backgroundColor: baseColors.offwhite,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  container: {
-    borderRadius: 16,
-    backgroundColor: baseColors.offwhite,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
-    overflow: 'hidden',
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-  },
-  seeAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  seeAllText: {
-    fontSize: 12,
-    color: '#000',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 2,
-  },
-  statNumberResolved: {
-    color: '#10b981',
-  },
-  statNumberUnresolved: {
-    color: baseColors.lilac,
-  },
-  statLabel: {
-    fontSize: 10,
-    color: '#666',
-    fontWeight: '500',
-  },
-  body: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  rowWrapper: {
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  lastRowWrapper: {
-    borderBottomWidth: 0,
-  },
-  archiveBackground: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: Dimensions.get('window').width,
-    backgroundColor: baseColors.lilac,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingRight: 20,
-    gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  archiveText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  row: {
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
-    gap: 12,
-  },
-  lastRow: {
-    borderBottomWidth: 0,
-  },
-  rowContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  checkboxContainer: {
-    width: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textContainer: {
-    flex: 1,
-    gap: 4,
-  },
-  cellText: {
-    fontSize: 12,
-    color: '#000',
-    lineHeight: 16,
-  },
-  cellTextResolved: {
-    textDecorationLine: 'line-through',
-    color: '#666',
-    opacity: 0.6,
-  },
-  titleText: {
-    fontSize: 10,
-    color: '#999',
-  },
-});
+

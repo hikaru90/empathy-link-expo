@@ -134,8 +134,8 @@ function ChatContent() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'android' ? 70 : 0}
     >
       <FlatList
         ref={flatListRef}
@@ -261,11 +261,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    paddingTop: Platform.OS === 'ios' ? 100 : 80, // Account for floating header
+    paddingTop: Platform.OS === 'ios' ? 100 : Platform.OS === 'android' ? 120 : 80, // Account for floating header
   },
   messageList: {
     paddingVertical: 16,
-    paddingTop: Platform.OS === 'ios' ? 100 : 80, // Account for floating header
+    paddingTop: Platform.OS === 'ios' ? 100 : Platform.OS === 'android' ? 120 : 80, // Account for floating header
     paddingBottom: Platform.OS === 'ios' ? 260 : 80, // Account for floating header
     // backgroundColor: 'red',
   },

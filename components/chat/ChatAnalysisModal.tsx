@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { SquareCheck, AlertCircle } from 'lucide-react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, Modal, ActivityIndicator, TouchableOpacity, Animated } from 'react-native';
+import { SquareCheck, AlertCircle, Quote } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
 interface ChatAnalysisModalProps {
@@ -13,6 +13,15 @@ interface ChatAnalysisModalProps {
   onClose: () => void;
 }
 
+// 5 random quotes to cycle through during analysis
+const LOADING_QUOTES = [
+  { quote: "Der Kern aller Wut ist ein Bedürfnis, das nicht erfüllt wird.", author: "Marshall B. Rosenberg" },
+  { quote: "Worte können Fenster sein oder Mauern.", author: "Marshall B. Rosenberg" },
+  { quote: "Deine Präsenz ist das wertvollste Geschenk, das du einem anderen machen kannst.", author: "Marshall B. Rosenberg" },
+  { quote: "Gefühle entstehen aus Bedürfnissen – nicht aus dem Verhalten anderer.", author: "Marshall B. Rosenberg" },
+  { quote: "Empathie ist keine Technik, sondern eine Haltung des Herzens.", author: "Marshall B. Rosenberg" }
+];
+
 export default function ChatAnalysisModal({
   visible,
   isAnalyzing,
@@ -24,6 +33,21 @@ export default function ChatAnalysisModal({
 }: ChatAnalysisModalProps) {
   const router = useRouter();
   const REDIRECT_DELAY = 500; // Brief delay to show completion state
+  const [selectedQuote] = useState(() => LOADING_QUOTES[Math.floor(Math.random() * LOADING_QUOTES.length)]);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Fade in the quote when analyzing starts
+  useEffect(() => {
+    if (isAnalyzing && visible) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      fadeAnim.setValue(0);
+    }
+  }, [isAnalyzing, visible]);
 
   // Redirect immediately when analysis is complete
   useEffect(() => {
@@ -50,6 +74,13 @@ export default function ChatAnalysisModal({
 
         {isAnalyzing && (
           <View style={styles.contentContainer}>
+            {/* Quote display - above loader */}
+            <Animated.View style={[styles.quoteContainer, { opacity: fadeAnim }]}>
+              <Quote size={24} color="#9333ea" style={styles.quoteIcon} />
+              <Text style={styles.quoteText}>{selectedQuote.quote}</Text>
+              <Text style={styles.quoteAuthor}>— {selectedQuote.author}</Text>
+            </Animated.View>
+
             <ActivityIndicator size="large" color="#4ECDC4" style={styles.spinner} />
             <Text style={styles.statusText}>Dein Chat wird ausgewertet</Text>
           </View>
@@ -102,13 +133,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: -60, // Center visually
   },
+  quoteContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 32,
+    marginHorizontal: 24,
+  },
   spinner: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   statusText: {
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+  },
+  quoteIcon: {
+    marginBottom: 12,
+  },
+  quoteText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#333',
+    fontStyle: 'italic',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  quoteAuthor: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 8,
   },
   errorIconContainer: {
     marginBottom: 24,
