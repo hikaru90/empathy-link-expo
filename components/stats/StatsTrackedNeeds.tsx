@@ -171,14 +171,11 @@ export default function StatsTrackedNeeds() {
   };
 
   const handleFillLevelChange = (trackedNeedId: string, fillLevel: number) => {
+    // Only update local state - don't save or update timestamps yet
+    // Will be saved when exiting edit mode
     setFillLevels(prev => ({
       ...prev,
       [trackedNeedId]: fillLevel,
-    }));
-    // Update last updated timestamp when fill level changes
-    setLastUpdated(prev => ({
-      ...prev,
-      [trackedNeedId]: new Date().toISOString(),
     }));
   };
 
@@ -232,10 +229,11 @@ export default function StatsTrackedNeeds() {
           </View>
           {trackedNeeds.length > 0 && (
             <TouchableOpacity
-              style={[styles.editButton, isEditMode && styles.editButtonActive]}
+              className="px-3 py-1 rounded-full border border-black/10 flex-row items-center gap-1"
               onPress={handleEditModeToggle}
+              style={isEditMode ? { backgroundColor: '#86efac', borderColor: '#000' } : {}}
             >
-              <Text style={styles.editButtonText}>
+              <Text className="text-xs text-black">
                 {isEditMode ? 'Bearbeitung abschließen' : 'Schalen füllen'}
               </Text>
             </TouchableOpacity>
@@ -246,7 +244,7 @@ export default function StatsTrackedNeeds() {
         <View style={styles.descriptionContainer}>
           <Text style={styles.descriptionText}>
             {isEditMode
-              ? 'Tippe auf eine Schale, um den Füllstand zu setzen. Die Position deines Klicks bestimmt den Füllstand.'
+              ? 'Tippe auf eine Schale, um den Füllstand zu setzen. Speichere deine Bedürfnis-Füllstände indem du die Bearbeitung abschließt.'
               : 'Wähle bis zu 3 Top Bedürfnisse aus und verfolge, wie gut sie erfüllt sind. Tippe auf eine Schale, um den Verlauf zu sehen.'}
           </Text>
           {!isEditMode && trackedNeeds.length > 0 && !hasFilledToday && (
@@ -308,6 +306,52 @@ export default function StatsTrackedNeeds() {
             </View>
           )}
         </View>
+
+        {/* Last updated display above cups */}
+        {trackedNeeds.length > 0 && !isEditMode && (
+          <View style={styles.lastUpdatedContainer}>
+            <Text style={styles.lastUpdatedLabel}>
+              {(() => {
+                // Get the most recent lastUpdated timestamp
+                const timestamps = Object.values(lastUpdated).filter(Boolean) as string[];
+                if (timestamps.length === 0) return 'Noch nicht ausgefüllt';
+                
+                const mostRecent = timestamps.sort((a, b) => 
+                  new Date(b).getTime() - new Date(a).getTime()
+                )[0];
+                
+                const formatLastUpdated = (timestamp: string): string => {
+                  try {
+                    const date = new Date(timestamp);
+                    const now = new Date();
+                    const diffMs = now.getTime() - date.getTime();
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMs / 3600000);
+                    const diffDays = Math.floor(diffMs / 86400000);
+
+                    if (diffMins < 1) {
+                      return 'Gerade aktualisiert';
+                    } else if (diffMins < 60) {
+                      return `Vor ${diffMins} Min. aktualisiert`;
+                    } else if (diffHours < 24) {
+                      return `Vor ${diffHours} Std. aktualisiert`;
+                    } else if (diffDays === 1) {
+                      return 'Gestern aktualisiert';
+                    } else if (diffDays < 7) {
+                      return `Vor ${diffDays} Tagen aktualisiert`;
+                    } else {
+                      return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    }
+                  } catch {
+                    return '';
+                  }
+                };
+                
+                return `Zuletzt aktualisiert: ${formatLastUpdated(mostRecent)}`;
+              })()}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Need Selector Modal */}
@@ -449,6 +493,18 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 20,
     marginBottom: 8,
+  },
+  lastUpdatedContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  lastUpdatedLabel: {
+    fontSize: 12,
+    color: baseColors.black,
+    opacity: 0.5,
+    textAlign: 'center',
   },
   dailyNotice: {
     flexDirection: 'row',

@@ -13,4 +13,5 @@ export default {
   lilac: '#D6BBFF',
   purple: '#A366FF',
   orange: '#FF9C34',
+  primary: '#A366FF', // Primary color (using purple)
 };

@@ -14,12 +14,12 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     if (!email || !password || !name) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('Fehler', 'Bitte fülle alle Felder aus');
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters long');
+      Alert.alert('Fehler', 'Das Passwort muss mindestens 8 Zeichen lang sein');
       return;
     }
 
@@ -29,7 +29,7 @@ export default function SignupScreen() {
       // Navigate immediately on success
       router.replace('/(protected)/(tabs)');
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Sign up failed');
+      Alert.alert('Fehler', error.message || 'Registrierung fehlgeschlagen');
     } finally {
       setIsLoading(false);
     }
@@ -39,10 +39,10 @@ export default function SignupScreen() {
     <View className="flex-1 justify-center px-6" style={{ backgroundColor: baseColors.background }}>
       <View className="mb-8">
         <Text className="text-3xl font-bold text-gray-800 mb-2">
-          Create Account
+          Konto erstellen
         </Text>
         <Text className="text-gray-600">
-          Sign up to get started with Empathy Link
+          Registriere dich, um mit Empathy Link zu beginnen
         </Text>
       </View>
 
@@ -52,19 +52,19 @@ export default function SignupScreen() {
           className="border border-gray-300 rounded-lg px-4 py-3 text-gray-800"
           value={name}
           onChangeText={setName}
-          placeholder="Enter your name"
+          placeholder="Name eingeben"
           autoCapitalize="words"
           style={{ backgroundColor: '#ffffff' }}
         />
       </View>
 
       <View className="mb-6">
-        <Text className="text-gray-700 mb-2 font-medium">Email</Text>
+        <Text className="text-gray-700 mb-2 font-medium">E-Mail</Text>
         <TextInput
           className="border border-gray-300 rounded-lg px-4 py-3 text-gray-800"
           value={email}
           onChangeText={setEmail}
-          placeholder="Enter your email"
+          placeholder="E-Mail eingeben"
           keyboardType="email-address"
           autoCapitalize="none"
           style={{ backgroundColor: '#ffffff' }}
@@ -72,17 +72,17 @@ export default function SignupScreen() {
       </View>
 
       <View className="mb-8">
-        <Text className="text-gray-700 mb-2 font-medium">Password</Text>
+        <Text className="text-gray-700 mb-2 font-medium">Passwort</Text>
         <TextInput
           className="border border-gray-300 rounded-lg px-4 py-3 text-gray-800"
           value={password}
           onChangeText={setPassword}
-          placeholder="Enter your password"
+          placeholder="Passwort eingeben"
           secureTextEntry
           style={{ backgroundColor: '#ffffff' }}
         />
         <Text className="text-gray-500 text-sm mt-1">
-          Password must be at least 8 characters long
+          Das Passwort muss mindestens 8 Zeichen lang sein
         </Text>
       </View>
 
@@ -91,22 +91,26 @@ export default function SignupScreen() {
         style={{ backgroundColor: baseColors.primary }}
         onPress={handleSignup}
         disabled={isLoading}
+        accessibilityRole="button"
+        accessibilityLabel="Konto erstellen"
+        accessibilityState={{ disabled: isLoading }}
+        testID="signup-button"
       >
         {isLoading ? (
           <ActivityIndicator color="#ffffff" />
         ) : (
           <Text className="text-white text-center font-semibold text-lg">
-            Create Account
+            Konto erstellen
           </Text>
         )}
       </TouchableOpacity>
 
       <View className="mt-6 flex-row justify-center">
-        <Text className="text-gray-600">Already have an account? </Text>
+        <Text className="text-gray-600">Bereits ein Konto? </Text>
         <Link href="/(auth)/login" asChild>
           <TouchableOpacity>
             <Text className="font-semibold" style={{ color: baseColors.primary }}>
-              Sign In
+              Anmelden
             </Text>
           </TouchableOpacity>
         </Link>

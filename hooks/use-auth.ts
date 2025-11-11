@@ -90,7 +90,7 @@ export function useAuthProvider(): AuthContextType {
     });
 
     if (result.error) {
-      throw new Error(result.error.message || 'Sign in failed');
+      throw new Error(result.error.message || 'Anmeldung fehlgeschlagen');
     }
 
     if (result.data?.user) {
@@ -106,7 +106,7 @@ export function useAuthProvider(): AuthContextType {
     });
 
     if (result.error) {
-      throw new Error(result.error.message || 'Sign up failed');
+      throw new Error(result.error.message || 'Registrierung fehlgeschlagen');
     }
 
     if (result.data?.user) {

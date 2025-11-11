@@ -1,5 +1,6 @@
 import baseColors from '@/baseColors.config';
-import { getNeedTimeseries, NeedTimeseriesData, saveNeedFillLevel } from '@/lib/api/stats';
+import { getNeedTimeseries, NeedTimeseriesData } from '@/lib/api/stats';
+import { getTextColorForBackground } from '@/lib/utils/color-contrast';
 import React, { useCallback, useRef, useState } from 'react';
 import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -45,7 +46,7 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
     return Math.round(percentage / 5) * 5;
   }, [cupHeight]);
 
-  const handleFillLevelSet = useCallback(async (level: number) => {
+  const handleFillLevelSet = useCallback((level: number) => {
     const clampedLevel = Math.max(0, Math.min(100, level));
     console.log('Setting fill level to:', clampedLevel);
     
@@ -53,15 +54,8 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
     setFillLevel(clampedLevel);
     onFillLevelChange?.(clampedLevel);
     
-    // Save to API in background (don't revert on error - keep the user's choice)
-    try {
-      await saveNeedFillLevel(trackedNeed.id, clampedLevel);
-      console.log('Fill level saved successfully');
-    } catch (error) {
-      console.error('Error saving fill level:', error);
-      // Don't revert - keep the user's selection even if save fails
-    }
-  }, [trackedNeed.id, onFillLevelChange]);
+    // Don't save to API here - will be saved when exiting edit mode
+  }, [onFillLevelChange]);
 
   const handleCupPress = (event: any) => {
     if (isEditMode) {
@@ -129,8 +123,8 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
   const lastFillPercentage = lastFillLevel !== undefined ? Math.max(0, Math.min(100, lastFillLevel)) : 0;
   const lastFillHeight = lastFillPercentage > 0 ? Math.max(2, (cupHeight * lastFillPercentage) / 100) : 0;
 
-  // Helper function to get text color based on background color brightness
-  const getTextColorForFill = (percentage: number): string => {
+  // Helper function to get text color based on background color with WCAG AA compliance
+  const getTextColorForFill = (percentage: number, fontSize: number, fontWeight: number): string => {
     // Determine which color is being used
     const fillColor = percentage > 50 
       ? baseColors.forest 
@@ -138,18 +132,8 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
       ? baseColors.orange 
       : baseColors.bullshift;
     
-    // Convert hex to RGB
-    const hex = fillColor.replace('#', '');
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    
-    // Calculate relative luminance (perceived brightness)
-    // Using the formula from WCAG: https://www.w3.org/WAI/GL/wiki/Relative_luminance
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    
-    // If luminance is less than 0.5, use white text, otherwise use black
-    return luminance < 0.5 ? '#fff' : '#000';
+    // Use WCAG-compliant contrast utility
+    return getTextColorForBackground(fillColor, fontSize, fontWeight);
   };
 
   const currentFillColor = fillPercentage > 0 
@@ -168,14 +152,14 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
         : baseColors.bullshift)
     : null;
   
-  // In edit mode, use black text since there's no filled background (only borders)
-  // In normal mode, calculate based on fill color brightness
-  const currentTextColor = isEditMode 
-    ? '#000' 
-    : (currentFillColor ? getTextColorForFill(fillPercentage) : '#000');
-  const lastTextColor = isEditMode 
-    ? '#000' 
-    : (lastFillColor ? getTextColorForFill(lastFillPercentage) : '#000');
+  // Calculate text color based on fill color with WCAG AA compliance
+  // Large text (16px, bold 700) needs 3:1 contrast, small text (8px, medium 500) needs 4.5:1
+  const currentTextColor = currentFillColor 
+    ? getTextColorForFill(fillPercentage, 16, 700) // fontSize: 16, fontWeight: 700
+    : '#000';
+  const lastTextColor = lastFillColor 
+    ? getTextColorForFill(lastFillPercentage, 8, 500) // fontSize: 8, fontWeight: 500
+    : '#000';
   
   // Debug logging
   React.useEffect(() => {
@@ -226,114 +210,60 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
                 isEditMode && styles.cupEditMode,
               ]}
             >
-              {isEditMode ? (
+              {/* Current fill - show filled area in both modes */}
+              {fillPercentage > 0 && fillHeight > 0 && (
+                <View
+                  style={[
+                    styles.cupFill,
+                    {
+                      height: fillHeight,
+                      backgroundColor: fillPercentage > 50 
+                        ? baseColors.forest 
+                        : fillPercentage > 25 
+                        ? baseColors.orange 
+                        : baseColors.bullshift,
+                    },
+                  ]}
+                />
+              )}
+              {/* Last fill level - shown as a border at the top */}
+              {lastFillPercentage > 0 && lastFillHeight > 0 && (
                 <>
-                  {/* In edit mode: show fill as border only */}
-                  {fillPercentage > 0 && fillHeight > 0 && (
-                    <View
-                      style={[
-                        styles.currentFillBorder,
-                        {
-                          bottom: fillHeight,
-                          borderColor: fillPercentage > 50 
-                            ? baseColors.forest 
-                            : fillPercentage > 25 
-                            ? baseColors.orange 
-                            : baseColors.bullshift,
-                        },
-                      ]}
-                    />
-                  )}
-                  {/* Last fill level - shown as a border at the top */}
-                  {lastFillPercentage > 0 && lastFillHeight > 0 && (
-                    <>
-                      <View
-                        style={[
-                          styles.lastFillBorder,
-                          {
-                            bottom: lastFillHeight,
-                            borderColor: lastFillPercentage > 50 
-                              ? baseColors.forest 
-                              : lastFillPercentage > 25 
-                              ? baseColors.orange 
-                              : baseColors.bullshift,
-                          },
-                        ]}
-                      />
-                      {/* Small percentage text for old fill level - below the line, to the left */}
-                      <View
-                        style={[
-                          styles.lastFillTextContainer,
-                          {
-                            bottom: lastFillHeight - 10,
-                          },
-                        ]}
-                      >
-                        <Text style={[styles.lastFillText, { color: lastTextColor }]}>
-                          {Math.round(lastFillPercentage)}%
-                        </Text>
-                      </View>
-                    </>
-                  )}
+                  <View
+                    style={[
+                      styles.lastFillBorder,
+                      {
+                        bottom: lastFillHeight,
+                        borderColor: lastFillPercentage > 50 
+                          ? baseColors.forest 
+                          : lastFillPercentage > 25 
+                          ? baseColors.orange 
+                          : baseColors.bullshift,
+                      },
+                    ]}
+                  />
+                  {/* Small percentage text for old fill level - below the line, to the left */}
+                  <View
+                    style={[
+                      styles.lastFillTextContainer,
+                      {
+                        bottom: lastFillHeight - 10,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.lastFillText, { color: lastTextColor }]}>
+                      {Math.round(lastFillPercentage)}%
+                    </Text>
+                  </View>
                 </>
-              ) : (
-                <>
-                  {/* Normal mode: show filled area */}
-                  {fillPercentage > 0 && fillHeight > 0 && (
-                    <View
-                      style={[
-                        styles.cupFill,
-                        {
-                          height: fillHeight,
-                          backgroundColor: fillPercentage > 50 
-                            ? baseColors.forest 
-                            : fillPercentage > 25 
-                            ? baseColors.orange 
-                            : baseColors.bullshift,
-                        },
-                      ]}
-                    />
-                  )}
-                  {/* Last fill level - shown as a border at the top */}
-                  {lastFillPercentage > 0 && lastFillHeight > 0 && (
-                    <>
-                      <View
-                        style={[
-                          styles.lastFillBorder,
-                          {
-                            bottom: lastFillHeight,
-                            borderColor: lastFillPercentage > 50 
-                              ? baseColors.forest 
-                              : lastFillPercentage > 25 
-                              ? baseColors.orange 
-                              : baseColors.bullshift,
-                          },
-                        ]}
-                      />
-                      {/* Small percentage text for old fill level - below the line, to the left */}
-                      <View
-                        style={[
-                          styles.lastFillTextContainer,
-                          {
-                            bottom: lastFillHeight - 10,
-                          },
-                        ]}
-                      >
-                        <Text style={[styles.lastFillText, { color: lastTextColor }]}>
-                          {Math.round(lastFillPercentage)}%
-                        </Text>
-                      </View>
-                    </>
-                  )}
-                  {/* Current fill level text - big, in the middle (only in normal mode) */}
-                  {fillPercentage > 0 && (
-                    <View style={styles.fillTextContainer}>
-                      <Text style={[styles.fillText, { color: currentTextColor }]}>
-                        {Math.round(fillPercentage)}%
-                      </Text>
-                    </View>
-                  )}
-                </>
+              )}
+              {/* Current fill level text - big, in the middle (show in both modes) */}
+              {fillPercentage > 0 && (
+                <View style={styles.fillTextContainer}>
+                  <Text style={[styles.fillText, { color: currentTextColor }]}>
+                    {Math.round(fillPercentage)}%
+                  </Text>
+                </View>
               )}
             </View>
           </TouchableOpacity>
@@ -341,9 +271,6 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
           <Text style={styles.needName} numberOfLines={2}>
             {trackedNeed.needName}
           </Text>
-          {isEditMode && (
-            <Text style={styles.editHint}>Tippen zum Setzen</Text>
-          )}
           {lastUpdated && (
             <Text style={styles.lastUpdatedText}>
               {formatLastUpdated(lastUpdated)}
