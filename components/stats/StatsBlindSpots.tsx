@@ -191,10 +191,10 @@ export default function StatsBlindSpots() {
       {insight.nextAvailableDate && insight.daysUntilNext !== undefined && insight.daysUntilNext > 0 && (
         <View
           className="mb-4 p-3 rounded-xl flex-row items-center"
-          style={{ backgroundColor: baseColors.orange + '15' }}
+          style={{ backgroundColor: baseColors.orange + '30' }}
         >
           <Clock size={16} color={baseColors.orange} strokeWidth={2} />
-          <Text className="text-xs ml-2 flex-1 leading-5" style={{ color: baseColors.orange }}>
+          <Text className="text-sm ml-2 flex-1 leading-[18px]" style={{ color: '#B85C00' }}>
             Nächste Analyse {insight.daysUntilNext === 1
               ? 'morgen'
               : `in ${insight.daysUntilNext} Tagen`} verfügbar

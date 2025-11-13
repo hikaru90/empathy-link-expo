@@ -104,8 +104,10 @@ export interface NeedFillLevel {
 }
 
 export interface NeedTimeseriesData {
+  id: string;
   date: Date;
   fillLevel: number;
+  strategies?: string[];
 }
 
 /**
@@ -141,6 +143,21 @@ export async function saveTrackedNeeds(needIds: string[]): Promise<TrackedNeed[]
     },
     body: JSON.stringify({ needIds }),
   });
+}
+
+/**
+ * Delete a single tracked need by its ID
+ */
+export async function deleteTrackedNeed(trackedNeedId: string): Promise<{ success: boolean }> {
+  return authenticatedFetch<{ success: boolean }>(
+    `${API_BASE}/api/stats/tracked-needs/${trackedNeedId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
 }
 
 /**
@@ -194,20 +211,22 @@ export async function getCurrentFillLevelsWithTimestamps(): Promise<Record<strin
       },
     });
   } catch (error: any) {
-    if (error?.message?.includes('404') || error?.message?.includes('not found')) {
-      return {};
+    // Silently handle 404 - endpoint doesn't exist yet
+    if (error?.message?.includes('404') || error?.message?.includes('not found') || error?.status === 404) {
+      // Fallback: try to get just fill levels without timestamps
+      try {
+        const levels = await getCurrentFillLevels();
+        const result: Record<string, { fillLevel: number; lastUpdated: string | null }> = {};
+        Object.entries(levels).forEach(([key, value]) => {
+          result[key] = { fillLevel: value, lastUpdated: null };
+        });
+        return result;
+      } catch {
+        return {};
+      }
     }
-    // Fallback: try to get just fill levels without timestamps
-    try {
-      const levels = await getCurrentFillLevels();
-      const result: Record<string, { fillLevel: number; lastUpdated: string | null }> = {};
-      Object.entries(levels).forEach(([key, value]) => {
-        result[key] = { fillLevel: value, lastUpdated: null };
-      });
-      return result;
-    } catch {
-      return {};
-    }
+    // Re-throw other errors
+    throw error;
   }
 }
 
@@ -246,15 +265,17 @@ export async function getNeedTimeseries(
   const url = `${API_BASE}/api/stats/need-timeseries/${trackedNeedId}${queryString ? `?${queryString}` : ''}`;
   
   try {
-    const data = await authenticatedFetch<Array<{ date: string; fillLevel: number }>>(url, {
+    const data = await authenticatedFetch<Array<{ id: string; date: string; fillLevel: number; strategies?: string[] }>>(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
     });
     return data.map(item => ({
+      id: item.id,
       date: new Date(item.date),
       fillLevel: item.fillLevel,
+      strategies: item.strategies || [],
     }));
   } catch (error: any) {
     if (error?.message?.includes('404') || error?.message?.includes('not found')) {
@@ -262,6 +283,25 @@ export async function getNeedTimeseries(
     }
     throw error;
   }
+}
+
+/**
+ * Update strategies for a fill level entry
+ */
+export async function updateFillLevelStrategies(
+  fillLevelId: string,
+  strategies: string[]
+): Promise<{ id: string; strategies: string[] }> {
+  return authenticatedFetch<{ id: string; strategies: string[] }>(
+    `${API_BASE}/api/stats/need-fill-levels/${fillLevelId}/strategies`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ strategies }),
+    }
+  );
 }
 
 export interface BlindSpotInsight {

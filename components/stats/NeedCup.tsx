@@ -1,8 +1,7 @@
 import baseColors from '@/baseColors.config';
-import { getNeedTimeseries, NeedTimeseriesData } from '@/lib/api/stats';
 import { getTextColorForBackground } from '@/lib/utils/color-contrast';
 import React, { useCallback, useRef, useState } from 'react';
-import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Text, TouchableOpacity, View } from 'react-native';
 
 interface NeedCupProps {
   trackedNeed: {
@@ -10,33 +9,41 @@ interface NeedCupProps {
     needId: string;
     needName: string;
   };
-  currentFillLevel?: number;
+  currentFillLevel?: number | null;
   onFillLevelChange?: (fillLevel: number) => void;
+  onReplaceNeed?: () => void;
+  onCupPress?: () => void;
   isEditMode?: boolean;
+  isSelected?: boolean;
   lastUpdated?: string | null;
   opacity?: number; // For showing yesterday's values with reduced opacity
   lastFillLevel?: number; // Previous fill level to show behind current with 50% opacity
 }
 
-export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevelChange, isEditMode = false, lastUpdated, opacity = 1, lastFillLevel }: NeedCupProps) {
-  const [fillLevel, setFillLevel] = useState(currentFillLevel);
-  const [showTimeseries, setShowTimeseries] = useState(false);
-  const [timeseriesData, setTimeseriesData] = useState<NeedTimeseriesData[]>([]);
-  const [isLoadingTimeseries, setIsLoadingTimeseries] = useState(false);
+export default function NeedCup({ trackedNeed, currentFillLevel = null, onFillLevelChange, onReplaceNeed, onCupPress, isEditMode = false, isSelected = false, lastUpdated, opacity = 1, lastFillLevel }: NeedCupProps) {
+  const [fillLevel, setFillLevel] = useState<number | null>(currentFillLevel ?? null);
+  const [hasSetValueInEditMode, setHasSetValueInEditMode] = useState(false);
   const cupRef = useRef<View>(null);
 
   // Sync with prop changes
   React.useEffect(() => {
     console.log('NeedCup - currentFillLevel prop changed:', currentFillLevel);
-    setFillLevel(currentFillLevel);
+    setFillLevel(currentFillLevel ?? null);
   }, [currentFillLevel]);
+
+  // Reset hasSetValueInEditMode when entering/exiting edit mode
+  React.useEffect(() => {
+    if (!isEditMode) {
+      setHasSetValueInEditMode(false);
+    }
+  }, [isEditMode]);
   
   // Debug: Log fillLevel changes
   React.useEffect(() => {
     console.log('NeedCup - fillLevel state changed:', fillLevel);
   }, [fillLevel]);
 
-  const cupHeight = 120;
+  const cupHeight = 100;
 
   // Calculate fill level from Y position (0 = bottom, cupHeight = top)
   const calculateFillLevelFromY = useCallback((y: number): number => {
@@ -49,11 +56,15 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
   const handleFillLevelSet = useCallback((level: number) => {
     const clampedLevel = Math.max(0, Math.min(100, level));
     console.log('Setting fill level to:', clampedLevel);
-    
+
+    // Treat 0 as null (empty state)
     // Update local state immediately for responsive UI
-    setFillLevel(clampedLevel);
+    const normalizedLevel = clampedLevel === 0 ? null : clampedLevel;
+    setFillLevel(normalizedLevel);
+    setHasSetValueInEditMode(true);
+    // Pass the numeric value (0 if null) to parent for validation
     onFillLevelChange?.(clampedLevel);
-    
+
     // Don't save to API here - will be saved when exiting edit mode
   }, [onFillLevelChange]);
 
@@ -97,26 +108,14 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
       console.log('Cup press - touchY:', touchY, 'clampedY:', clampedY, 'newLevel:', newLevel);
       handleFillLevelSet(newLevel);
     } else {
-      // Normal mode: show timeseries
-      setShowTimeseries(true);
-      loadTimeseries();
+      // Normal mode: notify parent to show timeseries
+      onCupPress?.();
     }
   };
 
-  const loadTimeseries = async () => {
-    setIsLoadingTimeseries(true);
-    try {
-      const data = await getNeedTimeseries(trackedNeed.id);
-      setTimeseriesData(data);
-    } catch (error) {
-      console.error('Error loading timeseries:', error);
-      setTimeseriesData([]);
-    } finally {
-      setIsLoadingTimeseries(false);
-    }
-  };
-
-  const fillPercentage = Math.max(0, Math.min(100, fillLevel));
+  // In edit mode, show current fill as null until user sets a new value
+  const displayFillLevel = isEditMode && !hasSetValueInEditMode ? null : fillLevel;
+  const fillPercentage = displayFillLevel === null || displayFillLevel === undefined ? 0 : Math.max(0, Math.min(100, displayFillLevel));
   const fillHeight = fillPercentage > 0 ? Math.max(2, (cupHeight * fillPercentage) / 100) : 0; // Minimum 2px if there's any fill
   
   // Calculate last fill level display
@@ -154,104 +153,89 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
   
   // Calculate text color based on fill color with WCAG AA compliance
   // Large text (16px, bold 700) needs 3:1 contrast, small text (8px, medium 500) needs 4.5:1
-  const currentTextColor = currentFillColor 
+  const currentTextColor = currentFillColor
     ? getTextColorForFill(fillPercentage, 16, 700) // fontSize: 16, fontWeight: 700
     : '#000';
-  const lastTextColor = lastFillColor 
-    ? getTextColorForFill(lastFillPercentage, 8, 500) // fontSize: 8, fontWeight: 500
-    : '#000';
+
+  // For lastTextColor: if current fill is below the last fill line, the text sits on current fill background
+  // Otherwise it sits on transparent/white background
+  const lastTextColor = (() => {
+    if (fillPercentage >= lastFillPercentage && currentFillColor) {
+      // Current fill is at or above last fill line, so text is on current fill color
+      return getTextColorForFill(fillPercentage, 8, 500);
+    } else if (lastFillColor) {
+      // Current fill is below, text is on transparent background
+      // Use the last fill color for the text to maintain color coding
+      return lastFillColor;
+    }
+    return '#000';
+  })();
+
+  // For lastFillBorderColor: determine if border should be black/20 or white/20 based on background
+  const lastFillBorderColor = (() => {
+    if (fillPercentage >= lastFillPercentage && currentFillColor) {
+      // Border is on top of current fill, use contrast color
+      const contrastColor = getTextColorForBackground(currentFillColor, 8, 500);
+      return contrastColor === '#FFFFFF' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)';
+    } else {
+      // Border is on transparent/white background
+      return 'rgba(0, 0, 0, 0.2)';
+    }
+  })();
   
   // Debug logging
   React.useEffect(() => {
     console.log('Fill state - fillLevel:', fillLevel, 'fillPercentage:', fillPercentage, 'fillHeight:', fillHeight, 'will render fill:', fillPercentage > 0);
   }, [fillLevel, fillPercentage, fillHeight]);
 
-  const formatLastUpdated = (timestamp: string): string => {
-    try {
-      const date = new Date(timestamp);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) {
-        return 'Gerade aktualisiert';
-      } else if (diffMins < 60) {
-        return `Vor ${diffMins} Min.`;
-      } else if (diffHours < 24) {
-        return `Vor ${diffHours} Std.`;
-      } else if (diffDays === 1) {
-        return 'Gestern';
-      } else if (diffDays < 7) {
-        return `Vor ${diffDays} Tagen`;
-      } else {
-        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-      }
-    } catch {
-      return '';
-    }
-  };
-
   return (
     <>
-      <View style={[styles.cupContainer, { opacity }]}>
-        <View style={styles.cupWrapper}>
+      <View className="items-center justify-center" style={{ opacity }}>
+        <View className="items-center gap-2">
           {/* Cup outline */}
           <TouchableOpacity
             onPress={handleCupPress}
             activeOpacity={0.7}
-            style={{ width: 80, height: 120 }}
+            className={`w-20 relative`}
+            style={{ height: cupHeight }}
           >
-            <View 
+            <View className="w-10 h-2 bg-black rounded absolute bottom-0 left-1/2 -translate-x-1/2"></View>
+            <View
               ref={cupRef}
-              style={[
-                styles.cup,
-                isEditMode && styles.cupEditMode,
-              ]}
+              className={`w-full h-full border-b-[8px] border-l-2 border-r-2 border-black rounded-b-[50px] overflow-hidden relative bg-transparent`}
             >
               {/* Current fill - show filled area in both modes */}
               {fillPercentage > 0 && fillHeight > 0 && (
                 <View
-                  style={[
-                    styles.cupFill,
-                    {
-                      height: fillHeight,
-                      backgroundColor: fillPercentage > 50 
-                        ? baseColors.forest 
-                        : fillPercentage > 25 
-                        ? baseColors.orange 
-                        : baseColors.bullshift,
-                    },
-                  ]}
+                  className="absolute bottom-0 left-0 right-0 min-h-[1px]"
+                  style={{
+                    height: fillHeight,
+                    backgroundColor: fillPercentage > 50
+                      ? baseColors.forest
+                      : fillPercentage > 25
+                      ? baseColors.orange
+                      : baseColors.bullshift,
+                  }}
                 />
               )}
               {/* Last fill level - shown as a border at the top */}
               {lastFillPercentage > 0 && lastFillHeight > 0 && (
                 <>
                   <View
-                    style={[
-                      styles.lastFillBorder,
-                      {
-                        bottom: lastFillHeight,
-                        borderColor: lastFillPercentage > 50 
-                          ? baseColors.forest 
-                          : lastFillPercentage > 25 
-                          ? baseColors.orange 
-                          : baseColors.bullshift,
-                      },
-                    ]}
+                    className="absolute left-0 right-0 border-t h-0"
+                    style={{
+                      bottom: lastFillHeight,
+                      borderColor: lastFillBorderColor,
+                    }}
                   />
                   {/* Small percentage text for old fill level - below the line, to the left */}
                   <View
-                    style={[
-                      styles.lastFillTextContainer,
-                      {
-                        bottom: lastFillHeight - 10,
-                      },
-                    ]}
+                    className="absolute left-1 items-start justify-center"
+                    style={{
+                      bottom: lastFillHeight - 10,
+                    }}
                   >
-                    <Text style={[styles.lastFillText, { color: lastTextColor }]}>
+                    <Text className="text-[8px] font-medium" style={{ color: lastTextColor }}>
                       {Math.round(lastFillPercentage)}%
                     </Text>
                   </View>
@@ -259,8 +243,8 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
               )}
               {/* Current fill level text - big, in the middle (show in both modes) */}
               {fillPercentage > 0 && (
-                <View style={styles.fillTextContainer}>
-                  <Text style={[styles.fillText, { color: currentTextColor }]}>
+                <View className="absolute top-[50%] left-0 right-0 items-center justify-center z-10">
+                  <Text className="text-base font-bold" style={{ color: currentTextColor }}>
                     {Math.round(fillPercentage)}%
                   </Text>
                 </View>
@@ -268,250 +252,12 @@ export default function NeedCup({ trackedNeed, currentFillLevel = 0, onFillLevel
             </View>
           </TouchableOpacity>
           {/* Need name */}
-          <Text style={styles.needName} numberOfLines={2}>
+          <Text className="text-xs font-medium text-black text-center max-w-full" numberOfLines={2}>
             {trackedNeed.needName}
           </Text>
-          {lastUpdated && (
-            <Text style={styles.lastUpdatedText}>
-              {formatLastUpdated(lastUpdated)}
-            </Text>
-          )}
         </View>
       </View>
-
-      {/* Timeseries Modal */}
-      <Modal
-        visible={showTimeseries}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowTimeseries(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{trackedNeed.needName}</Text>
-              <TouchableOpacity
-                onPress={() => setShowTimeseries(false)}
-                style={styles.closeIcon}
-              >
-                <Text style={styles.closeIconText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {isLoadingTimeseries ? (
-              <Text style={styles.loadingText}>Lade Daten...</Text>
-            ) : timeseriesData.length === 0 ? (
-              <Text style={styles.emptyText}>Noch keine Daten vorhanden</Text>
-            ) : (
-              <View style={styles.timeseriesContainer}>
-                {/* Simple line chart visualization */}
-                <View style={styles.chartContainer}>
-                  {timeseriesData.map((item, idx) => {
-                    const maxFill = Math.max(...timeseriesData.map(d => d.fillLevel), 100);
-                    const heightPercent = (item.fillLevel / maxFill) * 100;
-                    const widthPercent = (1 / timeseriesData.length) * 100;
-                    
-                    return (
-                      <View
-                        key={idx}
-                        style={[
-                          styles.chartBar,
-                          {
-                            width: `${widthPercent}%`,
-                            height: `${heightPercent}%`,
-                          },
-                        ]}
-                      />
-                    );
-                  })}
-                </View>
-                <View style={styles.chartLabels}>
-                  {timeseriesData.map((item, idx) => {
-                    if (idx % Math.ceil(timeseriesData.length / 5) === 0 || idx === timeseriesData.length - 1) {
-                      return (
-                        <Text key={idx} style={styles.chartLabel}>
-                          {item.date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-                        </Text>
-                      );
-                    }
-                    return null;
-                  })}
-                </View>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  cupContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cupEditMode: {
-    borderColor: '#86efac',
-    borderWidth: 4,
-  },
-  cupWrapper: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  cup: {
-    width: 80,
-    height: 120,
-    borderWidth: 3,
-    borderColor: '#000',
-    borderRadius: 8,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    overflow: 'hidden', // Keep hidden to clip fill to cup shape
-    position: 'relative',
-    backgroundColor: 'transparent',
-  },
-  cupFill: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderBottomLeftRadius: 17,
-    borderBottomRightRadius: 17,
-    minHeight: 1, // Ensure it's always visible if fillPercentage > 0
-  },
-  lastFillBorder: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    borderTopWidth: 2,
-    height: 0,
-  },
-  currentFillBorder: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    borderTopWidth: 2,
-    height: 0,
-  },
-  lastFillTextContainer: {
-    position: 'absolute',
-    left: 4,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  lastFillText: {
-    fontSize: 8,
-    fontWeight: '500',
-    // Color is set dynamically based on background
-  },
-  fillTextContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10, // Above everything
-  },
-  fillText: {
-    fontSize: 16,
-    fontWeight: '700',
-    // Color is set dynamically based on background
-  },
-  needName: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#000',
-    textAlign: 'center',
-    maxWidth: 100,
-  },
-  editHint: {
-    fontSize: 9,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 4,
-    fontStyle: 'italic',
-  },
-  lastUpdatedText: {
-    fontSize: 9,
-    color: '#999',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: baseColors.offwhite,
-    borderRadius: 20,
-    padding: 24,
-    width: '85%',
-    maxWidth: 400,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000',
-  },
-  closeIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeIconText: {
-    fontSize: 18,
-    color: '#000',
-  },
-  loadingText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    padding: 20,
-  },
-  timeseriesContainer: {
-    marginTop: 16,
-  },
-  chartContainer: {
-    height: 200,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    paddingBottom: 8,
-  },
-  chartBar: {
-    backgroundColor: '#86efac',
-    borderRadius: 2,
-    minHeight: 4,
-  },
-  chartLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  chartLabel: {
-    fontSize: 10,
-    color: '#666',
-  },
-});
 
