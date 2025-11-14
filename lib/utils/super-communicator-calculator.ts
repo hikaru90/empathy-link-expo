@@ -5,18 +5,18 @@
 
 import { AnalysisDetail } from '../api/analysis';
 
-// Level definitions
+// Level definitions in German
 const LEVELS = [
-  { id: 1, name: 'Beginner', minPoints: 0, maxPoints: 100 },
-  { id: 2, name: 'Aware', minPoints: 101, maxPoints: 250 },
-  { id: 3, name: 'Observer', minPoints: 251, maxPoints: 500 },
-  { id: 4, name: 'Feeling Explorer', minPoints: 501, maxPoints: 750 },
-  { id: 5, name: 'Need Navigator', minPoints: 751, maxPoints: 1000 },
-  { id: 6, name: 'Request Maker', minPoints: 1001, maxPoints: 1500 },
-  { id: 7, name: 'Empathy Builder', minPoints: 1501, maxPoints: 2000 },
-  { id: 8, name: 'Balanced Communicator', minPoints: 2001, maxPoints: 3000 },
-  { id: 9, name: 'Master Communicator', minPoints: 3001, maxPoints: 5000 },
-  { id: 10, name: 'Super Communicator', minPoints: 5001, maxPoints: Infinity },
+  { id: 1, name: 'Anfänger*in', minPoints: 0, maxPoints: 100 },
+  { id: 2, name: 'Gefühlsscout', minPoints: 101, maxPoints: 250 },
+  { id: 3, name: 'Bedürfnisjäger*in', minPoints: 251, maxPoints: 500 },
+  { id: 4, name: 'Herz-Decoder', minPoints: 501, maxPoints: 750 },
+  { id: 5, name: 'Klartext-Champion', minPoints: 751, maxPoints: 1000 },
+  { id: 6, name: 'Dialog-Designer*in', minPoints: 1001, maxPoints: 1500 },
+  { id: 7, name: 'Empathie-Held*in', minPoints: 1501, maxPoints: 2000 },
+  { id: 8, name: 'Verbindungsprofi', minPoints: 2001, maxPoints: 3000 },
+  { id: 9, name: 'Kommunikationsguru', minPoints: 3001, maxPoints: 5000 },
+  { id: 10, name: 'Super-Kommunikator*in', minPoints: 5001, maxPoints: Infinity },
 ];
 
 export interface SuperCommunicatorData {

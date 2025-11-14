@@ -9,14 +9,10 @@ import StatsConflictResolution from '@/components/stats/StatsConflictResolution'
 import StatsFeelings from '@/components/stats/StatsFeelings';
 import StatsInspiration from '@/components/stats/StatsInspiration';
 import StatsNeeds from '@/components/stats/StatsNeeds';
-import StatsSuperCommunicator, { type SuperCommunicatorData } from '@/components/stats/StatsSuperCommunicator';
 import StatsTrackedNeeds from '@/components/stats/StatsTrackedNeeds';
 import { useAuthGuard } from '@/hooks/use-auth';
-import { getAllAnalyses } from '@/lib/api/analysis';
-import { getSuperCommunicatorData } from '@/lib/api/stats';
 import { authClient } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/config';
-import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-calculator';
 
 interface Analysis {
   id: string;
@@ -47,12 +43,10 @@ export default function StatsScreen() {
   const [statsData, setStatsData] = useState<StatsData | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [superCommunicatorData, setSuperCommunicatorData] = useState<SuperCommunicatorData | null>(null);
 
   useEffect(() => {
     if (user) {
       fetchStatsData();
-      fetchSuperCommunicatorData();
     }
   }, [user]);
 
@@ -182,45 +176,6 @@ export default function StatsScreen() {
       }));
   };
 
-  const fetchSuperCommunicatorData = async () => {
-    try {
-      // Try to fetch from backend first
-      const backendData = await getSuperCommunicatorData();
-      
-      if (backendData) {
-        setSuperCommunicatorData(backendData);
-        return;
-      }
-
-      // Fallback: Calculate from analyses on frontend
-      // Fetch full analysis details to get all metrics
-      const allAnalyses = await getAllAnalyses();
-      
-      // Always calculate data, even if there are no analyses (will show 0 points)
-      const calculatedData = calculateSuperCommunicatorData(allAnalyses || []);
-      setSuperCommunicatorData(calculatedData);
-    } catch (err) {
-      console.error('Error fetching super communicator data:', err);
-      // Try fallback calculation if we have analyses
-      if (statsData?.analyses && statsData.analyses.length > 0) {
-        // We need full analysis details, so fetch them
-        try {
-          const allAnalyses = await getAllAnalyses();
-          const calculatedData = calculateSuperCommunicatorData(allAnalyses || []);
-          setSuperCommunicatorData(calculatedData);
-        } catch (fallbackErr) {
-          console.error('Fallback calculation also failed:', fallbackErr);
-          // Even on error, show empty state with 0 points
-          const emptyData = calculateSuperCommunicatorData([]);
-          setSuperCommunicatorData(emptyData);
-        }
-      } else {
-        // No analyses, but still show the component with 0 points
-        const emptyData = calculateSuperCommunicatorData([]);
-        setSuperCommunicatorData(emptyData);
-      }
-    }
-  };
 
   if (isLoading || loadingData) {
     return (
@@ -250,30 +205,6 @@ export default function StatsScreen() {
 
                 <StatsInspiration />
 
-                <View style={[styles.sectionHeader, { marginTop: 0 }]}>
-                  <Text style={styles.sectionTitle}>Super-Kommunikator</Text>
-                  <Text style={styles.sectionDescription}>
-                    Verfolge deinen Fortschritt auf dem Weg zur Kommunikationsmeisterschaft. Jeder Chat und jede Lerneinheit bringt dich weiter.
-                  </Text>
-                </View>
-                <StatsSuperCommunicator data={superCommunicatorData} />
-
-                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
-                  <Text style={styles.sectionTitle}>Wiederkehrende Muster</Text>
-                  <Text style={styles.sectionDescription}>
-                    Erkenne Blind Spots und wiederkehrende Muster in deinen Gesprächen. In welchen Situationen treten sie auf?
-                  </Text>
-                </View>
-                <StatsBlindSpots />
-
-                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
-                  <Text style={styles.sectionTitle}>Konfliktlösung</Text>
-                  <Text style={styles.sectionDescription}>
-                    Verfolge deine Bitten und markiere gelöste Konflikte als erledigt.
-                  </Text>
-                </View>
-                <StatsConflictResolution requests={getRequests()} />
-
                 <View style={[styles.sectionHeader, { marginTop: 32 }]}>
                   <Text style={styles.sectionTitle}>Deine häufigsten Gefühle</Text>
                   <Text style={styles.sectionDescription}>
@@ -291,6 +222,22 @@ export default function StatsScreen() {
                 <StatsNeeds data={getNeeds()} rawAnalyses={statsData?.analyses} />
 
                 <StatsTrackedNeeds />
+
+                <View style={[styles.sectionHeader, { marginTop: 0 }]}>
+                  <Text style={styles.sectionTitle}>Wiederkehrende Muster</Text>
+                  <Text style={styles.sectionDescription}>
+                    Erkenne Blind Spots und wiederkehrende Muster in deinen Gesprächen. In welchen Situationen treten sie auf?
+                  </Text>
+                </View>
+                <StatsBlindSpots />
+
+                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
+                  <Text style={styles.sectionTitle}>Konfliktlösung</Text>
+                  <Text style={styles.sectionDescription}>
+                    Verfolge deine Bitten und markiere gelöste Konflikte als erledigt.
+                  </Text>
+                </View>
+                <StatsConflictResolution requests={getRequests()} />
 
 
                 <View style={[styles.sectionHeader, { marginTop: 32 }]}>

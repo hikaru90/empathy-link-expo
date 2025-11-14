@@ -172,8 +172,8 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
         startDate.setHours(0, 0, 0, 0);
         break;
       case 'lastWeek':
-        // Last 7 days excluding today (7 days ago to yesterday)
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        // Last 7 days including today (7 days ago to today)
+        startDate = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
         startDate.setHours(0, 0, 0, 0);
         break;
       case 'lastMonth':
@@ -204,10 +204,9 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
       return endDate;
     }
     
-    // For lastWeek, exclude today (end at end of yesterday)
+    // For lastWeek, include today (end at end of today)
     if (timeframe === 'lastWeek') {
       const endDate = new Date(now);
-      endDate.setDate(endDate.getDate() - 1);
       endDate.setHours(23, 59, 59, 999);
       return endDate;
     }

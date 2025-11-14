@@ -1,14 +1,18 @@
 import baseColors from '@/baseColors.config';
 import { useAuth } from '@/hooks/use-auth';
+import { getAllAnalyses } from '@/lib/api/analysis';
+import { getSuperCommunicatorData, type SuperCommunicatorData } from '@/lib/api/stats';
 import { getStreak, type StreakResponse } from '@/lib/api/streak';
 import { authClient } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/config';
+import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-calculator';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Bell, Brain, FileText, Flame, LogOut, UserRoundCog } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Animated, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import GradientImage from './GradientImage';
+import SuperCommunicatorBadge from './stats/SuperCommunicatorBadge';
 import StatsStreak from './stats/StatsStreak';
 
 interface HeaderProps {
@@ -23,6 +27,7 @@ export default function Header({ className }: HeaderProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isStreakSheetOpen, setIsStreakSheetOpen] = useState(false);
   const [streakData, setStreakData] = useState<StreakResponse | null>(null);
+  const [superCommunicatorData, setSuperCommunicatorData] = useState<SuperCommunicatorData | null>(null);
 
   // Animation for modal slide-up
   const slideAnim = useState(new Animated.Value(300))[0];
@@ -32,11 +37,14 @@ export default function Header({ className }: HeaderProps) {
   useEffect(() => {
     fetchUnreadCount();
     fetchStreakData();
+    fetchSuperCommunicatorData();
     const interval = setInterval(fetchUnreadCount, 5 * 60 * 1000);
     const streakInterval = setInterval(fetchStreakData, 60 * 1000);
+    const superCommInterval = setInterval(fetchSuperCommunicatorData, 60 * 1000);
     return () => {
       clearInterval(interval);
       clearInterval(streakInterval);
+      clearInterval(superCommInterval);
     };
   }, []);
 
@@ -111,6 +119,35 @@ export default function Header({ className }: HeaderProps) {
     }
   }
 
+  async function fetchSuperCommunicatorData() {
+    try {
+      // Try to fetch from backend first
+      const backendData = await getSuperCommunicatorData();
+      
+      if (backendData) {
+        setSuperCommunicatorData(backendData);
+        return;
+      }
+
+      // Fallback: Calculate from analyses on frontend
+      const allAnalyses = await getAllAnalyses();
+      const calculatedData = calculateSuperCommunicatorData(allAnalyses || []);
+      setSuperCommunicatorData(calculatedData);
+    } catch (err) {
+      console.error('Error fetching super communicator data:', err);
+      // Try fallback calculation
+      try {
+        const allAnalyses = await getAllAnalyses();
+        const calculatedData = calculateSuperCommunicatorData(allAnalyses || []);
+        setSuperCommunicatorData(calculatedData);
+      } catch (fallbackErr) {
+        console.error('Fallback calculation also failed:', fallbackErr);
+        const emptyData = calculateSuperCommunicatorData([]);
+        setSuperCommunicatorData(emptyData);
+      }
+    }
+  }
+
   function handleLogout() {
     setIsUserMenuOpen(false);
     signOut();
@@ -119,6 +156,11 @@ export default function Header({ className }: HeaderProps) {
   function handleMemoryNavigation() {
     setIsUserMenuOpen(false);
     router.push('/memories');
+  }
+
+  function handleProfileNavigation() {
+    setIsUserMenuOpen(false);
+    router.push('/profile');
   }
 
   return (
@@ -213,12 +255,26 @@ export default function Header({ className }: HeaderProps) {
               )}
             </View>
             <View style={styles.drawerBody}>
+              {/* Super Communicator Badge */}
+              <SuperCommunicatorBadge 
+                data={superCommunicatorData} 
+                onPress={handleProfileNavigation}
+              />
+
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={handleMemoryNavigation}
               >
                 <Text style={styles.menuItemText}>Erinnerungsspeicher</Text>
                 <Brain size={16} color="#000" />
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={handleProfileNavigation}
+              >
+                <Text style={styles.menuItemText}>Profil</Text>
+                <UserRoundCog size={16} color="#000" />
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.menuItem}>

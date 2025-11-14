@@ -80,7 +80,7 @@ export default function GroupedNeedsSelector({
 
   const getCategoryHeaderStyle = (isVisible: boolean): StyleProp<ViewStyle> => {
     return {
-      backgroundColor: isVisible ? '#86efac' : '#86efac80', // green-300
+      backgroundColor: isVisible ? baseColors.lilac : baseColors.lilac + '80', // green-300
       boxShadow: isVisible ? 'inset 0 0 4px 0 rgba(0, 0, 0, 0.3)' : ''
     };
   };
@@ -122,7 +122,7 @@ export default function GroupedNeedsSelector({
             >
               <View
                 className=""
-                style={{ backgroundColor: '#86efac' }}
+                style={{ backgroundColor: baseColors.lilac }}
               />
               <Text className="text-black font-medium">{category.categoryDE}</Text>
             </TouchableOpacity>
@@ -136,7 +136,7 @@ export default function GroupedNeedsSelector({
                   onPress={() => onNeedPress(need.nameDE)}
                   className="rounded-full py-1 px-2 flex-row items-center gap-1"
                   style={{
-                    backgroundColor: isSelected ? '#86efac' : 'transparent',
+                    backgroundColor: isSelected ? baseColors.lilac : 'transparent',
                     borderWidth: isSelected ? 2 : 0,
                     borderColor: '#000',
                   }}

@@ -194,9 +194,9 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
               }`}
             disabled={isLoadingData}
           >
-            <View className="bg-red-300 rounded-full justify-center items-center size-5">
+            <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: baseColors.lilac }}>
               <Heart
-                size={12} color="red" fill="red"
+                size={12} color={baseColors.pink} fill={baseColors.pink}
               />
             </View>
             <Text className={`text-sm font-medium`}>
@@ -212,9 +212,9 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
               }`}
             disabled={isLoadingData}
           >
-            <View className="bg-green-200 rounded-full justify-center items-center size-5">
+            <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: baseColors.lilac }}>
               <Swirl
-                size={12} color="green"
+                size={12} color={baseColors.forest}
               />
             </View>
             <Text className={`text-sm font-medium`}>

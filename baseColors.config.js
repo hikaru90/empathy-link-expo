@@ -9,7 +9,6 @@ export default {
   pink: '#DB79AA',
   black: '#080638',
   forest: '#17545A',
-  forest: '#17545A',
   lilac: '#D6BBFF',
   purple: '#A366FF',
   orange: '#FF9C34',
