@@ -181,7 +181,7 @@ function ChatContent() {
                   style={styles.finishButton}
                   onPress={handleFinishChat}
                 >
-                  <Text style={styles.finishButtonText}>Chat abschließen</Text>
+                  <Text style={styles.finishButtonText}>Chat abschließen & auswerten</Text>
                   <SquareCheck size={16} color="#fff" style={styles.finishButtonIcon} />
                 </TouchableOpacity>
               </View>

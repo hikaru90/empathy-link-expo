@@ -23,6 +23,7 @@ export default function ProtectedLayout() {
       >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="analysis/[id]" />
+        <Stack.Screen name="learn/[slug]" />
         <Stack.Screen name="memories" />
         <Stack.Screen name="modal" />
         <Stack.Screen name="conflict-resolutions" />

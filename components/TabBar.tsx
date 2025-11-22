@@ -32,6 +32,10 @@ export default function TabBar() {
     if (path.includes('/stats')) {
       return pathname.includes('/stats') || pathname.includes('/analysis');
     }
+    // Match learn tab or learn detail routes
+    if (path.includes('/learn')) {
+      return pathname.includes('/learn');
+    }
     return pathname === path;
   };
 
@@ -63,7 +67,11 @@ export default function TabBar() {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
   },
   borderLeft: {
     zIndex: 1002,

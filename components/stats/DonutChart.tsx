@@ -53,9 +53,8 @@ const generateColorArray = (baseColors: string[], count: number): string[] => {
   return colors;
 };
 
-export default function DonutChart({ data, colors }: DonutChartProps) {
-  const size = 250;
-  const ringThickness = 30;
+export default function DonutChart({ data, colors, size = 250 }: DonutChartProps & { size?: number }) {
+  const ringThickness = size * 0.12; // Scale thickness relative to size
   const centerX = size / 2;
   const centerY = size / 2;
 
@@ -88,7 +87,7 @@ export default function DonutChart({ data, colors }: DonutChartProps) {
             alignItems: 'center',
           }}
         >
-          <Text style={{ fontSize: 56, fontWeight: 'bold', color: '#999' }}>
+          <Text style={{ fontSize: size * 0.22, fontWeight: 'bold', color: '#999' }}>
             0
           </Text>
         </View>
@@ -255,7 +254,7 @@ export default function DonutChart({ data, colors }: DonutChartProps) {
           alignItems: 'center',
         }}
       >
-        <Text style={{ fontSize: 56, fontWeight: 'bold', color: '#000' }}>
+        <Text style={{ fontSize: size * 0.22, fontWeight: 'bold', color: '#000' }}>
           {total}
         </Text>
       </View>
