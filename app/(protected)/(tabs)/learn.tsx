@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { BadgeCheck, Play } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Modal,
   Platform,
@@ -11,10 +10,11 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  View
 } from 'react-native';
 
 import baseColors from '@/baseColors.config';
+import GradientImage from '@/components/GradientImage';
 import Header from '@/components/Header';
 import DonutChart from '@/components/stats/DonutChart';
 import { useAuthGuard } from '@/hooks/use-auth';
@@ -180,9 +180,12 @@ export default function LearnScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 justify-center items-center" style={{ backgroundColor: baseColors.background }}>
-        <ActivityIndicator size="large" color={baseColors.primary} />
-        <Text className="text-gray-600 mt-4">Loading...</Text>
+      <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
+        <Header />
+        <View className="flex-1 justify-center items-center -mt-6">
+          <GradientImage style={{ width: 40, height: 20, borderRadius: 16 }} fast />
+          <Text className="text-gray-600 mt-2">Laden</Text>
+        </View>
       </View>
     );
   }
@@ -196,7 +199,7 @@ export default function LearnScreen() {
       <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
         <Header />
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color={baseColors.primary} />
+          <GradientImage style={{ width: 80, height: 32, borderRadius: 16 }} fast />
           <Text className="text-gray-600 mt-4">Lade Lernmodule...</Text>
         </View>
       </View>

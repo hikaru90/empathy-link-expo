@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, ActivityIndicator, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated } from 'react-native';
 import { SquareCheck, AlertCircle, Quote } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import GradientImage from '@/components/GradientImage';
 
 interface ChatAnalysisModalProps {
   visible: boolean;
@@ -81,7 +82,10 @@ export default function ChatAnalysisModal({
               <Text style={styles.quoteAuthor}>— {selectedQuote.author}</Text>
             </Animated.View>
 
-            <ActivityIndicator size="large" color="#4ECDC4" style={styles.spinner} />
+            <GradientImage
+              style={[{ width: 40, height: 20, borderRadius: 16 }, styles.spinner]}
+              fast
+            />
             <Text style={styles.statusText}>Dein Chat wird ausgewertet</Text>
           </View>
         )}

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
 import ChatAnalysisModal from '@/components/chat/ChatAnalysisModal';
 import MessageBubble from '@/components/chat/MessageBubble';
 import MessageInput from '@/components/chat/MessageInput';
 import TypingIndicator from '@/components/chat/TypingIndicator';
+import GradientImage from '@/components/GradientImage';
 import Header from '@/components/Header';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { ChatProvider, useChat } from '@/hooks/use-chat';
@@ -116,7 +117,7 @@ function ChatContent() {
   if (isLoading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={baseColors.lilac} />
+        <GradientImage style={{ width: 40, height: 20, borderRadius: 16 }} fast />
         <Text style={styles.loadingText}>Starte Chat...</Text>
       </View>
     );
@@ -222,9 +223,12 @@ export default function ChatScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 justify-center items-center" style={{ backgroundColor: baseColors.background }}>
-        <ActivityIndicator size="large" color={baseColors.lilac} />
-        <Text className="text-gray-600 mt-4">Loading...</Text>
+      <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
+        <Header />
+        <View className="flex-1 justify-center items-center -mt-6">
+          <GradientImage style={{ width: 40, height: 20, borderRadius: 16 }} fast />
+          <Text className="text-gray-600 mt-2">Loading...</Text>
+        </View>
       </View>
     );
   }
