@@ -10,7 +10,7 @@ import { getFeelings, type Feeling } from '@/lib/api/chat';
 import { feelingsDetectiveAI, type LearningSession } from '@/lib/api/learn';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, ChevronRight, Send } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -72,8 +72,18 @@ export default function LearnFeelingsDetective({
   const [feelingsLoading, setFeelingsLoading] = useState(true);
   const [feelingsError, setFeelingsError] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [lastReflectionInput, setLastReflectionInput] = useState<string | null>(null);
+  const [lastSummarySignature, setLastSummarySignature] = useState<string | null>(null);
   const situationInputRef = useRef<TextInput>(null);
   const thoughtsInputRef = useRef<TextInput>(null);
+
+  const summaryInputSignature = useMemo(() => {
+    return JSON.stringify({
+      situation: situationInput.trim(),
+      thoughts: thoughtsInput.trim(),
+      feelings: [...selectedFeelings].sort(),
+    });
+  }, [situationInput, thoughtsInput, selectedFeelings]);
 
   const internalStep = totalSteps[currentStep]?.internalStep ?? 0;
 
@@ -100,6 +110,18 @@ export default function LearnFeelingsDetective({
       setAiReflection(response.aiReflection || '');
       setAiSummary(response.aiSummary || '');
       setResponseTime(response.responseTime || null);
+      setLastReflectionInput(response.situationInput?.trim() || null);
+      if (response.aiSummary) {
+        setLastSummarySignature(
+          JSON.stringify({
+            situation: response.situationInput?.trim() || '',
+            thoughts: response.thoughtsInput?.trim() || '',
+            feelings: [...(response.selectedFeelings || [])].sort(),
+          })
+        );
+      } else {
+        setLastSummarySignature(null);
+      }
     }
   }, [existingResponse]);
 
@@ -146,6 +168,28 @@ export default function LearnFeelingsDetective({
     }
   }, [situationInput, thoughtsInput, errorMessage]);
 
+  useEffect(() => {
+    if (
+      aiReflection &&
+      lastReflectionInput &&
+      situationInput.trim() !== lastReflectionInput
+    ) {
+      setAiReflection('');
+      setLastReflectionInput(null);
+    }
+  }, [aiReflection, lastReflectionInput, situationInput]);
+
+  useEffect(() => {
+    if (
+      aiSummary &&
+      lastSummarySignature &&
+      summaryInputSignature !== lastSummarySignature
+    ) {
+      setAiSummary('');
+      setLastSummarySignature(null);
+    }
+  }, [aiSummary, lastSummarySignature, summaryInputSignature]);
+
   const submitSituation = async () => {
     if (!situationInput.trim() || isLoading) return;
 
@@ -161,6 +205,7 @@ export default function LearnFeelingsDetective({
       setResponseTime(timeTaken);
 
       setAiReflection(response);
+      setLastReflectionInput(situationInput.trim());
 
       // Save partial response
       const responseData = {
@@ -200,9 +245,16 @@ export default function LearnFeelingsDetective({
         timestamp: new Date().toISOString(),
         responseTime: responseTime,
       };
-      await onResponse(responseData);
 
+      console.log('submitThoughts: Saving response data:', responseData);
+      await onResponse(responseData);
+      console.log('submitThoughts: Response saved successfully');
+
+      console.log('submitThoughts: Current step:', currentStep);
+      console.log('submitThoughts: Current internalStep:', internalStep);
+      console.log('submitThoughts: Calling gotoNextStep');
       gotoNextStep?.();
+      console.log('submitThoughts: gotoNextStep called');
     } catch (error) {
       console.error('Error saving thoughts:', error);
       setErrorMessage("Sorry, I couldn't save your thoughts right now. Please try again.");
@@ -276,6 +328,7 @@ export default function LearnFeelingsDetective({
       setResponseTime(timeTaken);
 
       setAiSummary(response);
+      setLastSummarySignature(summaryInputSignature);
 
       // Save final complete response
       await onResponse({
@@ -336,8 +389,10 @@ export default function LearnFeelingsDetective({
                 maxLength={2000}
                 editable={!isLoading}
                 returnKeyType="send"
-                blurOnSubmit={false}
-                onSubmitEditing={submitSituation}
+                blurOnSubmit
+                onSubmitEditing={() => {
+                  submitSituation();
+                }}
               />
 
               {/* Action Buttons */}
@@ -526,8 +581,10 @@ export default function LearnFeelingsDetective({
                 maxLength={2000}
                 editable={!isLoading}
                 returnKeyType="send"
-                blurOnSubmit={false}
-                onSubmitEditing={submitThoughts}
+                blurOnSubmit
+                onSubmitEditing={() => {
+                  submitThoughts();
+                }}
               />
 
               {/* Action Buttons */}
@@ -573,14 +630,38 @@ export default function LearnFeelingsDetective({
 
   // Step 3: Feelings Selection
   if (internalStep === 3) {
+    const selectedFeelingItems = selectedFeelings
+      .map((id) => feelings.find((f) => f.id === id))
+      .filter((feeling): feeling is Feeling => Boolean(feeling));
+
     return (
       <View className="flex-grow flex-col justify-between">
         <View className="flex-grow flex-col justify-center space-y-4">
           <View className="flex-grow items-center justify-center px-4">
             <Text className="max-w-xs text-center text-base font-medium text-gray-900">
-              Welche Gefühle löst diese Situation in Dir aus?
+              Wie fühlst Du Dich in dieser Situation?
             </Text>
           </View>
+
+          {selectedFeelingItems.length > 0 ? (
+            <View className="px-4">
+              <View className="rounded-2xl border border-black/5 bg-white/80 p-3">
+                <Text className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Ausgewählte Gefühle
+                </Text>
+                <View className="flex-row flex-wrap justify-center gap-2">
+                  {selectedFeelingItems.map((feeling) => (
+                    <View
+                      key={feeling.id}
+                      className="rounded-full bg-black/5 px-3 py-1"
+                    >
+                      <Text className="text-sm text-gray-800">{feeling.nameDE}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          ) : null}
 
           <View className="max-h-64">
             {feelingsLoading ? (
@@ -656,30 +737,41 @@ export default function LearnFeelingsDetective({
     if (!aiSummary) {
       return (
         <View className="flex-grow flex-col justify-between">
-          <View className="flex-grow items-center justify-center px-4">
-            <Text className="text-center text-base font-medium text-gray-900">
-              Lass uns eine Zusammenfassung deiner Erkenntnisse erstellen.
-            </Text>
-          </View>
+          <ScrollView
+            className="flex-grow"
+            contentContainerStyle={{
+              flexGrow: 1,
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              paddingBottom: 6,
+            }}
+          >
+            <View className="flex-grow items-center justify-center px-4">
+              <Text className="text-center text-base font-medium text-gray-900 mt-4">
+                Lass uns eine Zusammenfassung deiner Erkenntnisse erstellen.
+              </Text>
+            </View>
 
-          {isLoading ? (
-            <View className="flex items-center justify-center">
-              <ActivityIndicator size="small" />
-              <Text className="ml-2">Erstelle Zusammenfassung...</Text>
-            </View>
-          ) : (
-            <View
-              className="px-4 py-4 border-t border-black/10"
-              style={{ backgroundColor: baseColors.background }}
-            >
-              <LearnNavigation
-                onNext={generateSummary}
-                onPrev={gotoPrevStep}
-                showPrev={!!gotoPrevStep}
-                nextText="Zusammenfassung erstellen"
-              />
-            </View>
-          )}
+
+            {isLoading ? (
+              <View className="py-4 flex flex-row items-center justify-center">
+                <ActivityIndicator size="small" />
+                <Text className="ml-2">Erstelle Zusammenfassung...</Text>
+              </View>
+            ) : (
+              <View
+                className="px-4 py-4 border-t border-black/10"
+                style={{ backgroundColor: baseColors.background }}
+              >
+                <LearnNavigation
+                  onNext={generateSummary}
+                  onPrev={gotoPrevStep}
+                  showPrev={!!gotoPrevStep}
+                  nextText="Zusammenfassung erstellen"
+                />
+              </View>
+            )}
+          </ScrollView>
         </View>
       );
     } else {

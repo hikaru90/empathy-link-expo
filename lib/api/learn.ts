@@ -154,20 +154,50 @@ export async function getCompletionStatus(): Promise<Record<string, boolean>> {
 }
 
 /**
- * Get or create a learning session for a topic
+ * Get the latest learning session for a user/topic combo
  * Uses backend API with Better Auth authentication
  */
-export async function getOrCreateLearningSession(
+export async function getLatestLearningSession(
+  userId: string,
+  topicId: string
+): Promise<LearningSession | null> {
+  try {
+    const response = await authenticatedFetch<{ session: LearningSession }>(
+      `${API_BASE_URL}/api/learn/sessions?userId=${encodeURIComponent(
+        userId
+      )}&topicId=${encodeURIComponent(topicId)}`
+    );
+    return response.session || null;
+  } catch (error: any) {
+    if (typeof error?.message === 'string' && error.message.includes('404')) {
+      return null;
+    }
+    console.error('Failed to load learning session:', error?.message || error);
+    return null;
+  }
+}
+
+/**
+ * Create a new learning session for a topic (forces creation of a new session)
+ * Uses backend API with Better Auth authentication
+ */
+export async function createLearningSession(
+  userId: string,
   topicId: string,
   topicVersionId: string
 ): Promise<LearningSession | null> {
   try {
     const response = await authenticatedFetch<{ session: LearningSession }>(
-      `${API_BASE_URL}/api/learn/sessions/${topicId}?topicVersionId=${encodeURIComponent(topicVersionId)}`
+      `${API_BASE_URL}/api/learn/sessions`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, topicId, topicVersionId }),
+      }
     );
     return response.session || null;
   } catch (error: any) {
-    console.error('Failed to get or create learning session:', error?.message || error);
+    console.error('Failed to create learning session:', error?.message || error);
     return null;
   }
 }
@@ -307,6 +337,52 @@ export async function saveLearningSessionFeedback(
   } catch (error: any) {
     console.error('Failed to save learning session feedback:', error?.message || error);
     return null;
+  }
+}
+
+/**
+ * Reset a learning session to start fresh
+ * Uses backend API with Better Auth authentication
+ */
+export async function resetLearningSession(sessionId: string): Promise<LearningSession | null> {
+  try {
+    const response = await authenticatedFetch<{ session: LearningSession }>(
+      `${API_BASE_URL}/api/learn/sessions/${sessionId}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          completed: false,
+          currentPage: 0,
+          responses: [],
+          feedback: null,
+          completedAt: null,
+        }),
+      }
+    );
+    return response.session || null;
+  } catch (error: any) {
+    console.error('Failed to reset learning session:', error?.message || error);
+    return null;
+  }
+}
+
+/**
+ * Delete a learning session
+ * Uses backend API with Better Auth authentication
+ */
+export async function deleteLearningSession(sessionId: string): Promise<{ success: boolean }> {
+  try {
+    await authenticatedFetch<{ success: boolean }>(
+      `${API_BASE_URL}/api/learn/sessions/${sessionId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to delete learning session:', error?.message || error);
+    return { success: false };
   }
 }
 

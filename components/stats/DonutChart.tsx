@@ -5,6 +5,9 @@ import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
 interface DonutChartProps {
   data: Array<{ value: string; count: number }>;
   colors?: string[]; // Made optional since we'll use default colors
+  showPercentage?: boolean; // Option to show percentage instead of total
+  completedCount?: number; // For calculating percentage when showPercentage is true
+  totalCount?: number; // For calculating percentage when showPercentage is true
 }
 
 interface Segment {
@@ -53,7 +56,14 @@ const generateColorArray = (baseColors: string[], count: number): string[] => {
   return colors;
 };
 
-export default function DonutChart({ data, colors, size = 250 }: DonutChartProps & { size?: number }) {
+export default function DonutChart({ 
+  data, 
+  colors, 
+  size = 250,
+  showPercentage = false,
+  completedCount,
+  totalCount
+}: DonutChartProps & { size?: number }) {
   const ringThickness = size * 0.12; // Scale thickness relative to size
   const centerX = size / 2;
   const centerY = size / 2;
@@ -255,7 +265,9 @@ export default function DonutChart({ data, colors, size = 250 }: DonutChartProps
         }}
       >
         <Text style={{ fontSize: size * 0.22, fontWeight: 'bold', color: '#000' }}>
-          {total}
+          {showPercentage && completedCount !== undefined && totalCount !== undefined && totalCount > 0
+            ? `${Math.round((completedCount / totalCount) * 100)}%`
+            : total}
         </Text>
       </View>
     </View>

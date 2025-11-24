@@ -1,4 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowRight } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
@@ -13,15 +14,18 @@ import LearnFeelingsDetective from '@/components/learn/LearnFeelingsDetective';
 import LearnNavigation from '@/components/learn/LearnNavigation';
 import LearnText from '@/components/learn/LearnText';
 import LearnTitleCard from '@/components/learn/LearnTitleCard';
+import LearningSummary from '@/components/learn/LearningSummary';
 import { useAuthGuard } from '@/hooks/use-auth';
 import {
   completeLearningSession,
-  getOrCreateLearningSession,
+  createLearningSession,
+  getLatestLearningSession,
   getTopicBySlug,
+  saveLearningSessionFeedback,
   saveLearningSessionResponse,
   updateLearningSessionPage,
   type LearningSession,
-  type Topic,
+  type Topic
 } from '@/lib/api/learn';
 
 // Initialize MarkdownIt with HTML support enabled
@@ -45,7 +49,8 @@ export default function LearnDetailScreen() {
     }
   }, [isAuthenticated, user, slug]);
 
-  // Reset child navigation preference when step changes (so new component can set it)
+  // Reset child navigation preference when step changes
+  // This allows components with internal steps to set their navigation preference
   useEffect(() => {
     setChildWantsParentNavigation(null);
   }, [currentStep]);
@@ -61,18 +66,47 @@ export default function LearnDetailScreen() {
 
       // Get or create learning session using backend API
       if (topicData.expand?.currentVersion?.id) {
-        const sessionData = await getOrCreateLearningSession(
-          topicData.id,
-          topicData.expand.currentVersion.id
-        );
+        if (!user?.id) {
+          throw new Error('Missing authenticated user');
+        }
+
+        let sessionData = await getLatestLearningSession(user.id, topicData.id);
+
+        const content = topicData.expand?.currentVersion?.content || [];
+        const getComponentStepCount = (component: any) => {
+          if (component.type === 'aiQuestion') return 2;
+          if (component.type === 'feelingsDetective') return 5;
+          return 1;
+        };
+        const totalSteps =
+          1 + content.reduce((sum, item) => sum + getComponentStepCount(item), 0) + 1;
+
+        if (!sessionData || sessionData.topicVersionId !== topicData.expand.currentVersion.id) {
+          sessionData = await createLearningSession(
+            user.id,
+            topicData.id,
+            topicData.expand.currentVersion.id
+          );
+        } else if (!sessionData.completed) {
+          const isAtSummary = (sessionData.currentPage ?? 0) >= totalSteps - 1;
+          if (isAtSummary) {
+            const completedSession = await completeLearningSession(sessionData.id);
+            if (completedSession) {
+              sessionData = completedSession;
+            } else {
+              sessionData = { ...sessionData, completed: true };
+            }
+          }
+        }
         
         if (sessionData) {
-          setSession(sessionData);
-          setCurrentStep(sessionData.currentPage || 0);
-        } else {
-          // No session available - app works in read-only mode
-          // User can still view content but progress won't be saved
-          console.log('Learning session not available - continuing in read-only mode');
+          if (sessionData.completed) {
+            setSession(sessionData);
+            setCurrentStep(totalSteps - 1);
+          } else {
+            setSession(sessionData);
+            setCurrentStep(sessionData.currentPage || 0);
+          }
         }
       }
     } catch (err) {
@@ -88,10 +122,13 @@ export default function LearnDetailScreen() {
 
     const content = topic.expand.currentVersion.content || [];
     
-    // Calculate step count: each aiQuestion takes 2 steps, others take 1
+    // Calculate step count: each aiQuestion takes 2 steps, feelingsDetective takes 5 steps, others take 1
     const getComponentStepCount = (component: any) => {
       if (component.type === 'aiQuestion') {
         return 2;
+      }
+      if (component.type === 'feelingsDetective') {
+        return 5;
       }
       return 1;
     };
@@ -198,61 +235,66 @@ export default function LearnDetailScreen() {
   };
 
   // Build totalSteps array mapping step indices to component info
-  const totalStepsArray: Array<{ component: string; internalStep: number }> = [];
-  totalStepsArray.push({ component: 'title', internalStep: 0 }); // Step 0: title
+  // This matches the Svelte implementation structure
+  const totalStepsArray: Array<{ component: string; internalStep: number; blockIndex: number }> = [];
   
-  let stepIndex = 1;
-  content.forEach((item: any) => {
+  // Step 0: title (blockIndex: -1)
+  totalStepsArray.push({ component: 'title', internalStep: 0, blockIndex: -1 });
+  
+  // Add content items with their blockIndex
+  content.forEach((item: any, index: number) => {
     const stepCount = getComponentStepCount(item);
     for (let i = 0; i < stepCount; i++) {
-      totalStepsArray.push({ component: item.type || 'unknown', internalStep: i });
+      totalStepsArray.push({ 
+        component: item.type || 'unknown', 
+        internalStep: i,
+        blockIndex: index // Store the index in the content array
+      });
     }
   });
   
-  totalStepsArray.push({ component: 'summary', internalStep: 0 }); // Final step: summary
+  // Final step: summary (blockIndex: -1)
+  totalStepsArray.push({ component: 'summary', internalStep: 0, blockIndex: -1 });
   
   const totalSteps = totalStepsArray.length;
   const categoryColor = topicVersion.expand?.category?.color || baseColors.primary;
 
-  // Get current content item for navigation buttons
-  // Find which content item corresponds to current step
-  let contentIndex = -1;
-  let stepOffset = 1; // Start after title step
-  for (let i = 0; i < content.length; i++) {
-    const stepCount = getComponentStepCount(content[i]);
-    if (currentStep >= stepOffset && currentStep < stepOffset + stepCount) {
-      contentIndex = i;
-      break;
-    }
-    stepOffset += stepCount;
-  }
-  
-  const currentContentItem = contentIndex >= 0 ? content[contentIndex] : null;
+  // Get current content item using blockIndex from totalStepsArray (matches Svelte implementation)
   const currentStepData = totalStepsArray[currentStep];
+  const currentContentItem = currentStepData?.blockIndex >= 0 
+    ? content[currentStepData.blockIndex] 
+    : null;
   
   // Determine if parent navigation should be shown
-  // If child component has explicitly set visibility preference, use that
+  // If child component has explicitly set visibility preference (via childWantsParentNavigation), use that
   // Otherwise, use default logic (show for steps that aren't first or last)
+  // For components like aiQuestion and feelingsDetective, childWantsParentNavigation will be set to false
+  // Also check component type - components with internal steps should not show parent navigation by default
+  const componentHandlesOwnNavigation = currentStepData?.component === 'aiQuestion' || 
+                                        currentStepData?.component === 'feelingsDetective';
+  
   const showBottomNavigation = childWantsParentNavigation !== null
     ? childWantsParentNavigation
-    : currentStep > 0 && currentStep < totalSteps - 1;
+    : componentHandlesOwnNavigation 
+      ? false // Don't show parent navigation for components that handle their own navigation
+      : currentStep > 0 && currentStep <= totalSteps - 1; // Show navigation on summary page too
   
   console.log('currentContentItem type:', currentContentItem?.type);
   console.log('================================');
 
   return (
-    <View className="flex flex-grow" style={{ backgroundColor: baseColors.background }}>
+    <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
       <Header />
       <ScrollView 
-        className="flex flex-grow" 
+        className="flex-1 flex-grow" 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          flexGrow: 1,
           paddingTop: Platform.OS === 'ios' ? 50 : Platform.OS === 'android' ? 60 : 40,
-          paddingBottom: showBottomNavigation ? 136 : 40, // Extra padding for TabBar + navigation buttons
+          flexGrow: 1,
+          paddingBottom: currentStep === totalSteps - 1 ? 200 : (showBottomNavigation ? 136 : 40), // Extra padding for TabBar and bottom nav on summary page
         }}
       >
-        <View className="flex flex-col flex-grow px-4 pt-4 pb-6">
+        <View className={`flex flex-grow flex-col px-4 pt-4 pb-6`}>
           {/* Step Indicator */}
           <View className="mb-4 flex items-center justify-center">
             <View className="flex-row items-center justify-center gap-0.5 rounded-full bg-neutral-500/5 p-1 shadow-inner w-3/4">
@@ -283,33 +325,33 @@ export default function LearnDetailScreen() {
               onStart={handleNextStep}
             />
           ) : currentStep === totalSteps - 1 ? (
-            // Summary/Completion
-            <View className="mb-6 flex flex-1 flex-col">
-              <View className="flex-grow flex flex-col justify-center">
-                <View className="bg-white rounded-lg p-6 mb-4">
-                  <Text className="text-2xl font-bold mb-4">Modul abgeschlossen!</Text>
-                  <Text className="text-gray-700 mb-4">
-                    Du hast dieses Modul erfolgreich durchgearbeitet. Gut gemacht!
-                  </Text>
-                  {session?.completed && (
-                    <View className="bg-teal-50 rounded-lg p-4 mb-4">
-                      <Text className="text-teal-800 font-semibold">✓ Abgeschlossen</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-              <LearnNavigation
-                onNext={() => router.back()}
-                nextText="Zurück zur Übersicht"
-                showPrev={false}
+            // Summary/Completion - Use LearningSummary component
+            topic ? (
+              <LearningSummary
+                session={session}
+                topic={topic}
+                color={categoryColor}
+                onFeedbackSubmit={async (feedback) => {
+                  if (session) {
+                    const updatedSession = await saveLearningSessionFeedback(session.id, feedback);
+                    if (updatedSession) {
+                      setSession(updatedSession);
+                    }
+                  }
+                }}
               />
-            </View>
+            ) : (
+              <View className="flex-1 items-center justify-center">
+                <Text className="text-gray-600">Loading summary...</Text>
+              </View>
+            )
           ) : (
             // Content Steps
             <View className="flex flex-col flex-grow">
               {(() => {
-                const contentIndex = currentStep - 1;
-                const contentItem = content[contentIndex];
+                // Use currentContentItem which is correctly calculated using blockIndex
+                // This properly handles multi-step components
+                const contentItem = currentContentItem;
 
                 if (!contentItem) {
                   return (
@@ -444,10 +486,10 @@ export default function LearnDetailScreen() {
                         color={categoryColor}
                         session={session}
                         onResponse={async (response) => {
-                          if (session) {
+                          if (session && currentStepData?.blockIndex >= 0) {
                             const updatedSession = await saveLearningSessionResponse(
                               session.id,
-                              contentIndex,
+                              currentStepData.blockIndex,
                               'audio',
                               response,
                               topicVersion.id,
@@ -471,10 +513,10 @@ export default function LearnDetailScreen() {
                         totalSteps={totalStepsArray}
                         topicVersionId={topicVersion.id}
                         onResponse={async (response) => {
-                          if (session) {
+                          if (session && currentStepData?.blockIndex >= 0) {
                             const updatedSession = await saveLearningSessionResponse(
                               session.id,
-                              contentIndex,
+                              currentStepData.blockIndex,
                               'aiQuestion',
                               response,
                               topicVersion.id,
@@ -487,6 +529,7 @@ export default function LearnDetailScreen() {
                         }}
                         gotoNextStep={handleNextStep}
                         gotoPrevStep={handlePrevStep}
+                        onParentNavigationVisibilityChange={setChildWantsParentNavigation}
                       />
                     );
                   case 'feelingsDetective':
@@ -500,10 +543,10 @@ export default function LearnDetailScreen() {
                         totalSteps={totalStepsArray}
                         topicVersionId={topicVersion.id}
                         onResponse={async (response) => {
-                          if (session) {
+                          if (session && currentStepData?.blockIndex >= 0) {
                             const updatedSession = await saveLearningSessionResponse(
                               session.id,
-                              contentIndex,
+                              currentStepData.blockIndex,
                               'feelingsDetective',
                               response,
                               topicVersion.id,
@@ -545,13 +588,26 @@ export default function LearnDetailScreen() {
             borderTopColor: 'rgba(0,0,0,0.1)',
           }}
         >
-          <LearnNavigation
-            onNext={handleNextStep}
-            onPrev={currentStep > 0 ? handlePrevStep : undefined}
-            nextText={currentContentItem?.type === 'breathe' ? 'Überspringen' : (currentContentItem?.ctaText || (currentStep === totalSteps - 2 ? 'Abschließen' : 'Weiter'))}
-            showPrev={currentStep > 0}
-            variant={currentContentItem?.type === 'breathe' ? 'light' : 'default'}
-          />
+          {currentStep === totalSteps - 1 ? (
+            // Summary page navigation - show only "Zurück zur Lernübersicht"
+            <TouchableOpacity
+              onPress={() => router.push('/learn')}
+              className="flex h-10 flex-grow flex-row items-center justify-between gap-2 rounded-full bg-black py-3 pl-6 pr-2"
+            >
+              <Text className="font-medium text-white">Zurück zur Lernübersicht</Text>
+              <View className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
+                <ArrowRight size={16} color="#fff" />
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <LearnNavigation
+              onNext={handleNextStep}
+              onPrev={currentStep > 0 ? handlePrevStep : undefined}
+              nextText={currentContentItem?.type === 'breathe' ? 'Überspringen' : (currentContentItem?.ctaText || (currentStep === totalSteps - 2 ? 'Abschließen' : 'Weiter'))}
+              showPrev={currentStep > 0}
+              variant={currentContentItem?.type === 'breathe' ? 'light' : 'default'}
+            />
+          )}
         </View>
       )}
       

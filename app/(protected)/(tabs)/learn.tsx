@@ -2,15 +2,27 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { BadgeCheck, Play } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Modal,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
 
 import baseColors from '@/baseColors.config';
 import Header from '@/components/Header';
 import DonutChart from '@/components/stats/DonutChart';
 import { useAuthGuard } from '@/hooks/use-auth';
 import {
+  createLearningSession,
   getCategories,
   getCompletionStatus,
+  getLatestLearningSession,
   getPocketBaseFileUrl,
   getTopics,
   type Topic,
@@ -35,6 +47,10 @@ export default function LearnScreen() {
   const [completionStatus, setCompletionStatus] = useState<Record<string, boolean>>({});
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [topicActionInProgress, setTopicActionInProgress] = useState<string | null>(null);
+  const [isRestartingTopic, setIsRestartingTopic] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -95,6 +111,69 @@ export default function LearnScreen() {
           (topics.filter((topic) => completionStatus[topic.id]).length / topics.length) * 100
         )
         : 0,
+  };
+
+  const closeRestartModal = () => {
+    setShowRestartConfirm(false);
+    setSelectedTopic(null);
+  };
+
+  const navigateToTopic = (topic: Topic) => {
+    router.push(`/(protected)/learn/${topic.slug}` as any);
+  };
+
+  const startFreshSession = async (topic: Topic) => {
+    if (!user?.id || !topic.expand?.currentVersion?.id) {
+      console.warn('Cannot create session without user or topic version.');
+      return;
+    }
+
+    const newSession = await createLearningSession(
+      user.id,
+      topic.id,
+      topic.expand.currentVersion.id
+    );
+
+    if (newSession) {
+      closeRestartModal();
+      navigateToTopic(topic);
+    } else {
+      console.error('Failed to create a new learning session.');
+    }
+  };
+
+  const handleTopicPress = async (topic: Topic) => {
+    if (!user?.id || !topic.expand?.currentVersion?.id) {
+      console.warn('Missing user or topic version, navigating directly.');
+      navigateToTopic(topic);
+      return;
+    }
+
+    if (topicActionInProgress) {
+      return;
+    }
+
+    setTopicActionInProgress(topic.id);
+    try {
+      const existingSession = await getLatestLearningSession(user.id, topic.id);
+
+      if (!existingSession) {
+        await startFreshSession(topic);
+        return;
+      }
+
+      if (existingSession.completed) {
+        setSelectedTopic(topic);
+        setShowRestartConfirm(true);
+        return;
+      }
+
+      navigateToTopic(topic);
+    } catch (err) {
+      console.error('Failed to open learning session:', err);
+    } finally {
+      setTopicActionInProgress(null);
+    }
   };
 
   const isTopicCompleted = (topicId: string) => completionStatus[topicId] || false;
@@ -179,7 +258,14 @@ export default function LearnScreen() {
                 <View className="flex-row items-center gap-3">
                   {donutData.length > 0 ? (
                     <View style={{ width: 64, height: 64 }}>
-                      <DonutChart data={donutData} colors={donutColors} size={64} />
+                      <DonutChart 
+                        data={donutData} 
+                        colors={donutColors} 
+                        size={64}
+                        showPercentage={true}
+                        completedCount={overallCompletion.completed}
+                        totalCount={overallCompletion.total}
+                      />
                     </View>
                   ) : (
                     <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center">
@@ -248,7 +334,8 @@ export default function LearnScreen() {
                       return (
                         <TouchableOpacity
                           key={topic.id}
-                          onPress={() => router.push(`/(protected)/learn/${topic.slug}` as any)}
+                          onPress={() => handleTopicPress(topic)}
+                          disabled={topicActionInProgress === topic.id}
                           className="mr-4"
                           style={{ width: 300 }}
                           activeOpacity={0.9}
@@ -320,6 +407,65 @@ export default function LearnScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Restart Confirmation Dialog - Shown when clicking on a completed module */}
+      <Modal
+        visible={showRestartConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={closeRestartModal}
+      >
+        <TouchableWithoutFeedback onPress={closeRestartModal}>
+          <View className="flex-1 items-center justify-center bg-black/50 px-4">
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+                <Text className="mb-2 text-xl font-bold text-gray-900">Modul neu starten?</Text>
+                <Text className="mb-6 text-gray-600">
+                  Möchtest du das Modul erneut durchlaufen oder deine bisherigen Ergebnisse ansehen?
+                </Text>
+                
+                <View className="flex-row gap-3">
+                  <TouchableOpacity
+                    onPress={async () => {
+                      if (selectedTopic && !isRestartingTopic) {
+                        setIsRestartingTopic(true);
+                        try {
+                          await startFreshSession(selectedTopic);
+                        } finally {
+                          setIsRestartingTopic(false);
+                        }
+                      }
+                    }}
+                    disabled={isRestartingTopic}
+                    className="flex-1 rounded-lg px-4 py-3"
+                    style={{
+                      backgroundColor:
+                        selectedTopic?.expand?.currentVersion?.expand?.category?.color || baseColors.primary,
+                    }}
+                  >
+                    <Text className="text-center font-semibold text-white">
+                      {isRestartingTopic ? 'Starte...' : 'Neu starten'}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (selectedTopic) {
+                        // Navigate to view results (summary page)
+                        closeRestartModal();
+                        navigateToTopic(selectedTopic);
+                      }
+                    }}
+                    className="flex-1 rounded-lg bg-gray-100 px-4 py-3"
+                  >
+                    <Text className="text-center font-semibold text-gray-700">Ergebnisse ansehen</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }

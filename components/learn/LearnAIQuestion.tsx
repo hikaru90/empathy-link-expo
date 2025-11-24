@@ -12,7 +12,7 @@ import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { askAIQuestion, type LearningSession } from '@/lib/api/learn';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, ChevronRight, Heart, Send } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -81,9 +81,10 @@ export default function LearnAIQuestion({
 
   const internalStep = totalSteps[currentStep]?.internalStep ?? 0;
 
-  // Notify parent about navigation visibility
-  // aiQuestion handles its own navigation, so hide parent navigation
-  useEffect(() => {
+  // Notify parent about navigation visibility immediately and when internalStep changes
+  // Always hide parent navigation - component handles its own navigation
+  // Use useLayoutEffect to run synchronously before paint to avoid flicker
+  useLayoutEffect(() => {
     onParentNavigationVisibilityChange?.(false);
   }, [internalStep, onParentNavigationVisibilityChange]);
 
@@ -399,8 +400,12 @@ export default function LearnAIQuestion({
               maxLength={2000}
               editable={!isLoading}
               returnKeyType="send"
-              blurOnSubmit={false}
-              onSubmitEditing={submitAnswer}
+              blurOnSubmit
+              onSubmitEditing={() => {
+                setFeelingSelectorVisible(false);
+                setNeedSelectorVisible(false);
+                submitAnswer();
+              }}
             />
 
             {/* Feelings selector */}
