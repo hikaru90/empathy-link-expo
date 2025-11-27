@@ -481,9 +481,9 @@ export default function StatsTrackedNeeds() {
   return (
     <View className="relative">
       <View
-        className={`rounded-2xl shadow-lg shadow-black/10 relative z-10`}
+        className={`rounded-2xl shadow-lg shadow-black/10 relative z-10 border border-white`}
         style={{
-          backgroundColor: isEditMode ? '#D3FBBF60' : baseColors.offwhite,
+          backgroundColor: isEditMode ? '#D3FBBF60' : baseColors.offwhite+'90',
           elevation: 10, // For Android
         }}
       >

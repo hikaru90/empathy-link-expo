@@ -3,7 +3,7 @@ import GradientImage from '@/components/GradientImage';
 import { getInspirationalQuote, type InspirationalQuote } from '@/lib/api/stats';
 import { Quote } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Text, View } from 'react-native';
 
 const COLLAPSED_HEIGHT = 60;
 
@@ -56,11 +56,9 @@ export default function StatsInspiration() {
   });
 
   return (
-    <>
-    <TouchableOpacity onPress={() => setLoadingQuote(!loadingQuote)}>Toggle State</TouchableOpacity>
     <View
-      className="rounded-2xl p-5 justify-center shadow-lg shadow-black/10"
-      style={{ backgroundColor: baseColors.offwhite }}
+      className="rounded-2xl p-5 justify-center shadow-lg shadow-black/10 border border-white"
+      style={{ backgroundColor: baseColors.offwhite+'90' }}
     >
       <Animated.View style={{ height: heightAnim, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {loadingQuote ? (
@@ -82,6 +80,5 @@ export default function StatsInspiration() {
         ) : null}
       </Animated.View>
     </View>
-    </>
   );
 }

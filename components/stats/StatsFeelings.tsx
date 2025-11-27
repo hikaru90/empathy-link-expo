@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    backgroundColor: baseColors.offwhite,
+    backgroundColor: baseColors.offwhite+'90',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
@@ -752,6 +752,8 @@ const styles = StyleSheet.create({
     elevation: 10,
     position: 'relative',
     zIndex: 10,
+    borderWidth: 1,
+    borderColor: 'white',
   },
   header: {
     flexDirection: 'row',
