@@ -2,7 +2,7 @@ import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import baseColors from '@/baseColors.config';
@@ -18,6 +18,18 @@ export default function RootLayout() {
   React.useEffect(() => {
     initializeI18n();
   }, []);
+
+  // Configure hash-based routing for web to prevent 404s on reload
+  // Convert pathname-based routes to hash-based before React renders
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    if (window.location.pathname !== '/' && !window.location.hash) {
+      const path = window.location.pathname + window.location.search;
+      window.location.replace(`#${path}`);
+      // Return null to prevent rendering until redirect completes
+      return null;
+    }
+  }
+
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
