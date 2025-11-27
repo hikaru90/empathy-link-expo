@@ -1,5 +1,5 @@
 import { authClient } from '@/lib/auth';
-import { API_BASE_URL } from '@/lib/config';
+import { BETTER_AUTH_URL } from '@/lib/config';
 import { useRouter } from 'expo-router';
 import { createContext, useContext, useEffect, useState } from 'react';
 
@@ -38,8 +38,8 @@ export function useAuthProvider(): AuthContextType {
   const loadUser = async () => {
     try {
       console.log('=== Loading user session ===');
-      console.log('Backend URL:', API_BASE_URL);
-      console.log('Full test URL:', `${API_BASE_URL}/api/auth/get-session`);
+      console.log('Better Auth URL:', BETTER_AUTH_URL);
+      console.log('Full test URL:', `${BETTER_AUTH_URL}/api/auth/get-session`);
 
       // First, test if backend is reachable with a simple fetch
       console.log('Testing backend connectivity...');
@@ -47,7 +47,7 @@ export function useAuthProvider(): AuthContextType {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-        const testResponse = await fetch(`${API_BASE_URL}/api/auth/get-session`, {
+        const testResponse = await fetch(`${BETTER_AUTH_URL}/api/auth/get-session`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -99,11 +99,12 @@ export function useAuthProvider(): AuthContextType {
   };
 
   const signUp = async (email: string, password: string, name?: string) => {
-    const result = await authClient.signUp.email({
+    const signUpData = {
       email,
       password,
-      name,
-    });
+      ...(name ? { name } : {}),
+    };
+    const result = await authClient.signUp.email(signUpData as any);
 
     if (result.error) {
       throw new Error(result.error.message || 'Registrierung fehlgeschlagen');

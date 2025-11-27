@@ -71,29 +71,31 @@ function getHostIPAddress(): string | null {
  * Get the appropriate backend URL based on the platform
  */
 export function getBackendURL(): string {
-  // Check for manual override via environment variable
+  // Check for manual override via environment variable (highest priority)
   const manualUrl = process.env.EXPO_PUBLIC_API_URL;
   if (manualUrl) {
-    console.log('Using manual API URL from env:', manualUrl);
-    return manualUrl;
+    const cleanUrl = manualUrl.trim().replace(/\/$/, '');
+    console.log('Using manual API URL from env:', cleanUrl);
+    return cleanUrl;
   }
 
-  // If running on web, use localhost
+  // For web platform, use EXPO_PUBLIC_BETTER_AUTH_URL if available, otherwise EXPO_PUBLIC_API_URL
   if (Platform.OS === 'web') {
-    return `http://localhost:${BACKEND_PORT}`;
+    const betterAuthUrl = process.env.EXPO_PUBLIC_BETTER_AUTH_URL;
+    if (betterAuthUrl) {
+      const cleanUrl = betterAuthUrl.trim().replace(/\/$/, '');
+      console.log('Web platform: Using Better Auth URL as API URL:', cleanUrl);
+      return cleanUrl;
+    }
+    // If no Better Auth URL, fall through to check EXPO_PUBLIC_API_URL (already checked above)
+    console.warn('⚠️ Web platform: No EXPO_PUBLIC_API_URL or EXPO_PUBLIC_BETTER_AUTH_URL set');
   }
 
-  // Check if running in iOS Simulator (not a physical device)
-  const isIOSSimulator = Platform.OS === 'ios' && !Constants.isDevice;
-  if (isIOSSimulator) {
-    console.log('Detected iOS Simulator, using localhost');
-    return `http://localhost:${BACKEND_PORT}`;
-  }
-
-  // For physical devices, try to auto-detect the host IP
+  // For native devices (iOS/Android), try to auto-detect the host IP
+  // This is useful for development when connecting to a local dev server
   const detectedIP = getHostIPAddress();
   if (detectedIP) {
-    console.log('✅ Detected physical device, using host IP:', detectedIP);
+    console.log('✅ Detected device, using host IP:', detectedIP);
     return `http://${detectedIP}:${BACKEND_PORT}`;
   }
 
@@ -104,26 +106,35 @@ export function getBackendURL(): string {
     return `http://${MANUAL_IP_OVERRIDE}:${BACKEND_PORT}`;
   }
 
-  // Final fallback: use localhost
-  console.warn('❌ Could not detect host IP, falling back to localhost');
-  return `http://localhost:${BACKEND_PORT}`;
+  // No fallback - require env vars to be set
+  console.error('❌ Could not determine backend URL. Please set EXPO_PUBLIC_API_URL or EXPO_PUBLIC_BETTER_AUTH_URL in your .env file');
+  throw new Error('EXPO_PUBLIC_API_URL or EXPO_PUBLIC_BETTER_AUTH_URL must be set');
 }
 
 export const API_BASE_URL = getBackendURL();
 
 /**
  * Get the Better Auth URL
- * Uses EXPO_PUBLIC_BETTER_AUTH_URL from .env if set, otherwise falls back to API_BASE_URL
+ * Uses EXPO_PUBLIC_BETTER_AUTH_URL from .env if set, otherwise falls back to EXPO_PUBLIC_API_URL
  */
 export function getBetterAuthURL(): string {
   // Check for Better Auth URL from .env
   const betterAuthUrl = process.env.EXPO_PUBLIC_BETTER_AUTH_URL;
   if (betterAuthUrl) {
-    console.log('Using Better Auth URL from env:', betterAuthUrl);
-    return betterAuthUrl;
+    const cleanUrl = betterAuthUrl.trim().replace(/\/$/, '');
+    console.log('Using Better Auth URL from env:', cleanUrl);
+    return cleanUrl;
   }
 
-  // Fallback to API_BASE_URL (for development and production if not overridden)
+  // Fallback to EXPO_PUBLIC_API_URL if set
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (apiUrl) {
+    const cleanUrl = apiUrl.trim().replace(/\/$/, '');
+    console.log('Using API URL as Better Auth URL:', cleanUrl);
+    return cleanUrl;
+  }
+
+  // Final fallback to API_BASE_URL (for native devices with IP detection)
   return API_BASE_URL;
 }
 
