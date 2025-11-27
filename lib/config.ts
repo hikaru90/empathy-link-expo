@@ -8,8 +8,10 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-// Backend port
-const BACKEND_PORT = 4000;
+// Backend port - can be overridden via EXPO_PUBLIC_BACKEND_PORT in .env
+const BACKEND_PORT = process.env.EXPO_PUBLIC_BACKEND_PORT 
+  ? parseInt(process.env.EXPO_PUBLIC_BACKEND_PORT, 10) 
+  : 4000;
 
 // Manual IP override for when auto-detection fails (e.g., tunnel mode)
 // Set this to your computer's IP address if you're using Expo tunnel mode
@@ -83,7 +85,6 @@ export function getBackendURL(): string {
 
   // Check if running in iOS Simulator (not a physical device)
   const isIOSSimulator = Platform.OS === 'ios' && !Constants.isDevice;
-
   if (isIOSSimulator) {
     console.log('Detected iOS Simulator, using localhost');
     return `http://localhost:${BACKEND_PORT}`;
@@ -91,7 +92,6 @@ export function getBackendURL(): string {
 
   // For physical devices, try to auto-detect the host IP
   const detectedIP = getHostIPAddress();
-
   if (detectedIP) {
     console.log('✅ Detected physical device, using host IP:', detectedIP);
     return `http://${detectedIP}:${BACKEND_PORT}`;
@@ -111,10 +111,30 @@ export function getBackendURL(): string {
 
 export const API_BASE_URL = getBackendURL();
 
+/**
+ * Get the Better Auth URL
+ * Uses EXPO_PUBLIC_BETTER_AUTH_URL from .env if set, otherwise falls back to API_BASE_URL
+ */
+export function getBetterAuthURL(): string {
+  // Check for Better Auth URL from .env
+  const betterAuthUrl = process.env.EXPO_PUBLIC_BETTER_AUTH_URL;
+  if (betterAuthUrl) {
+    console.log('Using Better Auth URL from env:', betterAuthUrl);
+    return betterAuthUrl;
+  }
+
+  // Fallback to API_BASE_URL (for development and production if not overridden)
+  return API_BASE_URL;
+}
+
+export const BETTER_AUTH_URL = getBetterAuthURL();
+
 // Log the configuration for debugging
 console.log('========================================');
 console.log('Backend Configuration:');
-console.log('  URL:', API_BASE_URL);
+console.log('  API URL:', API_BASE_URL);
+console.log('  Better Auth URL:', BETTER_AUTH_URL);
+console.log('  Backend Port:', BACKEND_PORT);
 console.log('  Platform:', Platform.OS);
 console.log('  Is Device:', Constants.isDevice);
 console.log('  Expo Go:', Constants.appOwnership === 'expo');
