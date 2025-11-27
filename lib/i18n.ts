@@ -1,4 +1,4 @@
-import { setLocale, getLocale } from './paraglide/runtime';
+import { getLocale, setLocale } from '@/src/paraglide/runtime';
 import * as Localization from 'expo-localization';
 
 // Initialize language on app start
@@ -21,4 +21,4 @@ export function initializeI18n() {
   }
 }
 
-export { setLocale, getLocale };
+export { getLocale, setLocale };
