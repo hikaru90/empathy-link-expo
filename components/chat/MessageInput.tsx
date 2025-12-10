@@ -125,8 +125,9 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
 
   return (
     <View
-      className="bg-white border-t border-gray-200 rounded-3xl shadow-lg shadow-black/10 flex flex-col gap-2"
+      className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl"
       style={{
+        backgroundColor: baseColors.background,
         position: 'absolute',
         bottom: Platform.OS === 'ios' 
           ? 88 
@@ -139,9 +140,10 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
         maxHeight: '65%', // Prevent overflow when selectors are open
       }}
     >
+      <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite+'ee' }}>
       {/* Feelings Selector */}
       {feelingSelectorVisible && (
-        <View className="max-h-40 border-b border-gray-200">
+        <View className="max-h-40 border-b border-black/5">
           <GroupedFeelingsSelector
             feelings={feelings}
             onFeelingPress={addText}
@@ -152,7 +154,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
 
       {/* Needs Selector */}
       {needSelectorVisible && (
-        <View className="max-h-40 border-b border-gray-200">
+        <View className="max-h-40 border-b border-black/5">
           <GroupedNeedsSelector
             needs={needs}
             onNeedPress={addText}
@@ -162,7 +164,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
       )}
 
       {/* Input Row */}
-      <View className="p-2 flex-row items-end gap-3 rounded-t-3xl overflow-hidden">
+      <View className="p-1 flex-row items-end gap-3 overflow-hidden">
         <TextInput
           ref={textInputRef}
           value={text}
@@ -170,7 +172,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
           onKeyPress={handleKeyPress}
           placeholder="Schreibe eine Nachricht..."
           placeholderTextColor="rgba(0, 0, 0, 0.5)"
-          className="flex-1 bg-white/90 rounded-2xl p-3 text-base"
+          className="flex-1 rounded-[18px] p-3 text-base"
           style={styles.textInput}
           multiline
           scrollEnabled={true}
@@ -183,7 +185,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
       </View>
 
       {/* Action Buttons */}
-      <View className="flex-row px-4 pb-4 gap-3 justify-between w-full">
+      <View className="flex-row px-3 pb-2 gap-3 justify-between w-full">
         <View className="flex-row gap-2 items-center">
           <TouchableOpacity
             onPress={toggleFeelingSelector}
@@ -240,6 +242,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
             <Send size={16} color={isSending || !text.trim() ? "#ffffff" : "#ffffff"} />
           )}
         </TouchableOpacity>
+      </View>
       </View>
     </View>
   );

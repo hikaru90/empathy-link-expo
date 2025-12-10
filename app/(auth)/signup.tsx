@@ -1,36 +1,87 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { Link, useRouter } from 'expo-router';
 import baseColors from '@/baseColors.config';
 import { useAuth } from '@/hooks/use-auth';
+import { Link, useRouter } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { signUp } = useAuth();
+  const router = useRouter();
+  
+  const nameInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
 
   const handleSignup = async () => {
+    // Clear any previous error
+    setErrorMessage(null);
+    
     if (!email || !password || !name) {
-      Alert.alert('Fehler', 'Bitte fülle alle Felder aus');
+      const msg = 'Bitte fülle alle Felder aus';
+      setErrorMessage(msg);
+      Alert.alert('Fehler', msg);
       return;
     }
 
+    // Frontend validation - check password length before submitting
     if (password.length < 8) {
-      Alert.alert('Fehler', 'Das Passwort muss mindestens 8 Zeichen lang sein');
+      const msg = 'Das Passwort muss mindestens 8 Zeichen lang sein';
+      setErrorMessage(msg);
+      Alert.alert('Fehler', msg);
+      return;
+    }
+
+    // Trim password to remove any accidental whitespace
+    const trimmedPassword = password.trim();
+    
+    // Double-check password length after trimming
+    if (trimmedPassword.length < 8) {
+      const msg = 'Das Passwort muss mindestens 8 Zeichen lang sein (nach Entfernen von Leerzeichen)';
+      setErrorMessage(msg);
+      Alert.alert('Fehler', msg);
       return;
     }
 
     setIsLoading(true);
+    setErrorMessage(null);
+    
+    // Blur all inputs to prevent focus issues during navigation
+    nameInputRef.current?.blur();
+    emailInputRef.current?.blur();
+    passwordInputRef.current?.blur();
+    
     try {
-      await signUp(email, password, name);
-      // Navigate immediately on success
-      router.replace('/(protected)/(tabs)');
+      // Use trimmed password to avoid whitespace issues
+      const result = await signUp(email, trimmedPassword, name);
+      // Wait a bit for state to update, then navigate
+      setTimeout(() => {
+        if (result.needsVerification) {
+          // Redirect to login with query params to show verification email sent message
+          router.replace(`/(auth)/login?initial=true&email=${encodeURIComponent(email)}`);
+        } else {
+          router.replace('/(protected)/(tabs)');
+        }
+      }, 100);
     } catch (error: any) {
-      Alert.alert('Fehler', error.message || 'Registrierung fehlgeschlagen');
-    } finally {
+      // Extract error message from various possible formats
+      let msg = 'Registrierung fehlgeschlagen';
+      
+      if (error instanceof Error) {
+        msg = error.message;
+      } else if (error?.message) {
+        msg = error.message;
+      } else if (error?.error?.message) {
+        msg = error.error.message;
+      }
+      
+      // Display error in UI and Alert
+      setErrorMessage(msg);
+      Alert.alert('Fehler', msg);
       setIsLoading(false);
     }
   };
@@ -46,14 +97,25 @@ export default function SignupScreen() {
         </Text>
       </View>
 
+      {errorMessage && (
+        <View className="mb-4 p-4 rounded-lg" style={{ backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fca5a5' }}>
+          <Text className="text-red-700 font-medium text-center">
+            {errorMessage}
+          </Text>
+        </View>
+      )}
+
       <View className="mb-6">
         <Text className="text-gray-700 mb-2 font-medium">Name</Text>
         <TextInput
+          ref={nameInputRef}
           className="border border-gray-300 rounded-lg px-4 py-3 text-gray-800"
           value={name}
           onChangeText={setName}
           placeholder="Name eingeben"
           autoCapitalize="words"
+          returnKeyType="next"
+          onSubmitEditing={() => emailInputRef.current?.focus()}
           style={{ backgroundColor: '#ffffff' }}
         />
       </View>
@@ -61,12 +123,15 @@ export default function SignupScreen() {
       <View className="mb-6">
         <Text className="text-gray-700 mb-2 font-medium">E-Mail</Text>
         <TextInput
+          ref={emailInputRef}
           className="border border-gray-300 rounded-lg px-4 py-3 text-gray-800"
           value={email}
           onChangeText={setEmail}
           placeholder="E-Mail eingeben"
           keyboardType="email-address"
           autoCapitalize="none"
+          returnKeyType="next"
+          onSubmitEditing={() => passwordInputRef.current?.focus()}
           style={{ backgroundColor: '#ffffff' }}
         />
       </View>
@@ -74,16 +139,16 @@ export default function SignupScreen() {
       <View className="mb-8">
         <Text className="text-gray-700 mb-2 font-medium">Passwort</Text>
         <TextInput
+          ref={passwordInputRef}
           className="border border-gray-300 rounded-lg px-4 py-3 text-gray-800"
           value={password}
           onChangeText={setPassword}
           placeholder="Passwort eingeben"
           secureTextEntry
+          returnKeyType="done"
+          onSubmitEditing={handleSignup}
           style={{ backgroundColor: '#ffffff' }}
         />
-        <Text className="text-gray-500 text-sm mt-1">
-          Das Passwort muss mindestens 8 Zeichen lang sein
-        </Text>
       </View>
 
       <TouchableOpacity

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 interface DonutChartProps {
   data: Array<{ value: string; count: number }>;
@@ -59,7 +59,7 @@ const generateColorArray = (baseColors: string[], count: number): string[] => {
 export default function DonutChart({ 
   data, 
   colors, 
-  size = 250,
+  size = 160,
   showPercentage = false,
   completedCount,
   totalCount

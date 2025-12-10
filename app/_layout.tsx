@@ -24,6 +24,21 @@ export default function RootLayout() {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     if (window.location.pathname !== '/' && !window.location.hash) {
       const path = window.location.pathname + window.location.search;
+      
+      // Store query params in sessionStorage before redirect (for login page to read)
+      if (window.location.search && window.location.pathname.includes('/login')) {
+        try {
+          const searchParams = new URLSearchParams(window.location.search);
+          const params: Record<string, string> = {};
+          searchParams.forEach((value, key) => {
+            params[key] = value;
+          });
+          sessionStorage.setItem('login_query_params', JSON.stringify(params));
+        } catch (e) {
+          // Ignore sessionStorage errors
+        }
+      }
+      
       window.location.replace(`#${path}`);
       // Return null to prevent rendering until redirect completes
       return null;

@@ -320,6 +320,10 @@ export default function LearnScreen() {
                     showsHorizontalScrollIndicator={false}
                     className="px-0"
                     contentContainerStyle={{ paddingRight: 16 }}
+                    pagingEnabled={true}
+                    snapToInterval={300}
+                    decelerationRate="fast"
+                    snapToOffsets={group.topics.map((topic, index) => index * 300)}
                   >
                     {group.topics.map((topic) => {
                       const topicVersion = topic.expand?.currentVersion;
@@ -372,26 +376,27 @@ export default function LearnScreen() {
                             {imageUrl && (
                               <Image
                                 source={{ uri: imageUrl }}
-                                className="absolute -right-4 -bottom-8 w-64 h-64 z-0 opacity-90"
+                                className="absolute -right-10 -bottom-16 w-64 h-64 z-0 opacity-30 mix-blend-multiply"
                                 style={{ transform: [{ rotate: '-12deg' }] }}
                                 resizeMode="contain"
                               />
                             )}
 
                             {/* Content Container */}
-                            <View className="absolute top-0 left-0 w-full h-full p-6 justify-between z-10">
+                            <View className="w-full h-full p-6 flex flex-col justify-end">
                               {/* Top Section (Title) */}
-                              <View>
-                                <Text className="text-3xl font-light text-white leading-tight shadow-sm">
-                                  <Text className="font-bold">{titleParts[0]}</Text>
-                                  {'\n'}
-                                  {titleParts[1]}
+                              <View className="mb-4 flx flex-col gap-1">
+                                <Text className="text-xl font-bold text-black/80 leading-tight">
+                                {titleParts[0].trim()}
+                                </Text>
+                                <Text className="text-xl text-black/80 leading-tight">
+                                  {titleParts[1].trim()}
                                 </Text>
                               </View>
 
                               {/* Bottom Section (CTA) */}
                               <View className="flex-row items-center">
-                                <View className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-md items-center justify-center border border-white/30">
+                                <View className="h-8 w-8 rounded-full bg-white/20 backdrop-blur-md items-center justify-center border border-white/30">
                                   <Play size={20} color="white" fill="white" style={{ marginLeft: 2 }} />
                                 </View>
                                 <Text className="ml-3 text-white font-medium tracking-wide opacity-90">

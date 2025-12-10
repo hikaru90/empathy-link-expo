@@ -140,11 +140,35 @@ export function getBetterAuthURL(): string {
 
 export const BETTER_AUTH_URL = getBetterAuthURL();
 
+/**
+ * Get the Expo app URL for callback URLs (e.g., email verification links)
+ * For web: uses localhost:8081 or window.location.origin
+ * For native: uses deep link scheme (empathy-link://)
+ */
+export function getExpoAppURL(): string {
+  // For web platform
+  if (Platform.OS === 'web') {
+    // Try to use window.location.origin if available (browser)
+    if (typeof window !== 'undefined' && window.location) {
+      return window.location.origin;
+    }
+    // Fallback to localhost:8081 for web development
+    return 'http://localhost:8081';
+  }
+  
+  // For native platforms, use deep link scheme
+  // This matches the scheme defined in app.json
+  return 'empathy-link://';
+}
+
+export const EXPO_APP_URL = getExpoAppURL();
+
 // Log the configuration for debugging
 console.log('========================================');
 console.log('Backend Configuration:');
 console.log('  API URL:', API_BASE_URL);
 console.log('  Better Auth URL:', BETTER_AUTH_URL);
+console.log('  Expo App URL:', EXPO_APP_URL);
 console.log('  Backend Port:', BACKEND_PORT);
 console.log('  Platform:', Platform.OS);
 console.log('  Is Device:', Constants.isDevice);

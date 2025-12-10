@@ -16,7 +16,22 @@ async function authenticatedFetch<T = any>(url: string, options: RequestInit = {
 
   // Better Auth returns {data: ..., error: ...}
   if (result.error) {
-    throw new Error(result.error.message || result.error);
+    // Extract error information properly
+    const errorMessage = typeof result.error === 'string' 
+      ? result.error 
+      : result.error?.message || JSON.stringify(result.error);
+    
+    // Check for HTTP status codes in the error
+    const statusCode = result.error?.status || result.error?.statusCode;
+    
+    // Create an error with status code information
+    const error = new Error(errorMessage);
+    if (statusCode) {
+      (error as any).status = statusCode;
+      (error as any).statusCode = statusCode;
+    }
+    
+    throw error;
   }
 
   return result.data as T;
@@ -142,8 +157,10 @@ export async function getLatestChat(): Promise<GetLatestChatResponse | null> {
 
     return result;
   } catch (error: any) {
-    // If 404 or no active chat, return null
-    if (error?.message?.includes('404') || error?.message?.includes('No active chat')) {
+    // If 404 or no active chat, return null (this is expected for fresh accounts)
+    const statusCode = error?.status || error?.statusCode;
+    if (statusCode === 404 || error?.message?.includes('404') || error?.message?.includes('No active chat')) {
+      console.log('No active chat found (this is normal for fresh accounts)');
       return null;
     }
     throw error;

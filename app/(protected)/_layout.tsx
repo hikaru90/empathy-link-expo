@@ -14,6 +14,10 @@ export default function ProtectedLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
+  if (!user.emailVerified) {
+    return <Redirect href="/(auth)/verify-email" />;
+  }
+
   return (
     <ChatProvider>
       <Stack
