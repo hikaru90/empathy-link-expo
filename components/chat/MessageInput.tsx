@@ -27,21 +27,33 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
   const { sendMessage, isSending } = useChat();
   const textInputRef = useRef<TextInput>(null);
 
-  // Handle keyboard show/hide on Android
+  // Handle keyboard show/hide using React Native's Keyboard API
   useEffect(() => {
-    if (Platform.OS === 'android') {
-      const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
-        setKeyboardHeight(e.endCoordinates.height);
-      });
-      const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
-        setKeyboardHeight(0);
-      });
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-      return () => {
-        showSubscription.remove();
-        hideSubscription.remove();
-      };
-    }
+    const handleKeyboardShow = (e: any) => {
+      const height = e.endCoordinates?.height || 0;
+      console.log('[MessageInput] Keyboard show:', {
+        platform: Platform.OS,
+        keyboardHeight: height,
+        endCoordinates: e.endCoordinates,
+      });
+      setKeyboardHeight(height);
+    };
+
+    const handleKeyboardHide = () => {
+      console.log('[MessageInput] Keyboard hide');
+      setKeyboardHeight(0);
+    };
+
+    const showSubscription = Keyboard.addListener(showEvent, handleKeyboardShow);
+    const hideSubscription = Keyboard.addListener(hideEvent, handleKeyboardHide);
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
   }, []);
 
   // Load feelings and needs data
@@ -123,17 +135,36 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
     setNeedSelectorVisible(prev => !prev);
   }, []);
 
+  // Tab bar height constant (matches tab bar configuration)
+  const TAB_BAR_HEIGHT = 14;
+  
+  // Calculate bottom offset using tab bar height and keyboard height
+  // Use fixed tab bar height instead of safe area insets for consistency
+  // Safe area insets can be inconsistent on first render vs reload
+  const bottomOffset = keyboardHeight > 0 
+    ? keyboardHeight + 0 // When keyboard is visible, position above keyboard with padding
+    : TAB_BAR_HEIGHT + 8; // When keyboard is hidden, use tab bar height + smaller padding
+
+  // Log bottom offset whenever keyboardHeight changes
+  useEffect(() => {
+    console.log('[MessageInput] Bottom offset calculated:', {
+      platform: Platform.OS,
+      keyboardHeight,
+      tabBarHeight: TAB_BAR_HEIGHT,
+      bottomOffset,
+      calculation: keyboardHeight > 0 
+        ? `keyboardHeight (${keyboardHeight}) + 16 = ${bottomOffset}`
+        : `tabBar (${TAB_BAR_HEIGHT}) + 8 = ${bottomOffset}`,
+    });
+  }, [keyboardHeight, bottomOffset]);
+
   return (
     <View
       className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl"
       style={{
         backgroundColor: baseColors.background,
         position: 'absolute',
-        bottom: Platform.OS === 'ios' 
-          ? 88 
-          : keyboardHeight > 0 
-            ? keyboardHeight + 16 // When keyboard is visible, position above keyboard
-            : 16, // When keyboard is hidden, use original position
+        bottom: bottomOffset,
         left: 16,
         right: 16,
         zIndex: 1000,

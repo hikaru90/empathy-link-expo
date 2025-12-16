@@ -17,7 +17,7 @@ const BACKEND_PORT = process.env.EXPO_PUBLIC_BACKEND_PORT
 // Set this to your computer's IP address if you're using Expo tunnel mode
 // To find your IP: ipconfig getifaddr en0 (macOS) or ipconfig (Windows)
 const MANUAL_IP_OVERRIDE = '192.168.2.52'; // Your current work IP
-// const MANUAL_IP_OVERRIDE = '192.168.178.24'; // Your current home IP
+// const MANUAL_IP_OVERRIDE = '192.168.178.44'; // Your current home IP
 
 /**
  * Dynamically detect the host machine's IP address from Expo's debugger connection
@@ -33,10 +33,10 @@ function getHostIPAddress(): string | null {
       // Check if it's a tunnel URL (contains .exp.direct or similar)
       if (debuggerHost.includes('.exp.direct') || debuggerHost.includes('expo.dev')) {
         console.warn('⚠️ Detected Expo tunnel mode:', debuggerHost);
-        console.warn('⚠️ Tunnel mode does not work with local backend servers.');
+        console.warn('⚠️ Tunnel mode detected - will use manual IP override for backend connection.');
         console.warn('⚠️ Make sure your device is on the same WiFi network as your computer.');
-        console.warn('⚠️ Then restart Expo with: npx expo start --lan');
-        return null; // Don't use tunnel URLs
+        console.warn('⚠️ If requests fail, try: npx expo start --lan (instead of --tunnel)');
+        return null; // Don't use tunnel URLs, will fall back to manual IP
       }
 
       // Check if it's a valid IP address (192.168.x.x format)
@@ -101,9 +101,14 @@ export function getBackendURL(): string {
 
   // Fallback: use manual IP override if available
   if (MANUAL_IP_OVERRIDE) {
-    console.warn('⚠️ Could not auto-detect IP, using manual override:', MANUAL_IP_OVERRIDE);
-    console.warn('💡 If this doesn\'t work, make sure your device is on the same WiFi network');
-    return `http://${MANUAL_IP_OVERRIDE}:${BACKEND_PORT}`;
+    const backendUrl = `http://${MANUAL_IP_OVERRIDE}:${BACKEND_PORT}`;
+    console.warn('⚠️ Could not auto-detect IP, using manual override:', backendUrl);
+    console.warn('💡 If requests fail, verify:');
+    console.warn('   1. Your device is on the same WiFi network as your computer');
+    console.warn('   2. Your backend server is running on port', BACKEND_PORT);
+    console.warn('   3. Your computer\'s IP is', MANUAL_IP_OVERRIDE);
+    console.warn('   4. Try: ipconfig getifaddr en0 (macOS) to get your current IP');
+    return backendUrl;
   }
 
   // No fallback - require env vars to be set

@@ -2,6 +2,7 @@ import { authClient } from '@/lib/auth';
 import { BETTER_AUTH_URL, EXPO_APP_URL } from '@/lib/config';
 import { useRouter } from 'expo-router';
 import { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 
 interface User {
   id: string;
@@ -40,8 +41,32 @@ export function useAuthProvider(): AuthContextType {
   const loadUser = async () => {
     try {
       console.log('=== Loading user session ===');
+      console.log('Platform:', Platform.OS);
       console.log('Better Auth URL:', BETTER_AUTH_URL);
-      console.log('Full test URL:', `${BETTER_AUTH_URL}/api/auth/get-session`);
+      
+      // Debug: Check SecureStore directly for Better Auth session keys
+      if (Platform.OS !== 'web') {
+        try {
+          const SecureStore = await import('expo-secure-store');
+          const sessionKey = 'empathy-link.session';
+          const tokenKey = 'empathy-link.token';
+          
+          console.log('[Auth Debug] Checking SecureStore keys...');
+          const storedSession = await SecureStore.getItemAsync(sessionKey);
+          const storedToken = await SecureStore.getItemAsync(tokenKey);
+          
+          console.log('[Auth Debug] Stored session exists:', !!storedSession);
+          console.log('[Auth Debug] Stored token exists:', !!storedToken);
+          if (storedSession) {
+            console.log('[Auth Debug] Session data length:', storedSession.length);
+          }
+          if (storedToken) {
+            console.log('[Auth Debug] Token data length:', storedToken.length);
+          }
+        } catch (secureStoreError) {
+          console.error('[Auth Debug] Error checking SecureStore:', secureStoreError);
+        }
+      }
 
       // First, test if backend is reachable with a simple fetch
       console.log('Testing backend connectivity...');
@@ -69,11 +94,18 @@ export function useAuthProvider(): AuthContextType {
 
       console.log('Calling authClient.getSession()...');
       const session = await authClient.getSession();
+      console.log('[Auth Debug] Session result:', {
+        hasData: !!session?.data,
+        hasUser: !!session?.data?.user,
+        sessionKeys: session ? Object.keys(session) : [],
+        dataKeys: session?.data ? Object.keys(session.data) : [],
+      });
       console.log('Session loaded:', session);
       if (session?.data?.user) {
         setUser(session.data.user as User);
+        console.log('[Auth Debug] ✅ User loaded successfully');
       } else {
-        console.log('No user in session');
+        console.log('[Auth Debug] ❌ No user in session');
         setUser(null);
       }
     } catch (error: any) {

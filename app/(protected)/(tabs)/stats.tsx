@@ -227,7 +227,7 @@ export default function StatsScreen() {
 
                 <StatsTrackedNeeds />
 
-                <View style={[styles.sectionHeader, { marginTop: 0 }]}>
+                <View style={[styles.sectionHeader, { marginTop: 32 }]}>
                   <Text style={styles.sectionTitle}>Wiederkehrende Muster</Text>
                   <Text style={styles.sectionDescription}>
                     Erkenne Blind Spots und wiederkehrende Muster in deinen Gesprächen. In welchen Situationen treten sie auf?

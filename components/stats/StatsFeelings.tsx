@@ -447,7 +447,6 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
                               width: 20,
                               height: 20,
                               borderRadius: 10,
-                              backgroundColor: '#fff',
                               justifyContent: 'center',
                               alignItems: 'center',
                               shadowColor: '#000',
@@ -694,7 +693,6 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
                           key={analysis.id}
                           className={`flex-row items-center justify-between ${idx === relevantAnalyses.length - 1 ? '' : 'border-b border-black/5'}`}
                           style={{
-                            backgroundColor: baseColors.offwhite,
                             paddingHorizontal: 0,
                             paddingVertical: 8,
                             gap: 12,
@@ -709,11 +707,10 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
                               {analysis.title || 'Reflektion'}
                             </Text>
                           </View>
-                          <View className="size-5 items-center justify-center bg-white rounded-full" style={{
+                          <View className="size-5 items-center justify-center rounded-full bg-white" style={{
                               width: 20,
                               height: 20,
                               borderRadius: 10,
-                              backgroundColor: '#fff',
                               justifyContent: 'center',
                               alignItems: 'center',
                               shadowColor: '#000',
@@ -744,12 +741,11 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    backgroundColor: baseColors.offwhite+'90',
     shadowColor: '#000',
+    backgroundColor: baseColors.offwhite+'90',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
-    elevation: 10,
     position: 'relative',
     zIndex: 10,
     borderWidth: 1,
@@ -777,7 +773,6 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#c084fc',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -803,7 +798,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: baseColors.offwhite,
   },
   chartContainer: {
     alignItems: 'center',
