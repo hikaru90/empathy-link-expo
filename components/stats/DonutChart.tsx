@@ -9,6 +9,7 @@ interface DonutChartProps {
   completedCount?: number; // For calculating percentage when showPercentage is true
   totalCount?: number; // For calculating percentage when showPercentage is true
   defaultColors?: string[];
+  colors?: string[]; // Alias for defaultColors for backward compatibility
 }
 
 interface Segment {
@@ -53,8 +54,11 @@ export default function DonutChart({
   showPercentage = false,
   completedCount,
   totalCount,
-  defaultColors
+  defaultColors,
+  colors
 }: DonutChartProps & { size?: number }) {
+  // Use defaultColors or colors prop (colors is alias for backward compatibility)
+  const baseColorsArray = defaultColors || colors || [];
   const ringThickness = size * 0.12; // Scale thickness relative to size
   const centerX = size / 2;
   const centerY = size / 2;
@@ -99,8 +103,8 @@ export default function DonutChart({
   // Calculate total
   const total = data.reduce((sum, item) => sum + item.count, 0);
 
-  // Generate color array based on data length
-  const chartColors = generateColorArray(defaultColors || [], data.length);
+  // Generate color array based on data length with opacity dropoff
+  const chartColors = generateColorArray(baseColorsArray, data.length);
 
   // Calculate total available degrees (360 minus gaps)
   const totalGaps = gapDegrees * data.length;

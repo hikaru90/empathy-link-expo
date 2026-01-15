@@ -107,8 +107,9 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
 
   // Generate color array for legend to match DonutChart's default colors
   const defaultColors = [
-    '#F0BADA', '#DB79AA', '#080638', '#17545A', '#D6BBFF', '#A366FF', '#FF9C34',
+    baseColors.forest, baseColors.emerald, baseColors.lilac, baseColors.purple, baseColors.zest
   ];
+
   const legendColors: string[] = [];
   for (let i = 0; i < filteredData.length; i++) {
     const colorIndex = i % defaultColors.length;
@@ -133,7 +134,7 @@ export default function StatsNeeds({ data, rawAnalyses }: StatsNeedsProps) {
         </View>
 
         <View style={styles.chartContainer}>
-          <DonutChart data={filteredData} />
+          <DonutChart data={filteredData} colors={defaultColors} />
         </View>
 
         <View style={styles.listContainer}>

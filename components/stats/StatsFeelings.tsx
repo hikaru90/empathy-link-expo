@@ -149,6 +149,20 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
       ]).start();
     }
   }, [selectedFeeling]);
+  
+  // Update height animation when heights are measured
+  useEffect(() => {
+    if (mainViewHeight > 0 && timelineViewHeight > 0) {
+      // Set the correct value based on current selection state
+      const targetValue = selectedFeeling ? 1 : 0;
+      Animated.timing(heightAnim, {
+        toValue: targetValue,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [mainViewHeight, timelineViewHeight, selectedFeeling]);
+  
 
   const getDateFilter = (timeframe: string) => {
     const now = new Date();
@@ -370,13 +384,39 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
     outputRange: [400, 0], // Slide timeline view from right
   });
 
+  // Single animated height value
+  const currentHeight = useRef(new Animated.Value(0)).current;
+  const prevMainHeight = useRef(0);
+  
+  // Animate height when mainViewHeight changes (data filtering)
+  useEffect(() => {
+    if (mainViewHeight > 0 && !selectedFeeling) {
+      if (prevMainHeight.current > 0 && mainViewHeight !== prevMainHeight.current) {
+        // Height changed, animate smoothly
+        Animated.spring(currentHeight, {
+          toValue: mainViewHeight,
+          useNativeDriver: false,
+          tension: 50,
+          friction: 7,
+        }).start();
+      } else {
+        // Initial or first measurement
+        currentHeight.setValue(mainViewHeight);
+      }
+      prevMainHeight.current = mainViewHeight;
+    }
+  }, [mainViewHeight, selectedFeeling]);
+  
+  // Interpolate between main and timeline heights when switching views
   const animatedHeight = heightAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [mainViewHeight || 500, timelineViewHeight || 500],
   });
-
-  // Only apply animated height if we have measured heights
-  const shouldAnimateHeight = mainViewHeight > 0 && timelineViewHeight > 0;
+  
+  // Use currentHeight when in main view (for data changes), animatedHeight when switching
+  const finalAnimatedHeight = selectedFeeling 
+    ? animatedHeight 
+    : currentHeight;
 
   return (
     <View style={styles.container}>
@@ -398,7 +438,7 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
         </View>
 
         <View style={styles.contentContainer}>
-          <Animated.View style={[styles.animatedHeightContainer, shouldAnimateHeight && { height: animatedHeight }]}>
+          <Animated.View style={[styles.animatedHeightContainer, { height: finalAnimatedHeight }]}>
             {/* Main view with donut chart and list */}
             <Animated.View
               style={[

@@ -1,7 +1,7 @@
-import baseColors from '@/baseColors.config';
+import QuoteIconImage from '@/assets/icons/Quote.png';
 import GradientImage from '@/components/GradientImage';
 import { getInspirationalQuote, type InspirationalQuote } from '@/lib/api/stats';
-import { Quote } from 'lucide-react-native';
+import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Text, View } from 'react-native';
 
@@ -57,9 +57,20 @@ export default function StatsInspiration() {
 
   return (
     <View
-      className="rounded-2xl p-5 justify-center shadow-lg shadow-black/10 border border-white"
-      style={{ backgroundColor: baseColors.offwhite+'90' }}
+      className="rounded-2xl p-5 justify-center overflow-hidden shadow-xl shadow-black/10"
+      style={{ position: 'relative' }}
     >
+      <Image 
+        source={require('@/assets/images/background-lilac-highres.png')} 
+        style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%',
+          zIndex: -1 
+        }} 
+      />
       <Animated.View style={{ height: heightAnim, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {loadingQuote ? (
           <View className="items-center justify-center py-5 flex-grow">
@@ -68,7 +79,7 @@ export default function StatsInspiration() {
         ) : quote ? (
           <Animated.View style={{ opacity: contentOpacity }} onLayout={handleContentLayout}>
             <View className="mb-3">
-              <Quote size={24} color="transparent" fill={baseColors.lilac} />
+              <Image source={QuoteIconImage} style={{ width: 40, height: 40, marginBottom: -8 }} />
             </View>
             <Text className="text-base leading-6 text-gray-800 italic mb-2">
               {quote.quote}

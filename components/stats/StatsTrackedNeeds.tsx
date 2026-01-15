@@ -6,7 +6,8 @@ import { Lightbulb, Plus, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import GroupedNeedsSelector from '../chat/GroupedNeedsSelector';
-import NeedCup from './NeedCup';
+import DateRangePicker from './DateRangePicker';
+import NeedsLineChart from './NeedsLineChart';
 
 export default function StatsTrackedNeeds() {
   const [trackedNeeds, setTrackedNeeds] = useState<TrackedNeed[]>([]);
@@ -23,16 +24,98 @@ export default function StatsTrackedNeeds() {
   const [hasFilledAllCups, setHasFilledAllCups] = useState(false);
   const [selectedCupId, setSelectedCupId] = useState<string | null>(null);
   const [timeseriesData, setTimeseriesData] = useState<NeedTimeseriesData[]>([]);
+  const [allTimeseriesData, setAllTimeseriesData] = useState<Record<string, NeedTimeseriesData[]>>({});
   const [isLoadingTimeseries, setIsLoadingTimeseries] = useState(false);
   const [needsError, setNeedsError] = useState<string | null>(null);
   const [currentStrategies, setCurrentStrategies] = useState<string[]>([]);
   const [newStrategyText, setNewStrategyText] = useState('');
   const [isSavingStrategies, setIsSavingStrategies] = useState(false);
   const [currentFillLevelId, setCurrentFillLevelId] = useState<string | null>(null);
+  const [selectedTimeframe, setSelectedTimeframe] = useState('lastWeek');
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Reload timeseries data when timeframe changes
+  useEffect(() => {
+    if (trackedNeeds.length > 0) {
+      loadTimeseriesData();
+    }
+  }, [selectedTimeframe, trackedNeeds]);
+
+  const getDateFilter = (timeframe: string) => {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (timeframe) {
+      case 'today':
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'yesterday':
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        startDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'dayBeforeYesterday':
+        const dayBeforeYesterday = new Date(now);
+        dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 2);
+        startDate = new Date(dayBeforeYesterday.getFullYear(), dayBeforeYesterday.getMonth(), dayBeforeYesterday.getDate());
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'lastWeek':
+        // Last 7 days including today (7 days ago to today)
+        startDate = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'lastMonth':
+        // Last 30 days
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'lastYear':
+        // Last 365 days
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      default:
+        startDate = new Date(0);
+    }
+
+    return startDate;
+  };
+
+  const getEndDate = (timeframe: string): Date | null => {
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+    return now;
+  };
+
+  const loadTimeseriesData = async (needsToLoad?: TrackedNeed[]) => {
+    const needs = needsToLoad || trackedNeeds;
+    if (needs.length === 0) return;
+
+    const startDate = getDateFilter(selectedTimeframe);
+    const endDate = getEndDate(selectedTimeframe);
+    const startDateISO = startDate.toISOString();
+    const endDateISO = endDate?.toISOString();
+
+    const allTimeseries: Record<string, NeedTimeseriesData[]> = {};
+    await Promise.all(
+      needs.map(async (tn) => {
+        try {
+          const data = await getNeedTimeseries(tn.id, startDateISO, endDateISO);
+          allTimeseries[tn.id] = data;
+        } catch (error) {
+          console.error(`Error loading timeseries for ${tn.id}:`, error);
+          allTimeseries[tn.id] = [];
+        }
+      })
+    );
+    setAllTimeseriesData(allTimeseries);
+  };
 
   const loadData = async () => {
     setIsLoading(true);
@@ -148,6 +231,9 @@ export default function StatsTrackedNeeds() {
         })
       );
       setLastFillLevels(lastLevels);
+
+      // Load timeseries data for all tracked needs (will be reloaded when timeframe changes)
+      await loadTimeseriesData(tracked);
 
       // Load yesterday's values if not filled today
       if (!hasTodayData && tracked.length > 0) {
@@ -298,7 +384,7 @@ export default function StatsTrackedNeeds() {
 
   const handleCupPress = async (trackedNeedId: string) => {
     if (selectedCupId === trackedNeedId) {
-      // If clicking the same cup, deselect it
+      // If clicking the same need, deselect it
       setSelectedCupId(null);
       setTimeseriesData([]);
       setCurrentStrategies([]);
@@ -309,7 +395,8 @@ export default function StatsTrackedNeeds() {
     setSelectedCupId(trackedNeedId);
     setIsLoadingTimeseries(true);
     try {
-      const data = await getNeedTimeseries(trackedNeedId);
+      // Use cached data if available, otherwise fetch
+      const data = allTimeseriesData[trackedNeedId] || await getNeedTimeseries(trackedNeedId);
       setTimeseriesData(data);
       
       // Find today's entry first, otherwise use the most recent entry
@@ -417,10 +504,25 @@ export default function StatsTrackedNeeds() {
         setLastUpdated(newTimestamps);
         setHasFilledAllCups(false); // Reset for next time
         
-        // Reload timeseries data if a cup is selected to get the new fill level entry
+        // Reload timeseries data for all needs
+        const updatedAllTimeseries: Record<string, NeedTimeseriesData[]> = {};
+        await Promise.all(
+          trackedNeeds.map(async (tn) => {
+            try {
+              const data = await getNeedTimeseries(tn.id);
+              updatedAllTimeseries[tn.id] = data;
+            } catch (error) {
+              console.error(`Error reloading timeseries for ${tn.id}:`, error);
+              updatedAllTimeseries[tn.id] = allTimeseriesData[tn.id] || [];
+            }
+          })
+        );
+        setAllTimeseriesData(updatedAllTimeseries);
+
+        // Reload timeseries data if a need is selected to get the new fill level entry
         if (selectedCupId) {
           try {
-            const data = await getNeedTimeseries(selectedCupId);
+            const data = updatedAllTimeseries[selectedCupId] || await getNeedTimeseries(selectedCupId);
             setTimeseriesData(data);
             
             // Find today's entry and load its strategies
@@ -490,6 +592,12 @@ export default function StatsTrackedNeeds() {
         <View className="flex-row justify-between items-center px-4 pt-3 pb-2 mb-2">
           <View className="flex-row items-center gap-2">
             <Text className="text-base font-semibold text-black">Top Bedürfnisse</Text>
+            {!isEditMode && trackedNeeds.length > 0 && (
+              <DateRangePicker
+                selectedTimeframe={selectedTimeframe}
+                onTimeframeChange={setSelectedTimeframe}
+              />
+            )}
           </View>
           {trackedNeeds.length > 0 && (
             <TouchableOpacity
@@ -542,44 +650,94 @@ export default function StatsTrackedNeeds() {
                 <Text className="text-sm font-medium text-black">Bedürfnisse auswählen</Text>
               </TouchableOpacity>
             </View>
-          ) : (
-            <View className="flex-row justify-between items-start">
+          ) : isEditMode ? (
+            <View className="gap-4">
               {trackedNeeds.map((trackedNeed) => {
-                const isSelected = selectedCupId === trackedNeed.id;
-                const shouldReduceOpacity = !isEditMode && selectedCupId !== null && !isSelected;
+                const currentLevel = fillLevels[trackedNeed.id] ?? 0;
                 return (
-                  <View key={trackedNeed.id} className="w-1/3 relative">
-                  <NeedCup
-                    trackedNeed={{
-                      id: trackedNeed.id,
-                      needId: trackedNeed.needId,
-                      needName: trackedNeed.needName,
-                    }}
-                    currentFillLevel={fillLevels[trackedNeed.id] ?? null}
-                    onFillLevelChange={(fillLevel) => handleFillLevelChange(trackedNeed.id, fillLevel)}
-                    onReplaceNeed={() => handleReplaceNeed(trackedNeed.id)}
-                    onCupPress={() => handleCupPress(trackedNeed.id)}
-                    isEditMode={isEditMode}
-                    isSelected={isSelected}
-                    opacity={shouldReduceOpacity ? 0.4 : 1}
-                    lastUpdated={lastUpdated[trackedNeed.id]}
-                    lastFillLevel={lastFillLevels[trackedNeed.id]}
-                    />
+                  <View key={trackedNeed.id} className="gap-2">
+                    <View className="flex-row justify-between items-center">
+                      <Text className="text-sm font-medium text-black">{trackedNeed.needName}</Text>
+                      <View className="flex-row items-center gap-2">
+                        <TouchableOpacity
+                          onPress={() => {
+                            const newValue = Math.max(0, currentLevel - 5);
+                            handleFillLevelChange(trackedNeed.id, newValue);
+                          }}
+                          className="w-8 h-8 rounded-full border border-gray-300 items-center justify-center"
+                        >
+                          <Text className="text-lg text-gray-600">−</Text>
+                        </TouchableOpacity>
+                        <TextInput
+                          value={Math.round(currentLevel).toString()}
+                          onChangeText={(text: string) => {
+                            const num = parseInt(text, 10);
+                            if (!isNaN(num) && num >= 0 && num <= 100) {
+                              handleFillLevelChange(trackedNeed.id, num);
+                            }
+                          }}
+                          keyboardType="numeric"
+                          className="w-16 text-center text-sm font-medium border border-gray-300 rounded px-2 py-1"
+                          style={{ color: '#000' }}
+                        />
+                        <Text className="text-sm text-gray-600">%</Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            const newValue = Math.min(100, currentLevel + 5);
+                            handleFillLevelChange(trackedNeed.id, newValue);
+                          }}
+                          className="w-8 h-8 rounded-full border border-gray-300 items-center justify-center"
+                        >
+                          <Text className="text-lg text-gray-600">+</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
+                    <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <View
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${currentLevel}%`,
+                          backgroundColor:
+                            currentLevel > 50
+                              ? baseColors.forest
+                              : currentLevel > 25
+                              ? baseColors.orange
+                              : baseColors.bullshift,
+                        }}
+                      />
+                    </View>
+                  </View>
                 );
               })}
               {trackedNeeds.length < 3 && (
                 <TouchableOpacity
-                  className="items-center justify-center gap-2 w-1/3 bg-red-300 relative"
+                  className="items-center justify-center gap-2 py-4 border-2 border-dashed rounded-lg"
+                  style={{ borderColor: '#d1d5db' }}
                   onPress={handleAddNeed}
                 >
-                  <View
-                    className="w-full h-[120px] border-[3px] border-dashed rounded-lg rounded-bl-[20px] rounded-br-[20px] items-center justify-center bg-gray-50"
-                    style={{ borderColor: '#d1d5db' }}
-                  >
-                    <Text className="text-[32px] text-gray-400 font-light">+</Text>
-                  </View>
-                  <Text className="text-xs font-medium text-gray-600 text-center">Hinzufügen</Text>
+                  <Text className="text-2xl text-gray-400 font-light">+</Text>
+                  <Text className="text-sm font-medium text-gray-600">Bedürfnis hinzufügen</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <View className="gap-4">
+              <NeedsLineChart
+                trackedNeeds={trackedNeeds}
+                timeseriesData={allTimeseriesData}
+                selectedNeedId={selectedCupId}
+                onNeedPress={handleCupPress}
+                currentFillLevels={fillLevels}
+                height={240}
+              />
+              {trackedNeeds.length < 3 && (
+                <TouchableOpacity
+                  className="items-center justify-center gap-2 py-4 border-2 border-dashed rounded-lg"
+                  style={{ borderColor: '#d1d5db' }}
+                  onPress={handleAddNeed}
+                >
+                  <Text className="text-2xl text-gray-400 font-light">+</Text>
+                  <Text className="text-sm font-medium text-gray-600">Bedürfnis hinzufügen</Text>
                 </TouchableOpacity>
               )}
             </View>
