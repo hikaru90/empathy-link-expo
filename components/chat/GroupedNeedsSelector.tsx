@@ -80,7 +80,7 @@ export default function GroupedNeedsSelector({
 
   const getCategoryHeaderStyle = (isVisible: boolean): StyleProp<ViewStyle> => {
     return {
-      backgroundColor: isVisible ? baseColors.lilac : baseColors.lilac + '80', // green-300
+      backgroundColor: isVisible ? baseColors.forest+'66' : baseColors.forest + '22', // green-300
       boxShadow: isVisible ? 'inset 0 0 4px 0 rgba(0, 0, 0, 0.3)' : ''
     };
   };

@@ -1,5 +1,7 @@
+import FlameIconImage from '@/assets/icons/Flame.png';
 import baseColors from '@/baseColors.config';
-import { Calendar, Flame, TrendingUp } from 'lucide-react-native';
+import { Image } from 'expo-image';
+import { Calendar, TrendingUp } from 'lucide-react-native';
 import React from 'react';
 import { Text, View } from 'react-native';
 
@@ -47,11 +49,11 @@ export default function StatsStreak({ data }: StatsStreakProps) {
   };
 
   return (
-    <View className="overflow-hidden">
+    <View className="">
       <View className="">
         {/* Current Streak Card */}
-        <View className="flex-row items-center justify-start border-b border-white/20 pt-4 pb-6 pl-4 pr-6">
-          <Flame size={50} fill={baseColors.pink} strokeWidth={2} color={baseColors.pink} className="-ml-2 mr-1" />
+        <View className="flex-row items-center justify-start pt-4 pb-5 pl-4 pr-6 shadow shadow-black/10 mb-1" style={{borderWidth: 1, borderColor: '#fff', borderRadius: 16, backgroundColor: baseColors.white+'88'}}>
+          <Image source={FlameIconImage} style={{ width: 50, height: 50, marginLeft: -8, marginRight: 4 }} />
           <View className="flex-1">
             <Text className="text-base font-bold text-black">{data.currentStreak} tages Streak</Text>
             <Text className="text-xs text-black">{getStreakMessage()}</Text>
@@ -59,20 +61,20 @@ export default function StatsStreak({ data }: StatsStreakProps) {
         </View>
 
         {/* Stats Grid */}
-        <View className="flex-row gap-3 p-2 border-b border-white/20">
+        <View className="flex-row gap-3 py-2">
           {/* Longest Streak */}
-          <View className="flex-1 rounded-xl p-2 items-center bg-white/20 border border-white/20 shadow shadow-black/10">
-            <View className="flex-row h-10 w-10 justify-between items-center">
-              <TrendingUp size={20} color={baseColors.pink} strokeWidth={2} />
+          <View className="flex-1 rounded-xl p-4 items-start justify-center bg-white/50 border border-white shadow shadow-black/10">
+            <View className="flex-row" style={{marginTop:-5}}>
+              <TrendingUp size={20} color={baseColors.lilac} strokeWidth={2} style={{ marginRight: 6, marginTop:3 }} />
               <Text className="text-lg font-bold text-black">{data.longestStreak}</Text>
             </View>
             <Text className="text-xs text-black/80 text-center">Bester Streak</Text>
           </View>
 
           {/* Total Chats */}
-          <View className="flex-1 rounded-xl p-2 items-center bg-white/20 border border-white/20 shadow shadow-black/10">
-            <View className="flex-row h-10 w-10 justify-between items-center">
-              <Calendar size={20} color={baseColors.pink} strokeWidth={2} />
+          <View className="flex-1 rounded-xl p-4 items-start justify-center bg-white/50 border border-white shadow shadow-black/10">
+            <View className="flex-row" style={{marginTop:-5}}>
+              <Calendar size={17} color={baseColors.lilac} strokeWidth={2} style={{ marginRight: 6, marginTop:5 }} />
             <Text className="text-lg font-bold text-black">{data.totalChatsCompleted}</Text>
             </View>
             <Text className="text-xs text-black/80 text-center">Anzahl Chats</Text>

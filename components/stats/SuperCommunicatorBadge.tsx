@@ -1,4 +1,5 @@
 import baseColors from '@/baseColors.config';
+import { Image } from 'expo-image';
 import { Award } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -34,13 +35,26 @@ const LEVELS = [
 export default function SuperCommunicatorBadge({ data, onPress }: SuperCommunicatorBadgeProps) {
   if (!data) {
     return (
-      <TouchableOpacity 
-        style={styles.container} 
+      <TouchableOpacity
+        style={{
+          position: 'relative',
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: baseColors.white+'88',
+          paddingHorizontal: 12,
+          paddingVertical: 12,
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: '#fff',
+          marginBottom: 12,
+        }}
         onPress={onPress}
         activeOpacity={0.7}
       >
+        <Image source={require('@/assets/images/background-lilac.png')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
         <View style={styles.iconContainer}>
-          <Award size={20} color={baseColors.purple} strokeWidth={2} />
+          <Image source={require('@/assets/images/background-lilac.png')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }} />
+          <Award size={20} color={baseColors.lemonade} strokeWidth={2} />
         </View>
         <View style={styles.content}>
           <Text style={styles.title}>Anfänger*in</Text>
@@ -55,39 +69,58 @@ export default function SuperCommunicatorBadge({ data, onPress }: SuperCommunica
   const isMaxLevel = data.currentLevel === 10;
 
   return (
-    <TouchableOpacity 
-      style={styles.container} 
+    <TouchableOpacity
+      style={{
+        position: 'relative',
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: baseColors.white+'88',
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#fff',
+        marginBottom: 12,
+      }}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <View style={styles.iconContainer}>
-        <Award 
-          size={20} 
-          color={baseColors.purple} 
-          strokeWidth={2} 
-          fill={baseColors.purple} 
-          fillOpacity={0.2} 
+      <View style={{
+        width: 40,
+        height: 40,
+        borderRadius: 999,
+        backgroundColor: baseColors.lilac,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+        overflow: 'hidden',
+      }}>
+        <Image source={require('@/assets/images/background-lilac.png')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }} />
+        <Award
+          size={20}
+          color={baseColors.lemonade}
+          strokeWidth={2}
         />
       </View>
       <View style={styles.content}>
         <Text style={styles.title}>{currentLevelInfo.name}</Text>
         {!isMaxLevel && (
           <>
-            
+
             {/* Progress Bar */}
             <View className='flex-row items-center justify-between my-1'>
-              <View className='flex-1 h-3 bg-black/10 rounded-full overflow-hidden mr-2'>
-                <View 
+              <View className='flex-1 h-3 rounded-full overflow-hidden mr-2' style={{ backgroundColor: baseColors.background }}>
+                <View
                   className='h-full rounded-full flex-row items-center justify-end pr-1'
-                  style={{ width: `${data.progressPercentage}%`, backgroundColor: baseColors.purple }}
+                  style={{ width: `${data.progressPercentage}%`, backgroundColor: baseColors.lilac }}
                 >
                   <Text className='text-[9px] font-medium text-white'>{Math.round(data.progressPercentage)}%</Text>
                 </View>
               </View>
             </View>
             <View className='flex-row items-center justify-between'>
-            <Text className='text-xs font-medium text-black/80'>{data.totalPoints.toLocaleString()} Punkte</Text>
-            <Text className='text-xs font-medium text-black/80'>{data.pointsNeededForNextLevel} bis {nextLevelInfo?.name}</Text>
+              <Text className='text-xs font-medium text-black/80'>{data.totalPoints.toLocaleString()} Punkte</Text>
+              <Text className='text-xs font-medium text-black/80'>{data.pointsNeededForNextLevel} bis {nextLevelInfo?.name}</Text>
             </View>
           </>
         )}
@@ -100,17 +133,6 @@ export default function SuperCommunicatorBadge({ data, onPress }: SuperCommunica
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.05)',
-    marginBottom: 12,
-  },
   iconContainer: {
     width: 40,
     height: 40,
@@ -119,6 +141,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    overflow: 'hidden',
+    position: 'relative',
   },
   content: {
     flex: 1,
@@ -156,7 +180,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: baseColors.purple,
+    backgroundColor: baseColors.lilac,
     borderRadius: 4,
   },
   progressPercentage: {

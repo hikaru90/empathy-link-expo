@@ -1,4 +1,4 @@
-import baseColorsConfig from '@/baseColors.config';
+import { default as baseColors, default as baseColorsConfig } from '@/baseColors.config';
 import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
@@ -22,12 +22,12 @@ interface ColorConfig {
 
 export default function GradientImage({ style, fast = false, children }: GradientImageProps) {
   const [containerWidth, setContainerWidth] = useState(0);
-  const duration = fast ? 2000 : 6000;
+  const duration = fast ? 6000 : 12000;
 
   const colors: ColorConfig[] = [
-    { colorName: 'rose', color: '#F0BADA', size: 3, x: 0, y: 50, z: 1, delay: 0, opacity: 0.6 },
-    { colorName: 'forest', color: '#17545A', size: 2, x: 0, y: 80, z: 0, delay: duration / 3, opacity: 0.2 },
-    { colorName: 'orange', color: '#FF9C34', size: 2, x: 50, y: 20, z: 2, delay: (duration * 2) / 3, opacity: 0.8 },
+    { colorName: 'rose', color: baseColors.lilac, size: 5, x: 0, y: 50, z: 1, delay: 0, opacity: 0.6 },
+    { colorName: 'forest', color: baseColors.purple, size: 3, x: 0, y: 80, z: 0, delay: duration / 3, opacity: 0.2 },
+    { colorName: 'orange', color: baseColors.rose, size: 2, x: 50, y: 20, z: 2, delay: (duration * 2) / 3, opacity: 0.8 },
   ];
 
   return (
@@ -126,8 +126,8 @@ function AnimatedOrb({ color, containerWidth, duration }: AnimatedOrbProps) {
           <Defs>
             <RadialGradient id={`grad-${color.colorName}`} cx="50%" cy="50%" r="50%">
               <Stop offset="0%" stopColor={color.color} stopOpacity={1} />
-              <Stop offset="40%" stopColor={color.color} stopOpacity={0.5} />
-              <Stop offset="75%" stopColor={color.color} stopOpacity={0.2} />
+              <Stop offset="40%" stopColor={color.color} stopOpacity={0.8} />
+              <Stop offset="75%" stopColor={color.color} stopOpacity={0.3} />
               <Stop offset="100%" stopColor={color.color} stopOpacity={0} />
             </RadialGradient>
           </Defs>
@@ -142,15 +142,15 @@ const styles = StyleSheet.create({
   container: {
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: baseColorsConfig.lilac, // lilac background
+    backgroundColor: baseColorsConfig.forest, // lilac background
   },
   orbContainer: {
     position: 'absolute',
   },
   orbInner: {
     position: 'relative',
-    width: 1,
-    height: 1,
+    width: 8,
+    height: 8,
   },
   orb: {
     position: 'absolute',

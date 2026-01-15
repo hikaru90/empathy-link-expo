@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
 import StatsSuperCommunicator, { type SuperCommunicatorData } from '@/components/stats/StatsSuperCommunicator';
@@ -74,12 +73,6 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <LinearGradient
-          colors={[baseColors.background, 'rgba(231, 217, 249, 0.8)', 'rgba(231, 217, 249, 0)']}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={styles.headerGradient}
-        />
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => {
@@ -130,19 +123,13 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     position: 'relative',
   },
-  headerGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    zIndex: -1,
-  },
   backButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: baseColors.white + '88',
+    borderWidth: 1,
+    borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -192,6 +179,7 @@ const styles = StyleSheet.create({
   sectionDescription: {
     fontSize: 14,
     color: '#666',
+    fontWeight: '500',
     marginBottom: 8,
   },
 });

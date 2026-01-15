@@ -227,9 +227,9 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
               }`}
             disabled={isLoadingData}
           >
-            <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: baseColors.lilac }}>
+            <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: feelingSelectorVisible ? baseColors.white : baseColors.forest+'33' }}>
               <Heart
-                size={12} color={baseColors.pink} fill={baseColors.pink}
+                size={14} color='transparent' fill={feelingSelectorVisible ? baseColors.lilac : baseColors.forest+'33'}
               />
             </View>
             <Text className={`text-sm font-medium`}>
@@ -245,9 +245,9 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
               }`}
             disabled={isLoadingData}
           >
-            <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: baseColors.lilac }}>
+            <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: needSelectorVisible ? baseColors.white : baseColors.forest+'33' }}>
               <Swirl
-                size={12} color={baseColors.forest}
+                size={12} color={needSelectorVisible ? baseColors.forest : baseColors.forest+'55'}
               />
             </View>
             <Text className={`text-sm font-medium`}>
@@ -262,8 +262,8 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
           className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
           style={{
             backgroundColor: isSending || !text.trim() 
-              ? '#dddddd' 
-              : `${baseColors.lilac}`
+              ? baseColors.forest+'33'
+              : `${baseColors.forest}`
           }}
           activeOpacity={0.7}
         >

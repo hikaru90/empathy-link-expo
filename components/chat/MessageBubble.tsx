@@ -43,10 +43,10 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   // Get path marker icon based on type
   const getPathMarkerIcon = () => {
     if (!message.pathMarker) return null;
-    const iconProps = { size: 14, color: '#fff' };
+    const iconProps = { size: 14, color: baseColors.lemonade };
     
     switch (message.pathMarker.type) {
-      case 'path_start': return <Play size={10} color="white" strokeWidth={2} />;
+      case 'path_start': return <Play size={10} color={baseColors.lemonade} fill={baseColors.lemonade} strokeWidth={2} />;
       case 'path_switch': return <RefreshCw size={10} color="white" strokeWidth={2} />;
       case 'path_end': return <Square size={10} color="white" strokeWidth={2} />;
       default: return null;
@@ -79,7 +79,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       {/* Path marker indicator */}
       {hasPathMarker && message.pathMarker ? (
         <View style={styles.pathMarker}>
-          <View style={{ backgroundColor: baseColors.lilac, borderRadius: 12, padding: 2 }}>
+          <View style={{ borderRadius: 12, padding: 0 }}>
             {getPathMarkerIcon()}
           </View>
           <Text style={styles.pathMarkerText}>
@@ -150,7 +150,8 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     paddingRight: 12,
     paddingVertical: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: baseColors.black+'11',
+    boxShadow: 'inset 0 0 10px 0 '+baseColors.black+'33',
     borderRadius: 12,
     marginBottom: 8,
     alignSelf: 'center',

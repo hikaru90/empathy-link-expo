@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, ImageBackground, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import jungleImage from '@/assets/images/Jungle.jpg';
 import baseColors from '@/baseColors.config';
 import ChatAnalysisModal from '@/components/chat/ChatAnalysisModal';
 import MessageBubble from '@/components/chat/MessageBubble';
@@ -11,7 +12,8 @@ import Header from '@/components/Header';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { ChatProvider, useChat } from '@/hooks/use-chat';
 import { LinearGradient } from 'expo-linear-gradient';
-import { SquareCheck } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
+import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 
 function ChatContent() {
   const { history, isLoading, error, initializeChat, isSending, finishChat, isAnalyzing, chatId } = useChat();
@@ -132,12 +134,35 @@ function ChatContent() {
     );
   }
 
+  const gradientSize = 500;
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'android' ? 70 : 0}
     >
+      <View style={{ position: 'absolute', top: -gradientSize / 3, left: -gradientSize / 3, right: 0, bottom: 0, zIndex: -1}}>
+
+        <Svg height={gradientSize} width={gradientSize}>
+          <Defs>
+            <RadialGradient
+              id="grad"
+              cx={gradientSize / 2} 
+              cy={gradientSize / 2}
+              rx={gradientSize / 2}
+              ry={gradientSize / 2}
+              fx={gradientSize / 2}
+              fy={gradientSize / 2}
+              gradientUnits="userSpaceOnUse"
+            >
+              <Stop offset="0" stopColor='white' stopOpacity="1" />
+              <Stop offset="1" stopColor='white' stopOpacity="0" />
+            </RadialGradient>
+          </Defs>
+          <Ellipse cx={gradientSize / 2} cy={gradientSize / 2} rx={gradientSize / 2} ry={gradientSize / 2} fill="url(#grad)" />
+        </Svg>
+      </View>
       <FlatList
         ref={flatListRef}
         data={history || []}
@@ -156,7 +181,7 @@ function ChatContent() {
           styles.messageList,
           {
             paddingBottom: (feelingSelectorVisible || needSelectorVisible)
-              ? Platform.OS === 'web' ? 200 :  Platform.OS === 'ios' ? 380 : 320  // Extra padding when selectors are open
+              ? Platform.OS === 'web' ? 200 : Platform.OS === 'ios' ? 380 : 320  // Extra padding when selectors are open
               : Platform.OS === 'web' ? 60 : Platform.OS === 'ios' ? 260 : 180
           }
         ]}
@@ -179,11 +204,23 @@ function ChatContent() {
             {showFinishButton && (
               <View style={styles.finishButtonContainer}>
                 <TouchableOpacity
-                  style={styles.finishButton}
                   onPress={handleFinishChat}
                 >
-                  <Text style={styles.finishButtonText}>Chat abschließen & auswerten</Text>
-                  <SquareCheck size={16} color="#fff" style={styles.finishButtonIcon} />
+                  <ImageBackground source={jungleImage} resizeMode="cover" style={{
+                    width: '100%', height: '100%', flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 16,
+                    paddingVertical: 8,
+                    paddingLeft: 16,
+                    paddingRight: 8,
+                    borderRadius: 999,
+                    overflow: 'hidden',
+                    borderWidth: 1,
+                    borderColor: 'rgba(0, 0, 0, 0.1)',
+                  }}>
+                    <Text style={styles.finishButtonText}>Chat abschließen & auswerten</Text>
+                    <Check size={16} color="#fff" style={{ backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
+                  </ImageBackground>
                 </TouchableOpacity>
               </View>
             )}
@@ -192,14 +229,14 @@ function ChatContent() {
         style={styles.flatList}
         scrollEnabled={true}
       />
-        <LinearGradient
-          colors={[baseColors.background,'rgba(231, 217, 249, 0.8)', 'rgba(231, 217, 249, 0)']}
-          start={{ x: 0, y: 1 }}
-          end={{ x: 0, y: 0 }}
-          style={styles.gradient}
-        >
-        </LinearGradient>
-      <MessageInput 
+      <LinearGradient
+        colors={[baseColors.background, baseColors.background + 'ee', baseColors.background + '00']}
+        start={{ x: 0, y: 1 }}
+        end={{ x: 0, y: 0 }}
+        style={styles.gradient}
+      >
+      </LinearGradient>
+      <MessageInput
         onSelectorStateChange={(feelingVisible, needVisible) => {
           setFeelingSelectorVisible(feelingVisible);
           setNeedSelectorVisible(needVisible);
@@ -298,25 +335,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 16,
     marginBottom: 16,
-  },
-  finishButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 6,
-    paddingLeft: 16,
-    paddingRight: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    color: '#fff',
-    backgroundColor: baseColors.black,
+    overflow: 'hidden',
   },
   finishButtonText: {
     fontSize: 14,
     color: baseColors.offwhite,
-  },
-  finishButtonIcon: {
-    marginLeft: 4,
   },
 });

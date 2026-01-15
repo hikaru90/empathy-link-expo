@@ -1,4 +1,5 @@
 import baseColors from '@/baseColors.config';
+import { Image } from 'expo-image';
 import { Target, TrendingUp, Award } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -41,7 +42,8 @@ export default function StatsSuperCommunicator({ data }: StatsSuperCommunicatorP
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerIconContainer}>
-            <Target size={24} color={baseColors.purple} strokeWidth={2} />
+            <Image source={require('@/assets/images/background-lilac.png')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }} />
+            <Target size={24} color={baseColors.lilac} strokeWidth={2} />
           </View>
           <View style={styles.headerTextContainer}>
             <Text style={styles.title}>Super-Kommunikator</Text>
@@ -70,10 +72,11 @@ export default function StatsSuperCommunicator({ data }: StatsSuperCommunicatorP
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerIconContainer}>
-          <Award size={28} color={baseColors.purple} strokeWidth={2} fill={baseColors.purple} fillOpacity={0.2} />
-        </View>
+        <View style={styles.header}>
+          <View style={styles.headerIconContainer}>
+            <Image source={require('@/assets/images/background-lilac.png')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }} />
+            <Award size={28} color={baseColors.lemonade} strokeWidth={2} fill={baseColors.lilac} fillOpacity={0.2} />
+          </View>
         <View style={styles.headerTextContainer}>
           <Text style={styles.title}>Super-Kommunikator</Text>
           <Text style={styles.levelBadge}>{currentLevelInfo.name}</Text>
@@ -174,7 +177,7 @@ export default function StatsSuperCommunicator({ data }: StatsSuperCommunicatorP
       {data.recentPoints && data.recentPoints.length > 0 && (
         <View style={styles.recentActivitySection}>
           <View style={styles.recentActivityHeader}>
-            <TrendingUp size={16} color={baseColors.purple} strokeWidth={2} />
+            <TrendingUp size={16} color={baseColors.lilac} strokeWidth={2} />
             <Text style={styles.recentActivityTitle}>Letzte Aktivität</Text>
           </View>
           <View style={styles.recentActivityList}>
@@ -229,6 +232,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    overflow: 'hidden',
+    position: 'relative',
   },
   headerTextContainer: {
     flex: 1,
@@ -283,7 +288,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: baseColors.purple,
+    backgroundColor: baseColors.lilac,
     borderRadius: 6,
   },
   progressPercentage: {
@@ -328,11 +333,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   levelMarkerPast: {
-    borderColor: baseColors.purple,
-    backgroundColor: baseColors.purple,
+    borderColor: baseColors.lilac,
+    backgroundColor: baseColors.lilac,
   },
   levelMarkerCurrent: {
-    borderColor: baseColors.purple,
+    borderColor: baseColors.lilac,
     borderWidth: 3,
     backgroundColor: baseColors.lilac,
   },
@@ -350,7 +355,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: baseColors.purple,
+    backgroundColor: baseColors.lilac,
   },
   levelInfo: {
     flex: 1,
@@ -384,7 +389,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   connectorLinePast: {
-    backgroundColor: baseColors.purple,
+    backgroundColor: baseColors.lilac,
   },
   connectorLineCurrent: {
     backgroundColor: baseColors.lilac,

@@ -1,13 +1,14 @@
+import baseColors from '@/baseColors.config';
 import React from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 interface DonutChartProps {
   data: Array<{ value: string; count: number }>;
-  colors?: string[]; // Made optional since we'll use default colors
   showPercentage?: boolean; // Option to show percentage instead of total
   completedCount?: number; // For calculating percentage when showPercentage is true
   totalCount?: number; // For calculating percentage when showPercentage is true
+  defaultColors?: string[];
 }
 
 interface Segment {
@@ -17,16 +18,6 @@ interface Segment {
   count: number;
 }
 
-// Default color palette
-const defaultColors = [
-  '#F0BADA', // rose
-  '#DB79AA', // pink
-  '#080638', // black
-  '#17545A', // forest
-  '#D6BBFF', // lilac
-  '#A366FF', // purple
-  '#FF9C34', // orange
-];
 
 // Generate extended color array with progressively reduced opacity
 const generateColorArray = (baseColors: string[], count: number): string[] => {
@@ -58,11 +49,11 @@ const generateColorArray = (baseColors: string[], count: number): string[] => {
 
 export default function DonutChart({ 
   data, 
-  colors, 
   size = 160,
   showPercentage = false,
   completedCount,
-  totalCount
+  totalCount,
+  defaultColors
 }: DonutChartProps & { size?: number }) {
   const ringThickness = size * 0.12; // Scale thickness relative to size
   const centerX = size / 2;
@@ -85,7 +76,7 @@ export default function DonutChart({
             cx={centerX}
             cy={centerY}
             r={radius}
-            stroke="#e5e5e5"
+            stroke={baseColors.black+'11'}
             strokeWidth={ringThickness}
             fill="transparent"
           />
@@ -109,7 +100,7 @@ export default function DonutChart({
   const total = data.reduce((sum, item) => sum + item.count, 0);
 
   // Generate color array based on data length
-  const chartColors = colors || generateColorArray(defaultColors, data.length);
+  const chartColors = generateColorArray(defaultColors || [], data.length);
 
   // Calculate total available degrees (360 minus gaps)
   const totalGaps = gapDegrees * data.length;

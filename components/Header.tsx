@@ -1,3 +1,4 @@
+import FlameIconImage from '@/assets/icons/Flame.png';
 import baseColors from '@/baseColors.config';
 import { useAuth } from '@/hooks/use-auth';
 import { getAllAnalyses } from '@/lib/api/analysis';
@@ -6,14 +7,15 @@ import { getStreak, type StreakResponse } from '@/lib/api/streak';
 import { authClient } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/config';
 import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-calculator';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Bell, Brain, FileText, Flame, LogOut, UserRoundCog } from 'lucide-react-native';
+import { Bell, Brain, FileText, LogOut, UserRoundCog } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Animated, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import GradientImage from './GradientImage';
-import SuperCommunicatorBadge from './stats/SuperCommunicatorBadge';
+import SparklePill from './SparklePill';
 import StatsStreak from './stats/StatsStreak';
+import SuperCommunicatorBadge from './stats/SuperCommunicatorBadge';
 
 interface HeaderProps {
   className?: string;
@@ -31,8 +33,7 @@ export default function Header({ className }: HeaderProps) {
 
   // Animation for modal slide-up
   const slideAnim = useState(new Animated.Value(300))[0];
-  // Animation for tooltip fade
-  const tooltipOpacity = useState(new Animated.Value(0))[0];
+  const streakSlideAnim = useState(new Animated.Value(300))[0];
 
   useEffect(() => {
     fetchUnreadCount();
@@ -50,17 +51,15 @@ export default function Header({ className }: HeaderProps) {
 
   useEffect(() => {
     if (isStreakSheetOpen) {
-      // Animate tooltip fade in
-      Animated.spring(tooltipOpacity, {
-        toValue: 1,
+      Animated.spring(streakSlideAnim, {
+        toValue: 0,
         useNativeDriver: true,
         tension: 65,
         friction: 11,
       }).start();
     } else {
-      // Animate tooltip fade out
-      Animated.spring(tooltipOpacity, {
-        toValue: 0,
+      Animated.spring(streakSlideAnim, {
+        toValue: 300,
         useNativeDriver: true,
         tension: 65,
         friction: 11,
@@ -168,7 +167,7 @@ export default function Header({ className }: HeaderProps) {
       <View style={styles.nav}>
         <View style={styles.navBackground} className="pointer-events-none">
           <LinearGradient
-            colors={[baseColors.background, 'rgba(231, 217, 249, 0.8)', 'rgba(231, 217, 249, 0)']}
+            colors={[baseColors.background, baseColors.background+'ee', baseColors.background+'00']}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
             style={{ height: 100, position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: -1 }}
@@ -187,7 +186,8 @@ export default function Header({ className }: HeaderProps) {
         </View>
 
         {/* Logo/Sparkle Pill */}
-        <GradientImage style={styles.logo} fast />
+        {/* <GradientImage style={styles.logo} fast /> */}
+        <SparklePill />
 
         <View className="flex-row gap-2">
           {/* Streak Button */}
@@ -203,7 +203,9 @@ export default function Header({ className }: HeaderProps) {
             }}
             onPress={() => setIsStreakSheetOpen(true)}
           >
-            <Flame size={34} color={baseColors.pink} fill={baseColors.pink} style={{ marginTop: -4 }} />
+
+            <Image source={FlameIconImage} style={{ width: 34, height: 34 }} />
+
             {streakData && streakData.currentStreak > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>
@@ -249,7 +251,7 @@ export default function Header({ className }: HeaderProps) {
           >
             <View style={styles.drawerHandle} />
             <View style={styles.drawerHeader}>
-              <Text style={styles.drawerTitle}>User</Text>
+              <Text style={styles.drawerTitle}>Profil</Text>
               {user && (
                 <Text style={styles.drawerSubtitle}>{user.email}</Text>
               )}
@@ -325,73 +327,53 @@ export default function Header({ className }: HeaderProps) {
         </TouchableOpacity>
       </Modal>
 
-      {/* Streak Tooltip */}
-      {isStreakSheetOpen && (
-        <Modal
-          visible={isStreakSheetOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setIsStreakSheetOpen(false)}
+      {/* Streak Modal */}
+      <Modal
+        visible={isStreakSheetOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsStreakSheetOpen(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsStreakSheetOpen(false)}
         >
-          <TouchableOpacity
-            activeOpacity={1} style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0)' }}
-            onPress={() => setIsStreakSheetOpen(false)}
+          <Animated.View
+            style={[
+              styles.drawerContent,
+              { transform: [{ translateY: streakSlideAnim }] },
+            ]}
+            onStartShouldSetResponder={() => true}
           >
-            <Animated.View
-              style={[
-                styles.tooltipContent,
-                {
-                  opacity: tooltipOpacity,
-                  top: Platform.OS === 'ios' ? 78 : 58, // Position below header
-                  right: 20, // Align with right side buttons
-                  maxWidth: 320,
-                  backgroundColor: baseColors.rose,
-                },
-              ]}
-              onStartShouldSetResponder={() => true}
-            >
-              {/* Tooltip arrow */}
-              <View style={{
-                position: 'absolute',
-                top: -8,
-                right: 47,
-                width: 0,
-                height: 0,
-                borderLeftWidth: 8,
-                borderRightWidth: 8,
-                borderBottomWidth: 8,
-                borderLeftColor: 'transparent',
-                borderRightColor: 'transparent',
-                borderBottomColor: baseColors.rose,
-              }} />
-
+            <View style={styles.drawerHandle} />
+            <View style={styles.drawerHeader}>
+              <Text style={styles.drawerTitle}>Streak</Text>
+            </View>
+            <ScrollView style={styles.drawerBody} showsVerticalScrollIndicator={false}>
               {streakData ? (
-                <ScrollView style={{maxHeight: 400}} showsVerticalScrollIndicator={false}>
-                  <StatsStreak
-                    data={{
-                      currentStreak: streakData.currentStreak,
-                      longestStreak: streakData.longestStreak,
-                      lastChatDate: streakData.lastChatDate,
-                      totalChatsCompleted: streakData.totalChatsCompleted,
-                    }}
-                  />
-                </ScrollView>
+                <StatsStreak
+                  data={{
+                    currentStreak: streakData.currentStreak,
+                    longestStreak: streakData.longestStreak,
+                    lastChatDate: streakData.lastChatDate,
+                    totalChatsCompleted: streakData.totalChatsCompleted,
+                  }}
+                />
               ) : (
-                <View style={{maxHeight: 400}}>
-                  <Text style={styles.placeholderText}>Loading streak data...</Text>
-                </View>
+                <Text style={styles.placeholderText}>Loading streak data...</Text>
               )}
-            </Animated.View>
-          </TouchableOpacity>
-        </Modal>
-      )}
+            </ScrollView>
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
     </>
   );
 }
 
 const shadow = {
   // shadowColor: '#000',
-  shadowColor: baseColors.lilac,
+  shadowColor: baseColors.background,
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 1,
   shadowRadius: 20,
@@ -424,7 +406,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: baseColors.black,
+    backgroundColor: baseColors.forest,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -456,11 +438,11 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'flex-end',
   },
   drawerContent: {
-    backgroundColor: '#fff',
+    backgroundColor: baseColors.background,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxWidth: 600,
@@ -474,7 +456,7 @@ const styles = StyleSheet.create({
   drawerHandle: {
     width: 40,
     height: 4,
-    backgroundColor: '#e5e5e5',
+    backgroundColor: baseColors.black+'33',
     borderRadius: 2,
     alignSelf: 'center',
     marginTop: 8,
@@ -483,6 +465,7 @@ const styles = StyleSheet.create({
   drawerHeader: {
     paddingHorizontal: 16,
     paddingBottom: 16,
+    marginLeft: 8
   },
   drawerTitle: {
     fontSize: 20,
@@ -502,13 +485,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
+    backgroundColor: baseColors.white+'88',
+    paddingLeft: 16,
+    paddingRight: 12,
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   menuItemText: {
     fontSize: 14,
@@ -518,8 +502,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#000',
-    paddingHorizontal: 12,
+    backgroundColor: baseColors.forest,
+    paddingLeft: 16,
+    paddingRight: 12,
     paddingVertical: 10,
     borderRadius: 20,
     marginBottom: 8,
@@ -533,16 +518,5 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     marginTop: 32,
-  },
-  tooltipContent: {
-    position: 'absolute',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 12,
-    zIndex: 2000,
   },
 });

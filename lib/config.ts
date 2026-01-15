@@ -16,8 +16,8 @@ const BACKEND_PORT = process.env.EXPO_PUBLIC_BACKEND_PORT
 // Manual IP override for when auto-detection fails (e.g., tunnel mode)
 // Set this to your computer's IP address if you're using Expo tunnel mode
 // To find your IP: ipconfig getifaddr en0 (macOS) or ipconfig (Windows)
-const MANUAL_IP_OVERRIDE = '192.168.2.52'; // Your current work IP
-// const MANUAL_IP_OVERRIDE = '192.168.178.44'; // Your current home IP
+// const MANUAL_IP_OVERRIDE = '192.168.2.52'; // Your current work IP
+const MANUAL_IP_OVERRIDE = '192.168.2.30'; // Your current home IP
 
 /**
  * Dynamically detect the host machine's IP address from Expo's debugger connection
