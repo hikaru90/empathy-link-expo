@@ -8,7 +8,6 @@ import MessageBubble from '@/components/chat/MessageBubble';
 import MessageInput from '@/components/chat/MessageInput';
 import TypingIndicator from '@/components/chat/TypingIndicator';
 import GradientImage from '@/components/GradientImage';
-import Header from '@/components/Header';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { ChatProvider, useChat } from '@/hooks/use-chat';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -261,7 +260,6 @@ export default function ChatScreen() {
   if (isLoading) {
     return (
       <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
-        <Header />
         <View className="flex-1 justify-center items-center -mt-6">
           <GradientImage style={{ width: 40, height: 20, borderRadius: 16 }} fast />
           <Text className="text-gray-600 mt-2">Loading...</Text>
@@ -277,8 +275,6 @@ export default function ChatScreen() {
   return (
     <ChatProvider>
       <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
-        <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-        <Header />
         <ChatContent />
       </View>
     </ChatProvider>

@@ -1,6 +1,6 @@
 import baseColors from '@/baseColors.config';
 import { Image } from 'expo-image';
-import { Target, TrendingUp, Award } from 'lucide-react-native';
+import { Award, Target, TrendingUp } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -209,14 +209,6 @@ export default function StatsSuperCommunicator({ data }: StatsSuperCommunicatorP
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
-    backgroundColor: baseColors.offwhite,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
-    overflow: 'hidden',
-    padding: 20,
     marginBottom: 16,
   },
   header: {

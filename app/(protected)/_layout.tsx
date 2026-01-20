@@ -1,7 +1,7 @@
-import { Redirect, Stack } from 'expo-router';
-import React from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { ChatProvider } from '@/hooks/use-chat';
+import { Redirect, Stack } from 'expo-router';
+import React from 'react';
 
 export default function ProtectedLayout() {
   const { user, isLoading } = useAuth();
@@ -23,6 +23,8 @@ export default function ProtectedLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
+          animation: 'fade',
+                  animationDuration: 400,
         }}
       >
         <Stack.Screen name="(tabs)" />
@@ -31,6 +33,8 @@ export default function ProtectedLayout() {
         <Stack.Screen name="memories" />
         <Stack.Screen name="modal" />
         <Stack.Screen name="conflict-resolutions" />
+        <Stack.Screen name="chat-settings" />
+        <Stack.Screen name="profile" />
       </Stack>
     </ChatProvider>
   );

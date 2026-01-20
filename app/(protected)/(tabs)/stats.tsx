@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
 import GradientImage from '@/components/GradientImage';
-import Header from '@/components/Header';
 import StatsBlindSpots from '@/components/stats/StatsBlindSpots';
 import StatsChatOverview from '@/components/stats/StatsChatOverview';
 import StatsConflictResolution from '@/components/stats/StatsConflictResolution';
@@ -181,7 +180,6 @@ export default function StatsScreen() {
   if (isLoading || loadingData) {
     return (
       <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
-        <Header />
         <View className="flex-1 justify-center items-center -mt-6">
           <GradientImage style={{ width: 40, height: 20, borderRadius: 16 }} fast />
           <Text className="text-gray-600 mt-2">Loading...</Text>
@@ -196,8 +194,6 @@ export default function StatsScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      <Header />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {error ? (
           <Text style={styles.errorText}>{error}</Text>

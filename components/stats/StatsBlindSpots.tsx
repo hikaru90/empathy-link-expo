@@ -112,7 +112,17 @@ export default function StatsBlindSpots() {
         <View className="items-center justify-center py-3">
           <Eye size={32} color={baseColors.lilac} strokeWidth={1.5} />
           <Text className="text-base text-gray-700 text-center mt-3 leading-6">
-            {insight?.message || 'Starte deine erste Konversation, um Muster und Blind Spots zu erkennen.'}
+            {insight?.message || 'Klicke auf "Neu generieren" um deine erste Analyse zu erstellen.'}
+          </Text>
+        </View>
+
+        {/* Info message about manual generation */}
+        <View
+          className="mt-4 p-3 rounded-xl"
+          style={{ backgroundColor: baseColors.lilac + '15' }}
+        >
+          <Text className="text-sm text-gray-700 text-center leading-5">
+            💡 Die Analyse wird nicht automatisch erstellt. Klicke auf den Button "Neu generieren" oben rechts, um eine Analyse zu erstellen.
           </Text>
         </View>
 
@@ -123,8 +133,8 @@ export default function StatsBlindSpots() {
           </Text>
         )}
 
-        {/* Generate Button for empty state - show for admins */}
-        {insight?.isAdmin && (
+        {/* Generate Button for empty state - show if canGenerateNew is true */}
+        {insight?.canGenerateNew && (
           <Pressable
             onPress={handleGenerateInsight}
             disabled={isGenerating}
@@ -145,7 +155,7 @@ export default function StatsBlindSpots() {
               <>
                 <RefreshCw size={16} color="white" strokeWidth={2} />
                 <Text className="text-sm font-semibold text-white ml-2">
-                  Neue Analyse erstellen (Admin)
+                  Neue Analyse erstellen
                 </Text>
               </>
             )}
@@ -190,15 +200,31 @@ export default function StatsBlindSpots() {
       {/* Weekly Limit Notice */}
       {insight.nextAvailableDate && insight.daysUntilNext !== undefined && insight.daysUntilNext > 0 && (
         <View
-          className="mb-4 p-3 rounded-xl flex-row items-center"
+          className="mb-4 p-3 rounded-xl"
           style={{ backgroundColor: baseColors.orange + '30' }}
         >
-          <Clock size={16} color={baseColors.orange} strokeWidth={2} />
-          <Text className="text-sm ml-2 flex-1 leading-[18px]" style={{ color: '#B85C00' }}>
-            Nächste Analyse {insight.daysUntilNext === 1
-              ? 'morgen'
-              : `in ${insight.daysUntilNext} Tagen`} verfügbar
-            
+          <View className="flex-row items-center mb-1">
+            <Clock size={16} color={baseColors.orange} strokeWidth={2} />
+            <Text className="text-sm ml-2 flex-1 leading-[18px]" style={{ color: '#B85C00' }}>
+              Nächste Analyse {insight.daysUntilNext === 1
+                ? 'morgen'
+                : `in ${insight.daysUntilNext} Tagen`} verfügbar
+            </Text>
+          </View>
+          <Text className="text-xs ml-6 leading-4" style={{ color: '#B85C00' }}>
+            Klicke auf "Neu generieren" um eine neue Analyse zu erstellen.
+          </Text>
+        </View>
+      )}
+
+      {/* Info message when new analysis is available */}
+      {insight.canGenerateNew && (!insight.nextAvailableDate || insight.daysUntilNext === 0) && insight.message && (
+        <View
+          className="mb-4 p-3 rounded-xl"
+          style={{ backgroundColor: baseColors.lilac + '15' }}
+        >
+          <Text className="text-sm text-gray-700 leading-5">
+            💡 {insight.message}
           </Text>
         </View>
       )}

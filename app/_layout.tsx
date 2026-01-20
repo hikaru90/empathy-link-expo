@@ -56,6 +56,8 @@ export default function RootLayout() {
               <Stack
                 screenOptions={{
                   contentStyle: { backgroundColor: baseColors.background },
+                  animation: 'fade',
+                  animationDuration: 400,
                 }}
               >
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />

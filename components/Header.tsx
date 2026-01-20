@@ -21,7 +21,7 @@ interface HeaderProps {
   className?: string;
 }
 
-export default function Header({ className }: HeaderProps) {
+function Header({ className }: HeaderProps) {
   const { user, signOut } = useAuth();
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -162,9 +162,14 @@ export default function Header({ className }: HeaderProps) {
     router.push('/profile');
   }
 
+  function handleChatSettingsNavigation() {
+    setIsUserMenuOpen(false);
+    router.push('/chat-settings');
+  }
+
   return (
     <>
-      <View style={styles.nav}>
+      <View style={styles.nav} pointerEvents="box-none">
         <View style={styles.navBackground} className="pointer-events-none">
           <LinearGradient
             colors={[baseColors.background, baseColors.background+'ee', baseColors.background+'00']}
@@ -271,16 +276,19 @@ export default function Header({ className }: HeaderProps) {
                 <Brain size={16} color="#000" />
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              {/* <TouchableOpacity 
                 style={styles.menuItem}
                 onPress={handleProfileNavigation}
               >
                 <Text style={styles.menuItemText}>Profil</Text>
                 <UserRoundCog size={16} color="#000" />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
-              <TouchableOpacity style={styles.menuItem}>
-                <Text style={styles.menuItemText}>Chat Settings</Text>
+              <TouchableOpacity 
+                style={styles.menuItem}
+                onPress={handleChatSettingsNavigation}
+              >
+                <Text style={styles.menuItemText}>Chat-Einstellungen</Text>
                 <FileText size={16} color="#000" />
               </TouchableOpacity>
 
@@ -520,3 +528,5 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
 });
+
+export default React.memo(Header);

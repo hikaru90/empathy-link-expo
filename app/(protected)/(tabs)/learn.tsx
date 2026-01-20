@@ -181,7 +181,6 @@ export default function LearnScreen() {
   if (isLoading) {
     return (
       <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
-        <Header />
         <View className="flex-1 justify-center items-center -mt-6">
           <GradientImage style={{ width: 40, height: 20, borderRadius: 16 }} fast />
           <Text className="text-gray-600 mt-2">Laden</Text>
@@ -238,7 +237,6 @@ export default function LearnScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
-      <Header />
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}

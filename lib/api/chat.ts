@@ -271,3 +271,34 @@ export async function extractMemories(): Promise<{ success: boolean }> {
     body: JSON.stringify({}),
   });
 }
+
+export interface ChatSettings {
+  aiAnswerLength: 'short' | 'medium' | 'long';
+  toneOfVoice: 'heartfelt' | 'analytical';
+  nvcKnowledge: 'beginner' | 'intermediate' | 'advanced';
+}
+
+/**
+ * Get user chat settings
+ */
+export async function getChatSettings(): Promise<ChatSettings> {
+  return authenticatedFetch<ChatSettings>(`${API_BASE}/api/user/chat-settings`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+}
+
+/**
+ * Update user chat settings
+ */
+export async function updateChatSettings(settings: ChatSettings): Promise<{ success: boolean; message?: string }> {
+  return authenticatedFetch<{ success: boolean; message?: string }>(`${API_BASE}/api/user/chat-settings`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(settings),
+  });
+}

@@ -1,12 +1,13 @@
 import { Tabs } from 'expo-router';
 import { BarChart3, Book, BotMessageSquare, Users } from 'lucide-react-native';
 import React from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, StatusBar, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import InvertedBorder from '@/assets/icons/InvertedBorder';
 import baseColors from '@/baseColors.config';
 import { HapticTab } from '@/components/haptic-tab';
+import Header from '@/components/Header';
 
 const ICON_SIZE = 18;
 
@@ -41,6 +42,10 @@ export default function TabLayout() {
   
   return (
     <View style={{ flex: 1 }}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1001 }}>
+        <Header />
+      </View>
       {/* Add your custom view here */}
       <InvertedBorder color={baseColors.white} style={{ zIndex: 1002, position: 'absolute', bottom: Platform.OS === 'android' ? 70 + tabBarBottom : 70, left: 0, height: 28, width: 28 }} />
       <InvertedBorder color={baseColors.white} style={{ zIndex: 1002, position: 'absolute', bottom: Platform.OS === 'android' ? 70 + tabBarBottom : 70, right: 0, height: 28, width: 28, transform: [{ scaleX: -1 }] }} />
@@ -50,6 +55,8 @@ export default function TabLayout() {
             tabBarInactiveTintColor: '#999999',
             headerShown: false,
             tabBarButton: HapticTab,
+            animation: 'fade',
+            animationDuration: 400,
             tabBarStyle: {
               backgroundColor: baseColors.white,
               borderTopColor: 'transparent',

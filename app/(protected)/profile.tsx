@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -73,6 +74,19 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <LinearGradient
+          colors={[baseColors.background, baseColors.background + '00']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 80,
+            zIndex: -1,
+          }}
+        />
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => {
@@ -97,10 +111,6 @@ export default function ProfileScreen() {
       >
         <View style={styles.sectionsContainer}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Super-Kommunikator</Text>
-            <Text style={styles.sectionDescription}>
-              Verfolge deinen Fortschritt auf dem Weg zur Kommunikationsmeisterschaft. Jeder Chat und jede Lerneinheit bringt dich weiter.
-            </Text>
             <StatsSuperCommunicator data={superCommunicatorData} />
           </View>
         </View>
@@ -117,25 +127,23 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    gap: 8,
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' || Platform.OS === 'android' ? 58 : 16,
     paddingBottom: 16,
-    position: 'relative',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
   },
   backButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: baseColors.white + '88',
-    borderWidth: 1,
-    borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
   },
   headerTitle: {
@@ -144,14 +152,14 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   headerSpacer: {
-    width: 32,
+    flex: 1,
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 40 : 0,
+    paddingTop: Platform.OS === 'android' ? 120 : 80,
     paddingBottom: 40,
   },
   loadingContainer: {
