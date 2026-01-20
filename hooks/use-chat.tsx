@@ -144,6 +144,29 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       setHistory(result.history);
 
       console.log('Message sent, AI responded');
+
+      // Extract memories after each message - the AI (via system instruction) decides what to store
+      // This works for both direct memory requests and implicit memory-worthy content
+      // 
+      // CRITICAL BUG: The backend system instruction incorrectly switches to the "memory" path
+      // when the user asks to STORE a memory. This is WRONG behavior.
+      // 
+      // CORRECT behavior should be:
+      // - Storing memories: "remember X" / "merke dir X" → 
+      //   * DO NOT switch to memory path
+      //   * DO NOT recall/show existing memories
+      //   * Just acknowledge and extract/store the new memory silently
+      //   * Stay in current conversation path
+      // 
+      // - Recalling memories: "what do you remember" / "was erinnerst du dich" / "zeig mir Erinnerungen" → 
+      //   * DO switch to memory path
+      //   * Show/recall existing memories
+      // 
+      // The backend system instruction must be updated to fix this path switching logic.
+      chatApi.extractMemories().catch(err => {
+        console.error('Failed to extract memories:', err);
+        // Don't fail the whole operation if memory extraction fails
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       setError(errorMessage);

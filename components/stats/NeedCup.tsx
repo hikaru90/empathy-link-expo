@@ -1,5 +1,5 @@
 import baseColors from '@/baseColors.config';
-import { getTextColorForBackground } from '@/lib/utils/color-contrast';
+import { getContrastRatio, getTextColorForBackground } from '@/lib/utils/color-contrast';
 import React, { useCallback, useRef, useState } from 'react';
 import { Platform, Text, TouchableOpacity, View } from 'react-native';
 
@@ -18,9 +18,10 @@ interface NeedCupProps {
   lastUpdated?: string | null;
   opacity?: number; // For showing yesterday's values with reduced opacity
   lastFillLevel?: number; // Previous fill level to show behind current with 50% opacity
+  color?: string; // Color for the cup fill (from line chart colors)
 }
 
-export default function NeedCup({ trackedNeed, currentFillLevel = null, onFillLevelChange, onReplaceNeed, onCupPress, isEditMode = false, isSelected = false, lastUpdated, opacity = 1, lastFillLevel }: NeedCupProps) {
+export default function NeedCup({ trackedNeed, currentFillLevel = null, onFillLevelChange, onReplaceNeed, onCupPress, isEditMode = false, isSelected = false, lastUpdated, opacity = 1, lastFillLevel, color }: NeedCupProps) {
   const [fillLevel, setFillLevel] = useState<number | null>(currentFillLevel ?? null);
   const [hasSetValueInEditMode, setHasSetValueInEditMode] = useState(false);
   const cupRef = useRef<View>(null);
@@ -123,46 +124,99 @@ export default function NeedCup({ trackedNeed, currentFillLevel = null, onFillLe
   const lastFillHeight = lastFillPercentage > 0 ? Math.max(2, (cupHeight * lastFillPercentage) / 100) : 0;
 
   // Helper function to get text color based on background color with WCAG AA compliance
-  const getTextColorForFill = (percentage: number, fontSize: number, fontWeight: number): string => {
-    // Determine which color is being used
-    const fillColor = percentage > 50 
-      ? baseColors.forest 
-      : percentage > 25 
-      ? baseColors.orange 
-      : baseColors.bullshift;
-    
+  const getTextColorForFill = (fillColor: string, fontSize: number, fontWeight: number): string => {
     // Use WCAG-compliant contrast utility
     return getTextColorForBackground(fillColor, fontSize, fontWeight);
   };
 
+  // Use provided color from line chart, or fall back to fill-level-based colors if no color provided
   const currentFillColor = fillPercentage > 0 
-    ? (fillPercentage > 50 
+    ? (color || (fillPercentage > 50 
         ? baseColors.forest 
         : fillPercentage > 25 
         ? baseColors.orange 
-        : baseColors.bullshift)
+        : baseColors.bullshift))
     : null;
   
+  // For last fill color, use the same color as current if provided, otherwise use fill-level-based
   const lastFillColor = lastFillPercentage > 0
-    ? (lastFillPercentage > 50 
+    ? (color || (lastFillPercentage > 50 
         ? baseColors.forest 
         : lastFillPercentage > 25 
         ? baseColors.orange 
-        : baseColors.bullshift)
+        : baseColors.bullshift))
     : null;
   
+  // Helper to check if a color is dark (low luminance)
+  const isDarkColor = (hexColor: string): boolean => {
+    const cleanHex = hexColor.replace('#', '');
+    const fullHex = cleanHex.length === 3
+      ? cleanHex.split('').map(char => char + char).join('')
+      : cleanHex;
+    
+    if (fullHex.length !== 6) return false;
+    
+    const r = parseInt(fullHex.substring(0, 2), 16);
+    const g = parseInt(fullHex.substring(2, 4), 16);
+    const b = parseInt(fullHex.substring(4, 6), 16);
+    
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return false;
+    
+    // Calculate relative luminance
+    const normalize = (val: number) => {
+      const normalized = val / 255;
+      return normalized <= 0.03928
+        ? normalized / 12.92
+        : Math.pow((normalized + 0.055) / 1.055, 2.4);
+    };
+    
+    const luminance = 0.2126 * normalize(r) + 0.7152 * normalize(g) + 0.0722 * normalize(b);
+    
+    // Consider dark if luminance is below 0.5
+    return luminance < 0.5;
+  };
+
   // Calculate text color based on fill color with WCAG AA compliance
-  // Large text (16px, bold 700) needs 3:1 contrast, small text (8px, medium 500) needs 4.5:1
-  const currentTextColor = currentFillColor
-    ? getTextColorForFill(fillPercentage, 16, 700) // fontSize: 16, fontWeight: 700
-    : '#000';
+  // Large text (16px, bold 700) needs 3:1 contrast
+  // If fill is below 40% AND fill color is dark AND text is initially white, invert to black
+  const currentTextColor = (() => {
+    if (!currentFillColor) return '#000';
+    
+    // Calculate contrast for both white and black text against the fill color
+    const whiteContrast = getContrastRatio('#ffffff', currentFillColor);
+    const blackContrast = getContrastRatio('#000000', currentFillColor);
+    
+    // Minimum contrast for large bold text (16px, 700) is 3:1
+    const minContrast = 3.0;
+    
+    // Determine the best color based on contrast
+    let bestColor: string;
+    if (whiteContrast >= minContrast && blackContrast >= minContrast) {
+      // Both meet minimum - choose the one with better contrast
+      bestColor = whiteContrast > blackContrast ? '#ffffff' : '#000000';
+    } else if (whiteContrast >= minContrast) {
+      bestColor = '#ffffff';
+    } else if (blackContrast >= minContrast) {
+      bestColor = '#000000';
+    } else {
+      // Neither meets minimum - choose the one with better contrast anyway
+      bestColor = whiteContrast > blackContrast ? '#ffffff' : '#000000';
+    }
+    
+    // Only invert if: fill < 40% AND fill color is dark AND initial color is white
+    if (fillPercentage < 40 && isDarkColor(currentFillColor) && bestColor === '#ffffff') {
+      return '#000000';
+    }
+    
+    return bestColor;
+  })();
 
   // For lastTextColor: if current fill is below the last fill line, the text sits on current fill background
   // Otherwise it sits on transparent/white background
   const lastTextColor = (() => {
     if (fillPercentage >= lastFillPercentage && currentFillColor) {
       // Current fill is at or above last fill line, so text is on current fill color
-      return getTextColorForFill(fillPercentage, 8, 500);
+      return getTextColorForFill(currentFillColor, 8, 500);
     } else if (lastFillColor) {
       // Current fill is below, text is on transparent background
       // Use the last fill color for the text to maintain color coding
@@ -175,7 +229,7 @@ export default function NeedCup({ trackedNeed, currentFillLevel = null, onFillLe
   const lastFillBorderColor = (() => {
     if (fillPercentage >= lastFillPercentage && currentFillColor) {
       // Border is on top of current fill, use contrast color
-      const contrastColor = getTextColorForBackground(currentFillColor, 8, 500);
+      const contrastColor = getTextColorForFill(currentFillColor, 8, 500);
       return contrastColor === '#FFFFFF' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)';
     } else {
       // Border is on transparent/white background
@@ -199,52 +253,24 @@ export default function NeedCup({ trackedNeed, currentFillLevel = null, onFillLe
             className={`w-20 relative`}
             style={{ height: cupHeight }}
           >
-            <View className="w-10 h-2 bg-black rounded absolute bottom-0 left-1/2 -translate-x-1/2"></View>
             <View
               ref={cupRef}
-              className={`w-full h-full border-b-[8px] border-l-2 border-r-2 border-black rounded-b-[50px] overflow-hidden relative bg-transparent`}
+              className={`w-full h-full bg-white/40 border border-white rounded-t-[16px] rounded-b-[50px] overflow-hidden relative`}
             >
               {/* Current fill - show filled area in both modes */}
-              {fillPercentage > 0 && fillHeight > 0 && (
+              {fillPercentage > 0 && fillHeight > 0 && currentFillColor && (
                 <View
                   className="absolute bottom-0 left-0 right-0 min-h-[1px]"
                   style={{
                     height: fillHeight,
-                    backgroundColor: fillPercentage > 50
-                      ? baseColors.forest
-                      : fillPercentage > 25
-                      ? baseColors.orange
-                      : baseColors.bullshift,
+                    backgroundColor: currentFillColor,
                   }}
                 />
-              )}
-              {/* Last fill level - shown as a border at the top */}
-              {lastFillPercentage > 0 && lastFillHeight > 0 && (
-                <>
-                  <View
-                    className="absolute left-0 right-0 border-t h-0"
-                    style={{
-                      bottom: lastFillHeight,
-                      borderColor: lastFillBorderColor,
-                    }}
-                  />
-                  {/* Small percentage text for old fill level - below the line, to the left */}
-                  <View
-                    className="absolute left-1 items-start justify-center"
-                    style={{
-                      bottom: lastFillHeight - 10,
-                    }}
-                  >
-                    <Text className="text-[8px] font-medium" style={{ color: lastTextColor }}>
-                      {Math.round(lastFillPercentage)}%
-                    </Text>
-                  </View>
-                </>
               )}
               {/* Current fill level text - big, in the middle (show in both modes) */}
               {fillPercentage > 0 && (
                 <View className="absolute top-[50%] left-0 right-0 items-center justify-center z-10">
-                  <Text className="text-base font-bold" style={{ color: currentTextColor }}>
+                  <Text className="text-base font-bold" style={{ color: currentTextColor,  }}>
                     {Math.round(fillPercentage)}%
                   </Text>
                 </View>

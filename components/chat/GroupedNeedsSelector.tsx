@@ -112,20 +112,30 @@ export default function GroupedNeedsSelector({
       scrollEventThrottle={16}
     >
       <View className="flex-row flex-wrap gap-2 px-3 py-3">
-        {groupedNeeds.map((category, catIndex) => (
-          <React.Fragment key={category.category}>
-            {/* Category Header */}
-            <TouchableOpacity
-              onPress={() => toggleCategory(category.category)}
-              className="rounded-full py-1 px-2 flex-row items-center gap-1"
-              style={getCategoryHeaderStyle(category.visible)}
-            >
-              <View
-                className=""
-                style={{ backgroundColor: baseColors.lilac }}
-              />
-              <Text className="text-black font-medium">{category.categoryDE}</Text>
-            </TouchableOpacity>
+        {groupedNeeds.map((category, catIndex) => {
+          // Check if any need in this category is selected
+          const hasSelectedNeed = category.needs.some(need => selectedNeedIds.includes(need.id));
+          
+          return (
+            <React.Fragment key={category.category}>
+              {/* Category Header */}
+              <TouchableOpacity
+                onPress={() => toggleCategory(category.category)}
+                className="rounded-full py-1 px-2 flex-row items-center gap-1"
+                style={getCategoryHeaderStyle(category.visible)}
+              >
+                {hasSelectedNeed && (
+                  <View
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: baseColors.lilac,
+                    }}
+                  />
+                )}
+                <Text className="text-black font-medium">{category.categoryDE}</Text>
+              </TouchableOpacity>
 
             {/* Category Needs */}
             {category.visible && category.needs.map((need) => {
@@ -152,8 +162,9 @@ export default function GroupedNeedsSelector({
                 </TouchableOpacity>
               );
             })}
-          </React.Fragment>
-        ))}
+            </React.Fragment>
+          );
+        })}
       </View>
     </ScrollView>
   );

@@ -286,7 +286,72 @@ export async function getNeedTimeseries(
 }
 
 /**
- * Update strategies for a fill level entry
+ * Get strategies for a tracked need
+ */
+export async function getTrackedNeedStrategies(trackedNeedId: string): Promise<{ strategies: string[]; doneStrategies: number[] }> {
+  try {
+    const url = `${API_BASE}/api/stats/tracked-needs/${trackedNeedId}/strategies`;
+    const result = await authClient.$fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (result.error) {
+      // If it's a 404, return empty arrays
+      const errorMessage = result.error?.message || String(result.error || '');
+      if (errorMessage.includes('404') || errorMessage.toLowerCase().includes('not found')) {
+        return { strategies: [], doneStrategies: [] };
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data = result.data as { strategies: string[]; doneStrategies?: number[] };
+    return {
+      strategies: data?.strategies || [],
+      doneStrategies: data?.doneStrategies || [],
+    };
+  } catch (error: any) {
+    // Handle 404 or not found errors - endpoint doesn't exist yet, return empty arrays
+    const errorMessage = error?.message || String(error || '');
+    const errorString = errorMessage.toLowerCase();
+    if (
+      errorString.includes('404') ||
+      errorString.includes('not found') ||
+      errorString.includes('cannot get') ||
+      error?.status === 404 ||
+      error?.statusCode === 404
+    ) {
+      console.warn(`Strategies endpoint not found for tracked need ${trackedNeedId}, returning empty arrays`);
+      return { strategies: [], doneStrategies: [] };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Update strategies for a tracked need
+ */
+export async function updateTrackedNeedStrategies(
+  trackedNeedId: string,
+  strategies: string[],
+  doneStrategies?: number[]
+): Promise<{ id: string; strategies: string[]; doneStrategies: number[] }> {
+  return authenticatedFetch<{ id: string; strategies: string[]; doneStrategies: number[] }>(
+    `${API_BASE}/api/stats/tracked-needs/${trackedNeedId}/strategies`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ strategies, doneStrategies }),
+    }
+  );
+}
+
+/**
+ * Update strategies for a fill level entry (deprecated - kept for backward compatibility)
  */
 export async function updateFillLevelStrategies(
   fillLevelId: string,
