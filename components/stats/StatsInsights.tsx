@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Check, Trash } from 'lucide-react-native';
+import { deleteMemory, deleteMemories } from '@/lib/api/memories';
 
 interface Memory {
   id: string;
@@ -12,38 +13,12 @@ interface Memory {
 
 interface StatsInsightsProps {
   data: Memory[];
+  onMemoriesUpdated?: () => void;
 }
 
-const ConfidenceBadge = ({ confidence }: { confidence: string }) => {
-  if (confidence === 'certain') {
-    return (
-      <View style={styles.confidenceBadge}>
-        <View style={[styles.confidenceBar, styles.confidenceBarGreen]} />
-        <View style={[styles.confidenceBar, styles.confidenceBarGreen]} />
-        <View style={[styles.confidenceBar, styles.confidenceBarGreen]} />
-      </View>
-    );
-  } else if (confidence === 'likely') {
-    return (
-      <View style={styles.confidenceBadge}>
-        <View style={[styles.confidenceBar, styles.confidenceBarBlue]} />
-        <View style={[styles.confidenceBar, styles.confidenceBarBlue]} />
-        <View style={[styles.confidenceBar, styles.confidenceBarGray]} />
-      </View>
-    );
-  } else {
-    return (
-      <View style={styles.confidenceBadge}>
-        <View style={[styles.confidenceBar, styles.confidenceBarOrange]} />
-        <View style={[styles.confidenceBar, styles.confidenceBarGray]} />
-        <View style={[styles.confidenceBar, styles.confidenceBarGray]} />
-      </View>
-    );
-  }
-};
-
-export default function StatsInsights({ data }: StatsInsightsProps) {
+export default function StatsInsights({ data, onMemoriesUpdated }: StatsInsightsProps) {
   const [selectedMemories, setSelectedMemories] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const relationshipInsights = data.filter(
     (memory) => memory.type === 'relationship' || memory.type === 'identity'
@@ -57,17 +32,55 @@ export default function StatsInsights({ data }: StatsInsightsProps) {
     }
   };
 
-  const deleteMemories = async () => {
-    // TODO: Implement deletion logic
-    console.log('Delete memories:', selectedMemories);
-    setSelectedMemories([]);
+  const handleDeleteMemories = async () => {
+    if (selectedMemories.length === 0) return;
+
+    console.log(`[StatsInsights] Deleting ${selectedMemories.length} memories:`, selectedMemories);
+    try {
+      setIsDeleting(true);
+      await deleteMemories(selectedMemories);
+      console.log('[StatsInsights] Bulk delete successful');
+      setSelectedMemories([]);
+      onMemoriesUpdated?.();
+    } catch (error) {
+      console.error('[StatsInsights] Failed to delete memories:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteSingle = async (memoryId: string) => {
+    console.log('[StatsInsights] handleDeleteSingle called with ID:', memoryId);
+    try {
+      console.log('[StatsInsights] Calling deleteMemory API with ID:', memoryId);
+      const result = await deleteMemory(memoryId);
+      console.log('[StatsInsights] Delete API call successful, result:', result);
+      onMemoriesUpdated?.();
+      console.log('[StatsInsights] onMemoriesUpdated callback called');
+    } catch (error) {
+      console.error('[StatsInsights] Failed to delete memory:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
+      console.error('[StatsInsights] Error details:', {
+        message: errorMessage,
+        error: error instanceof Error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        } : error,
+        memoryId,
+      });
+    }
   };
 
   return (
     <View>
       <View style={styles.headerActions}>
         {selectedMemories.length > 0 && (
-          <TouchableOpacity style={styles.deleteButton} onPress={deleteMemories}>
+          <TouchableOpacity 
+            style={styles.deleteButton} 
+            onPress={handleDeleteMemories}
+            disabled={isDeleting}
+          >
             <Text style={styles.deleteButtonText}>löschen</Text>
             <Trash size={16} color="#fff" />
           </TouchableOpacity>
@@ -97,14 +110,16 @@ export default function StatsInsights({ data }: StatsInsightsProps) {
             </TouchableOpacity>
 
             <View style={styles.memoryContent}>
-              <View style={styles.confidenceContainer}>
-                <Text style={styles.confidenceLabel}>Gewissheit</Text>
-                <ConfidenceBadge confidence={memory.confidence} />
-              </View>
-
               <Text style={styles.memoryKey}>{memory.key}</Text>
               <Text style={styles.memoryValue}>{memory.value}</Text>
             </View>
+
+            <TouchableOpacity
+              style={styles.deleteIconButton}
+              onPress={() => handleDeleteSingle(memory.id)}
+            >
+              <Trash size={18} color="#ef4444" />
+            </TouchableOpacity>
           </View>
         ))}
       </View>
@@ -167,55 +182,19 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   memoryContent: {
-    position: 'relative',
     flex: 1,
     paddingVertical: 8,
     gap: 8,
   },
-  confidenceContainer: {
-    position: 'absolute',
-    right: 0,
-    top: 8,
-    flexDirection: 'row',
+  deleteIconButton: {
+    padding: 8,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#fff',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  confidenceLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  confidenceBadge: {
-    flexDirection: 'row',
-    gap: 1,
-  },
-  confidenceBar: {
-    width: 8,
-    height: 12,
-    borderRadius: 4,
-  },
-  confidenceBarGreen: {
-    backgroundColor: '#10b981',
-    borderRightWidth: 1,
-    borderRightColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  confidenceBarBlue: {
-    backgroundColor: '#93c5fd',
-    borderRightWidth: 1,
-    borderRightColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  confidenceBarOrange: {
-    backgroundColor: '#f97316',
-  },
-  confidenceBarGray: {
-    backgroundColor: '#f5f5f5',
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(0, 0, 0, 0.02)',
   },
   memoryKey: {
-    maxWidth: '60%',
-    marginBottom: 16,
+    marginBottom: 8,
     color: '#666',
     fontSize: 14,
   },

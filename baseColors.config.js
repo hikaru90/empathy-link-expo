@@ -17,5 +17,6 @@ export default {
   purple: '#A366FF',
   orange: '#FF9C34',
   primary: '#A366FF', // Primary color (using purple)
-  black: '#021212'
+  black: '#021212',
+  brick: '#C62828'
 };
