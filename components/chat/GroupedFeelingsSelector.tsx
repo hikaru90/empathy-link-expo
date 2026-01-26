@@ -4,9 +4,10 @@
  */
 
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import type { Feeling } from '@/lib/api/chat';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { ScrollView, StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 interface GroupedFeelingsProps {
   feelings: Feeling[];
@@ -122,7 +123,7 @@ export default function GroupedFeelingsSelector({
   if (isLoading) {
     return (
       <View className="p-4 items-center">
-        <ActivityIndicator size="small" color={baseColors.lilac} />
+        <LoadingIndicator />
       </View>
     );
   }

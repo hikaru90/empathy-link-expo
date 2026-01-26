@@ -1,9 +1,10 @@
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import { authClient } from '@/lib/auth';
 import { BETTER_AUTH_URL } from '@/lib/config';
 import { Link, Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function VerifyEmailTokenScreen() {
@@ -164,7 +165,7 @@ export default function VerifyEmailTokenScreen() {
   if (authLoading) {
     return (
       <View className="flex-1 justify-center items-center" style={{ backgroundColor: baseColors.background }}>
-        <ActivityIndicator size="large" color={baseColors.primary} />
+        <LoadingIndicator />
       </View>
     );
   }
@@ -178,7 +179,7 @@ export default function VerifyEmailTokenScreen() {
     <View className="flex-1 justify-center px-6" style={{ backgroundColor: baseColors.background }}>
       {verificationStatus === 'idle' && isVerifying && (
         <View className="items-center">
-          <ActivityIndicator size="large" color={baseColors.primary} />
+          <LoadingIndicator />
           <Text className="text-gray-600 text-center mt-4">
             E-Mail wird verifiziert...
           </Text>
@@ -222,7 +223,7 @@ export default function VerifyEmailTokenScreen() {
               disabled={isVerifying}
             >
               {isVerifying ? (
-                <ActivityIndicator color="#ffffff" />
+                <LoadingIndicator inline />
               ) : (
                 <Text className="text-white text-center font-semibold text-lg">
                   Erneut versuchen

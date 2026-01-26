@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronDown, ChevronLeft, MessageSquare, Play, RefreshCw, Square } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 import { useAuthGuard } from '@/hooks/use-auth';
@@ -76,8 +77,7 @@ export default function AnalysisDetailScreen() {
   if (authLoading || isLoading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={baseColors.lilac} />
-        <Text style={styles.loadingText}>Lade Analyse...</Text>
+        <LoadingIndicator />
       </View>
     );
   }
@@ -283,7 +283,7 @@ export default function AnalysisDetailScreen() {
               disabled={isReopeningChat}
             >
               {isReopeningChat ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <LoadingIndicator inline />
               ) : (
                 <>
                   <MessageSquare size={16} color="#fff" />

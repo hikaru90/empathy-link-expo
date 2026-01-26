@@ -1,9 +1,11 @@
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import { generateBlindSpotsAnalysis, getBlindSpotsAnalysis, type BlindSpotInsight } from '@/lib/api/stats';
+import { ImageBackground } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Clock, Eye, Lightbulb, RefreshCw, TrendingUp } from 'lucide-react-native';
+import { Clock4, Eye, RefreshCcwDot, RefreshCw } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function StatsBlindSpots() {
   const [insight, setInsight] = useState<BlindSpotInsight | null>(null);
@@ -85,8 +87,7 @@ export default function StatsBlindSpots() {
         style={{ backgroundColor: baseColors.offwhite }}
       >
         <View className="items-center justify-center py-5">
-          <ActivityIndicator size="small" color={baseColors.lilac} />
-          <Text className="text-sm text-gray-600 mt-2">Analysiere deine Muster...</Text>
+          <LoadingIndicator />
         </View>
       </View>
     );
@@ -146,7 +147,7 @@ export default function StatsBlindSpots() {
           >
             {isGenerating ? (
               <>
-                <ActivityIndicator size="small" color="white" />
+                <LoadingIndicator inline />
                 <Text className="text-sm font-semibold text-white ml-2">
                   Erstelle Analyse...
                 </Text>
@@ -172,7 +173,7 @@ export default function StatsBlindSpots() {
     >
       {/* Header with Icon and Generate Button */}
       <View className="flex-row justify-between items-center mb-4">
-        <Eye size={28} color={baseColors.lilac} strokeWidth={1.5} />
+        <Text className="text-base font-semibold text-black">Muster</Text>
 
         {/* Generate Button - top right corner */}
         {(insight.canGenerateNew || insight.isAdmin) && (
@@ -184,7 +185,7 @@ export default function StatsBlindSpots() {
           >
             {isGenerating ? (
               <>
-                <ActivityIndicator size="small" color={baseColors.lilac} />
+                <LoadingIndicator inline />
                 <Text className="text-xs text-black ml-1">Erstelle...</Text>
               </>
             ) : (
@@ -200,20 +201,18 @@ export default function StatsBlindSpots() {
       {/* Weekly Limit Notice */}
       {insight.nextAvailableDate && insight.daysUntilNext !== undefined && insight.daysUntilNext > 0 && (
         <View
-          className="mb-4 p-3 rounded-xl"
-          style={{ backgroundColor: baseColors.orange + '30' }}
+          className="rounded-xl mb-4 overflow-hidden"
+          style={{ backgroundColor: baseColors.lilac }}
         >
-          <View className="flex-row items-center mb-1">
-            <Clock size={16} color={baseColors.orange} strokeWidth={2} />
-            <Text className="text-sm ml-2 flex-1 leading-[18px]" style={{ color: '#B85C00' }}>
-              Nächste Analyse {insight.daysUntilNext === 1
-                ? 'morgen'
-                : `in ${insight.daysUntilNext} Tagen`} verfügbar
-            </Text>
-          </View>
-          <Text className="text-xs ml-6 leading-4" style={{ color: '#B85C00' }}>
-            Klicke auf "Neu generieren" um eine neue Analyse zu erstellen.
-          </Text>
+          <ImageBackground source={require('@/assets/images/background-lilac-highres.png')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}></ImageBackground>
+            <View className="px-4 py-3">
+              <Text className="text-sm flex-1 leading-[18px]" style={{ color: baseColors.black }}>
+                Nächste Analyse {insight.daysUntilNext === 1
+                  ? 'morgen'
+                  : `in ${insight.daysUntilNext} Tagen`} verfügbar.
+                Klicke auf "Neu generieren" um eine neue Analyse zu erstellen.
+              </Text>
+            </View>
         </View>
       )}
 
@@ -253,15 +252,15 @@ export default function StatsBlindSpots() {
           {/* Patterns Section */}
           {insight.patterns && insight.patterns.length > 0 && (
             <View className="mb-4">
-              <View className="flex-row items-center mb-2">
-                <TrendingUp size={18} color={baseColors.lilac} strokeWidth={2} />
+              <View className="flex-row items-center mb-3">
+                <RefreshCcwDot size={18} color={baseColors.forest} strokeWidth={2} />
                 <Text className="text-sm font-semibold text-gray-700 ml-2">
                   Wiederkehrende Muster
                 </Text>
               </View>
               {insight.patterns.map((pattern, index) => (
-                <View key={index} className="flex-row mb-2 ml-1">
-                  <Text className="text-gray-600 mr-2">•</Text>
+                <View key={index} className="flex-row mb-2" style={{ marginLeft: 6 }}>
+                  <Text className="text-gray-600 mr-4">•</Text>
                   <Text className="text-sm text-gray-700 flex-1 leading-5">{pattern}</Text>
                 </View>
               ))}
@@ -271,12 +270,15 @@ export default function StatsBlindSpots() {
           {/* Situations Section */}
           {insight.situations && insight.situations.length > 0 && (
             <View className="mb-4">
-              <Text className="text-sm font-semibold text-gray-700 mb-2">
-                Typische Situationen
-              </Text>
+              <View className="flex-row items-center mb-3">
+                <Clock4 size={18} color={baseColors.forest} strokeWidth={2} />
+                <Text className="text-sm font-semibold text-gray-700 ml-2">
+                  Typische Situationen
+                </Text>
+              </View>
               {insight.situations.map((situation, index) => (
-                <View key={index} className="flex-row mb-2 ml-1">
-                  <Text className="text-gray-600 mr-2">•</Text>
+                <View key={index} className="flex-row mb-2" style={{ marginLeft: 6 }}>
+                  <Text className="text-gray-600 mr-4">•</Text>
                   <Text className="text-sm text-gray-700 flex-1 leading-5">{situation}</Text>
                 </View>
               ))}
@@ -287,11 +289,10 @@ export default function StatsBlindSpots() {
           {insight.advice && (
             <View
               className="p-4 rounded-xl"
-              style={{ backgroundColor: baseColors.lilac + '15' }}
+              style={{ backgroundColor: baseColors.black + '15' }}
             >
               <View className="flex-row items-center mb-2">
-                <Lightbulb size={18} color={baseColors.lilac} strokeWidth={2} />
-                <Text className="text-sm font-semibold ml-2" style={{ color: baseColors.lilac }}>
+                <Text className="text-sm font-semibold">
                   Empfehlung für dich
                 </Text>
               </View>

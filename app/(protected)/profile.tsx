@@ -2,9 +2,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import StatsSuperCommunicator, { type SuperCommunicatorData } from '@/components/stats/StatsSuperCommunicator';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { getAllAnalyses } from '@/lib/api/analysis';
@@ -59,8 +60,7 @@ export default function ProfileScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={baseColors.lilac} />
-          <Text style={styles.loadingText}>Lade Profil...</Text>
+          <LoadingIndicator />
         </View>
       </View>
     );

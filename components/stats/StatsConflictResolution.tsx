@@ -1,9 +1,10 @@
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import { getConflictResolutions, updateConflictResolution, type ConflictResolution } from '@/lib/api/conflict-resolution';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Archive, CheckCircle, Circle } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Animated, Dimensions, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Animated, Dimensions, Text, TouchableOpacity, View } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 
 interface RequestItem {
@@ -153,6 +154,13 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
     loadResolutions(true);
   }, []);
 
+  // Reload data when screen comes into focus (e.g., when returning from conflict-resolutions page)
+  useFocusEffect(
+    useCallback(() => {
+      loadResolutions(false);
+    }, [])
+  );
+
   const loadResolutions = async (isInitialLoad = false) => {
     try {
       if (isInitialLoad) {
@@ -250,7 +258,7 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
   if (loading) {
     return (
       <View className="p-5 items-center">
-        <ActivityIndicator size="small" color={baseColors.lilac} />
+        <LoadingIndicator />
       </View>
     );
   }
@@ -311,7 +319,7 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
             {totalCount > 0 && (
               <View className="flex-row items-center gap-2">
                 {updatingIds.size > 0 && (
-                  <ActivityIndicator size="small" color={baseColors.lilac} />
+                  <LoadingIndicator />
                 )}
                 <TouchableOpacity
                   className="px-3 py-1 rounded-full border border-black/10"

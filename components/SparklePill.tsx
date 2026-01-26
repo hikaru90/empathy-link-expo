@@ -2,11 +2,16 @@ import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 
+interface SparklePillProps {
+  width?: number;
+  height?: number;
+}
 
-export default function SparklePill() {
+export default function SparklePill(props: SparklePillProps = {}) {
+  const { width = 32, height = 16 } = props;
   const translateX = useRef(new Animated.Value(0)).current;
-  const [containerWidth, setContainerWidth] = useState(40);
-  const [containerHeight, setContainerHeight] = useState(20);
+  const [containerWidth, setContainerWidth] = useState(width);
+  const [containerHeight, setContainerHeight] = useState(height);
 
   useEffect(() => {
     if (containerWidth <= 0) return;
@@ -33,8 +38,8 @@ export default function SparklePill() {
   return (
     <View
       style={{
-        width: 32,
-        height: 16,
+        width: width,
+        height: height,
         overflow: 'hidden',
         backgroundColor: '#106869',
         position: 'relative',
@@ -42,9 +47,9 @@ export default function SparklePill() {
         boxShadow: '0 4px 12px 0 rgba(0, 0, 0, 0.2)',
       }}
       onLayout={(event) => {
-        const { width, height } = event.nativeEvent.layout;
-        setContainerWidth(width);
-        setContainerHeight(height);
+        const { width: layoutWidth, height: layoutHeight } = event.nativeEvent.layout;
+        setContainerWidth(layoutWidth);
+        setContainerHeight(layoutHeight);
       }}
     >
       <Animated.View

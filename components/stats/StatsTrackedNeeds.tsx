@@ -2,11 +2,12 @@ import jungleImage from '@/assets/images/Jungle.jpg';
 import purpleImageHighres from '@/assets/images/background-lilac-highres.png';
 import purpleImage from '@/assets/images/background-lilac.png';
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import { getNeeds, Need } from '@/lib/api/chat';
 import { deleteTrackedNeed, getCurrentFillLevelsWithTimestamps, getNeedTimeseries, getTrackedNeeds, getTrackedNeedStrategies, NeedTimeseriesData, saveFillLevelsSnapshot, saveTrackedNeeds, TrackedNeed, updateTrackedNeedStrategies } from '@/lib/api/stats';
 import { Check, ChevronLeft, ChevronsUpDown, ListFilter, Pencil, Plus, RotateCcw, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, ImageBackground, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Animated, ImageBackground, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import GroupedNeedsSelector from '../chat/GroupedNeedsSelector';
 import DateRangePicker from './DateRangePicker';
 import NeedCup from './NeedCup';
@@ -909,8 +910,7 @@ export default function StatsTrackedNeeds() {
           }}
         >
           <View className="p-10 items-center justify-center gap-3">
-            <ActivityIndicator size="small" color={baseColors.lilac} />
-            <Text className="text-sm text-gray-600">Lade Bedürfnisse...</Text>
+            <LoadingIndicator />
           </View>
         </View>
       </View>
@@ -977,7 +977,7 @@ export default function StatsTrackedNeeds() {
             >
               
               <View className="p-3">
-              <Text className="ml-2 flex-1 leading-[18px] mb-4" style={{ color: baseColors.black }}>
+              <Text className="ml-1 flex-1 leading-[18px] mb-4" style={{ color: baseColors.black }}>
                 Du kannst heute deine Schalen füllen! Nutze die Gelegenheit, um deine Bedürfnisse zu reflektieren.
               </Text>
               <TouchableOpacity
@@ -1083,7 +1083,7 @@ export default function StatsTrackedNeeds() {
                     }}
                   >
                     {isSavingFillLevels ? (
-                      <ActivityIndicator size="small" color={baseColors.offwhite} />
+                      <LoadingIndicator />
                     ) : (
                       <>
                         <Text style={{ fontSize: 14, color: baseColors.offwhite }}>
@@ -1489,7 +1489,7 @@ export default function StatsTrackedNeeds() {
                         }}
                       >
                         {isSavingStrategies ? (
-                          <ActivityIndicator size="small" color={baseColors.offwhite} />
+                          <LoadingIndicator />
                         ) : (
                           <>
                             <Text style={{ fontSize: 14, color: baseColors.black }}>

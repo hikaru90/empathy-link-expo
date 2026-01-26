@@ -4,6 +4,7 @@
  */
 
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import GroupedFeelingsSelector from '@/components/chat/GroupedFeelingsSelector';
 import LearnNavigation from '@/components/learn/LearnNavigation';
 import { getFeelings, type Feeling } from '@/lib/api/chat';
@@ -12,7 +13,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, ChevronRight, Send } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Keyboard,
   Platform,
   ScrollView,
@@ -431,7 +431,7 @@ export default function LearnFeelingsDetective({
                   style={styles.shadowButton}
                 >
                   {isLoading ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <LoadingIndicator inline />
                   ) : (
                     <Send size={16} color="#fff" />
                   )}
@@ -517,7 +517,7 @@ export default function LearnFeelingsDetective({
                   style={{ opacity: isLoading ? 0.5 : 1 }}
                 >
                   {isLoading ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <LoadingIndicator inline />
                   ) : (
                     <Text className="text-center text-white">Reflexion neu erstellen</Text>
                   )}
@@ -608,7 +608,7 @@ export default function LearnFeelingsDetective({
                   style={styles.shadowButton}
                 >
                   {isLoading ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <LoadingIndicator inline />
                   ) : (
                     <Send size={16} color="#fff" />
                   )}
@@ -666,7 +666,7 @@ export default function LearnFeelingsDetective({
           <View className="max-h-64">
             {feelingsLoading ? (
               <View className="flex items-center justify-center p-8">
-                <ActivityIndicator size="small" color="#9ca3af" />
+                <LoadingIndicator inline />
                 <Text className="ml-2 text-sm text-gray-600">Gefühle werden geladen...</Text>
               </View>
             ) : feelingsError ? (
@@ -755,7 +755,7 @@ export default function LearnFeelingsDetective({
 
             {isLoading ? (
               <View className="py-4 flex flex-row items-center justify-center">
-                <ActivityIndicator size="small" />
+                <LoadingIndicator inline />
                 <Text className="ml-2">Erstelle Zusammenfassung...</Text>
               </View>
             ) : (

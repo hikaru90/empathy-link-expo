@@ -1,11 +1,12 @@
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import SelectDropdown from '@/components/ui/SelectDropdown';
 import { getChatSettings, updateChatSettings, type ChatSettings } from '@/lib/api/chat';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const answerLengthOptions: Array<{ value: ChatSettings['aiAnswerLength']; label: string; description: string }> = [
   { value: 'short', label: 'Kurz', description: 'Prägnante, fokussierte Antworten' },
@@ -94,8 +95,7 @@ export default function ChatSettingsPage() {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={baseColors.lilac} />
-          <Text style={styles.loadingText}>Lade Einstellungen...</Text>
+          <LoadingIndicator />
         </View>
       </View>
     );

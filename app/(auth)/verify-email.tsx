@@ -1,8 +1,9 @@
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import { authClient } from '@/lib/auth';
 import { Link, Redirect, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function VerifyEmailScreen() {
@@ -38,7 +39,7 @@ export default function VerifyEmailScreen() {
   if (authLoading) {
     return (
       <View className="flex-1 justify-center items-center" style={{ backgroundColor: baseColors.background }}>
-        <ActivityIndicator size="large" color={baseColors.primary} />
+        <LoadingIndicator />
       </View>
     );
   }
@@ -75,7 +76,7 @@ export default function VerifyEmailScreen() {
         accessibilityLabel="Verifizierung prüfen"
       >
         {isChecking ? (
-          <ActivityIndicator color="#ffffff" />
+          <LoadingIndicator inline />
         ) : (
           <Text className="text-white text-center font-semibold text-lg">
             Verifizierung prüfen

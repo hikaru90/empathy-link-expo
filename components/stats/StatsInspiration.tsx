@@ -1,5 +1,5 @@
 import QuoteIconImage from '@/assets/icons/Quote.png';
-import GradientImage from '@/components/GradientImage';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import { getInspirationalQuote, type InspirationalQuote } from '@/lib/api/stats';
 import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
@@ -74,7 +74,7 @@ export default function StatsInspiration() {
       <Animated.View style={{ height: heightAnim, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {loadingQuote ? (
           <View className="items-center justify-center py-5 flex-grow">
-            <GradientImage style={{ width: 40, height: 20, borderRadius: 16, boxShadow: '0 8px 16px 0 rgba(0, 0, 0, 0.1)' }} fast />
+            <LoadingIndicator />
           </View>
         ) : quote ? (
           <Animated.View style={{ opacity: contentOpacity }} onLayout={handleContentLayout}>

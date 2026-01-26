@@ -1,21 +1,21 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { BadgeCheck, Play } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { BadgeCheck, Play, RotateCcw } from 'lucide-react-native';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Image,
   Modal,
   Platform,
-  ScrollView,
-  Text,
+  ScrollView, StyleSheet, Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View
 } from 'react-native';
 
 import baseColors from '@/baseColors.config';
-import GradientImage from '@/components/GradientImage';
 import Header from '@/components/Header';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import DonutChart from '@/components/stats/DonutChart';
 import { useAuthGuard } from '@/hooks/use-auth';
 import {
@@ -28,6 +28,7 @@ import {
   type Topic,
   type TopicCategory,
 } from '@/lib/api/learn';
+import { ImageBackground } from 'expo-image';
 
 interface GroupedCategory {
   category: TopicCategory;
@@ -52,11 +53,50 @@ export default function LearnScreen() {
   const [topicActionInProgress, setTopicActionInProgress] = useState<string | null>(null);
   const [isRestartingTopic, setIsRestartingTopic] = useState(false);
 
+  const COLLAPSED_HEIGHT = 60;
+  const [targetHeight, setTargetHeight] = useState(COLLAPSED_HEIGHT);
+  const heightAnim = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
+  const contentHeightRef = useRef(COLLAPSED_HEIGHT);
+
   useEffect(() => {
     if (isAuthenticated && user) {
       loadData();
     }
   }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    // Animate height expansion
+    Animated.spring(heightAnim, {
+      toValue: targetHeight,
+      useNativeDriver: false,
+      tension: 120,
+      friction: 18,
+    }).start();
+  }, [heightAnim, targetHeight]);
+
+  const handleContentLayout = (event: any) => {
+    const measuredHeight = Math.max(event.nativeEvent.layout.height, COLLAPSED_HEIGHT);
+    if (Math.abs(measuredHeight - contentHeightRef.current) > 4) {
+      contentHeightRef.current = measuredHeight;
+      setTargetHeight(measuredHeight);
+    }
+  };
+
+  const positions = [
+    { left: 0, top: 0 },
+    { right: 0, top: 0, transform: [{ rotate: '180deg' }] },
+    { left: 0, bottom: 0 },
+    { right: 0, bottom: 0 },
+  ]
+
+  const getPositionStyles = (position: number) => {
+    return positions[position];
+  }
+
+  const contentOpacity = heightAnim.interpolate({
+    inputRange: [COLLAPSED_HEIGHT, Math.max(targetHeight, COLLAPSED_HEIGHT + 1)],
+    outputRange: [0, 1],
+  });
 
   const loadData = async () => {
     setIsLoadingData(true);
@@ -182,8 +222,7 @@ export default function LearnScreen() {
     return (
       <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
         <View className="flex-1 justify-center items-center -mt-6">
-          <GradientImage style={{ width: 40, height: 20, borderRadius: 16 }} fast />
-          <Text className="text-gray-600 mt-2">Laden</Text>
+          <LoadingIndicator />
         </View>
       </View>
     );
@@ -198,8 +237,7 @@ export default function LearnScreen() {
       <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
         <Header />
         <View className="flex-1 justify-center items-center">
-          <GradientImage style={{ width: 80, height: 32, borderRadius: 16 }} fast />
-          <Text className="text-gray-600 mt-4">Lade Lernmodule...</Text>
+          <LoadingIndicator />
         </View>
       </View>
     );
@@ -241,17 +279,37 @@ export default function LearnScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: Platform.OS === 'ios' ? 50 : Platform.OS === 'android' ? 60 : 40,
+          ...styles.scrollContent,
         }}
       >
-        <View className="px-4 pt-4 pb-6">
-          <Text className="text-2xl font-light mb-3 max-w-[15em]">
-            Stärke deine Empathiefähigkeit, Schritt für Schritt.
-          </Text>
-          <Text className="text-2xl font-light text-black/40 mb-6 max-w-[14em]">
-            Lerne praktische Werkzeuge, um klar, mitfühlend und selbstbewusst zu kommunizieren.
-          </Text>
 
+        <View className="px-4 pt-4 pb-6">
+          <View
+            className="intro rounded-2xl p-5 justify-center overflow-hidden shadow-xl shadow-black/10 mb-6"
+            style={{ position: 'relative', backgroundColor: baseColors.forest }}
+          >
+            <ImageBackground
+              source={require('@/assets/images/Jungle.jpg')}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: -1,
+                width: '102%',
+                height: '102%',
+                zIndex: -1,
+                opacity: 0.6,
+              }}
+            />
+            <Animated.View style={{ height: heightAnim, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <Animated.View style={{ opacity: contentOpacity }} onLayout={handleContentLayout}>
+                <Image source={require('@/assets/images/illustration-book.png')} style={{ width: 46, height: 46, marginLeft: -8, marginBottom: 8 }} />
+                <Text className="text-base leading-6 text-white inline">
+                  Stärke deine Empathiefähigkeit, Schritt für Schritt.
+                  <Text className=""> Lerne praktische Werkzeuge, um klar, mitfühlend und selbstbewusst zu kommunizieren.</Text>
+                </Text>
+              </Animated.View>
+            </Animated.View>
+          </View>
           {/* Progress Summary */}
           {overallCompletion.total > 0 && (
             <View className="mb-8 rounded-xl bg-white/80 border border-white/20 px-4 py-5 shadow-lg" style={{ shadowColor: '#065f46', shadowOpacity: 0.05 }}>
@@ -259,9 +317,9 @@ export default function LearnScreen() {
                 <View className="flex-row items-center gap-3">
                   {donutData.length > 0 ? (
                     <View style={{ width: 64, height: 64 }}>
-                      <DonutChart 
-                        data={donutData} 
-                        colors={donutColors} 
+                      <DonutChart
+                        data={donutData}
+                        colors={donutColors}
                         size={64}
                         showPercentage={true}
                         completedCount={overallCompletion.completed}
@@ -335,6 +393,11 @@ export default function LearnScreen() {
                         )
                         : null;
                       const titleParts = topicVersion?.titleDE?.split('||') || ['', ''];
+                      
+
+
+                      const position = topic.expand?.currentVersion?.position;
+                      const positionStyles = positions[position || 0];
 
                       return (
                         <TouchableOpacity
@@ -358,8 +421,8 @@ export default function LearnScreen() {
                           >
                             {/* Gradient Overlay for depth */}
                             <LinearGradient
-                              colors={['rgba(255,255,255,0.1)', 'rgba(0,0,0,0.1)']}
-                              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 1 }}
+                              colors={[baseColors.forest+'00', baseColors.lilac+'88', baseColors.lilac]}
+                              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 1, opacity: 1 }}
                             />
 
                             {/* Completion Badge */}
@@ -372,20 +435,19 @@ export default function LearnScreen() {
 
                             {/* Topic Image - Artistic positioning */}
                             {imageUrl && (
-                              <Image
-                                source={{ uri: imageUrl }}
-                                className="absolute -right-10 -bottom-16 w-64 h-64 z-0 opacity-30 mix-blend-multiply"
-                                style={{ transform: [{ rotate: '-12deg' }] }}
-                                resizeMode="contain"
-                              />
+                                <Image
+                                  source={{ uri: imageUrl }}
+                                  className="z-0"
+                                  style={{ position: 'absolute', width: '150%', height: '150%', ...positionStyles, opacity: completed ? 0.3 : 1 }}
+                                />
                             )}
 
                             {/* Content Container */}
-                            <View className="w-full h-full p-6 flex flex-col justify-end">
+                            <View className="w-full h-full p-6 flex flex-col justify-end z-10">
                               {/* Top Section (Title) */}
                               <View className="mb-4 flx flex-col gap-1">
                                 <Text className="text-xl font-bold text-black/80 leading-tight">
-                                {titleParts[0].trim()}
+                                  {titleParts[0].trim()}
                                 </Text>
                                 <Text className="text-xl text-black/80 leading-tight">
                                   {titleParts[1].trim()}
@@ -395,9 +457,9 @@ export default function LearnScreen() {
                               {/* Bottom Section (CTA) */}
                               <View className="flex-row items-center">
                                 <View className="h-8 w-8 rounded-full bg-white/20 backdrop-blur-md items-center justify-center border border-white/30">
-                                  <Play size={20} color="white" fill="white" style={{ marginLeft: 2 }} />
+                                  {completed ? <RotateCcw size={14} color="white" fill="transparent" style={{ marginLeft: 2 }} /> : <Play size={14} color="white" fill="white" style={{ marginLeft: 2 }} />}
                                 </View>
-                                <Text className="ml-3 text-white font-medium tracking-wide opacity-90">
+                                <Text className="ml-3 font-medium tracking-wide opacity-90">
                                   {completed ? 'Wiederholen' : 'Starten'}
                                 </Text>
                               </View>
@@ -423,13 +485,13 @@ export default function LearnScreen() {
       >
         <TouchableWithoutFeedback onPress={closeRestartModal}>
           <View className="flex-1 items-center justify-center bg-black/50 px-4">
-            <TouchableWithoutFeedback onPress={() => {}}>
+            <TouchableWithoutFeedback onPress={() => { }}>
               <View className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
                 <Text className="mb-2 text-xl font-bold text-gray-900">Modul neu starten?</Text>
                 <Text className="mb-6 text-gray-600">
                   Möchtest du das Modul erneut durchlaufen oder deine bisherigen Ergebnisse ansehen?
                 </Text>
-                
+
                 <View className="flex-row gap-3">
                   <TouchableOpacity
                     onPress={async () => {
@@ -453,7 +515,7 @@ export default function LearnScreen() {
                       {isRestartingTopic ? 'Starte...' : 'Neu starten'}
                     </Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     onPress={() => {
                       if (selectedTopic) {
@@ -475,3 +537,17 @@ export default function LearnScreen() {
     </View>
   );
 }
+
+
+const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: Platform.OS === 'web' ? 80 : 120, // Account for floating header
+    paddingBottom: 64,
+  },
+  contentContainer: {
+    paddingHorizontal: 20,
+  },
+});

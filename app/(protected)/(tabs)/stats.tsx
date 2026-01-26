@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
-import GradientImage from '@/components/GradientImage';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import StatsBlindSpots from '@/components/stats/StatsBlindSpots';
 import StatsChatOverview from '@/components/stats/StatsChatOverview';
 import StatsConflictResolution from '@/components/stats/StatsConflictResolution';
@@ -181,8 +181,7 @@ export default function StatsScreen() {
     return (
       <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
         <View className="flex-1 justify-center items-center -mt-6">
-          <GradientImage style={{ width: 40, height: 20, borderRadius: 16 }} fast />
-          <Text className="text-gray-600 mt-2">Loading...</Text>
+          <LoadingIndicator />
         </View>
       </View>
     );

@@ -1,10 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowRight } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 import LearnAIQuestion from '@/components/learn/LearnAIQuestion';
@@ -181,8 +182,7 @@ export default function LearnDetailScreen() {
   if (authLoading || isLoading) {
     return (
       <View className="flex-1 justify-center items-center" style={{ backgroundColor: baseColors.background }}>
-        <ActivityIndicator size="large" color={baseColors.primary} />
-        <Text className="text-gray-600 mt-4">Loading...</Text>
+        <LoadingIndicator />
       </View>
     );
   }

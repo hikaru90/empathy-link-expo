@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
 import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 import { useAuthGuard } from '@/hooks/use-auth';
@@ -92,8 +93,7 @@ export default function AnalysesListScreen() {
   if (authLoading || isLoading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={baseColors.primary} />
-        <Text style={styles.loadingText}>Lade Analysen...</Text>
+        <LoadingIndicator />
       </View>
     );
   }

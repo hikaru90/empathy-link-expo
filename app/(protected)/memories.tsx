@@ -1,10 +1,11 @@
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import { deleteMemories, getMemories, type Memory } from '@/lib/api/memories';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Check, ChevronLeft, ListFilter, ListTodo, Trash, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, ImageBackground, Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, ImageBackground, Modal, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 const brickImage = require('@/assets/images/background-brick-highres.png');
 const jungleImage = require('@/assets/images/Jungle.jpg');
@@ -354,8 +355,7 @@ export default function MemoriesPage() {
             justifyContent: 'center',
             paddingTop: 100,
           }}>
-            <ActivityIndicator size="large" color={baseColors.lilac} />
-            <Text style={{ marginTop: 16, fontSize: 14, color: '#666' }}>Lade Erinnerungen...</Text>
+            <LoadingIndicator />
           </View>
         ) : (
           <View style={{ gap: 32 }}>

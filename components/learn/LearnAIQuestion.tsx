@@ -5,6 +5,7 @@
 
 import Swirl from '@/assets/icons/Swirl';
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import GroupedFeelingsSelector from '@/components/chat/GroupedFeelingsSelector';
 import GroupedNeedsSelector from '@/components/chat/GroupedNeedsSelector';
 import LearnNavigation from '@/components/learn/LearnNavigation';
@@ -14,7 +15,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, ChevronRight, Heart, Send } from 'lucide-react-native';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Keyboard,
   Platform,
   ScrollView,
@@ -530,7 +530,7 @@ export default function LearnAIQuestion({
                 style={styles.shadowButton}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <LoadingIndicator inline />
                 ) : (
                   <Send size={16} color="#fff" />
                 )}

@@ -1,4 +1,5 @@
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { getConflictResolutions, updateConflictResolution, type ConflictResolution } from '@/lib/api/conflict-resolution';
 import { authClient } from '@/lib/auth';
@@ -7,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Archive, Check, CheckCircle, ChevronLeft, ListFilter, ListTodo, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, ImageBackground, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, ImageBackground, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface RequestItem {
   id: string;
@@ -284,8 +285,7 @@ export default function ConflictResolutionsScreen() {
   if (isLoading || loading) {
     return (
       <View className="flex-1 justify-center items-center" style={{ backgroundColor: baseColors.background }}>
-        <ActivityIndicator size="large" color={baseColors.lilac} />
-        <Text className="text-gray-600 mt-4">Laden...</Text>
+        <LoadingIndicator />
       </View>
     );
   }
@@ -648,7 +648,7 @@ export default function ConflictResolutionsScreen() {
                     fontSize: 14,
                     color: baseColors.offwhite,
                   }}>Abhaken</Text>
-                  <CheckCircle size={16} color={baseColors.jungle} style={{
+                  <CheckCircle size={16} color={baseColors.forest} style={{
                     backgroundColor: baseColors.white + '88',
                     padding: 3,
                     borderRadius: 999,

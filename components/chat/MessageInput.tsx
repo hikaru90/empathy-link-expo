@@ -4,11 +4,12 @@
 
 import Swirl from '@/assets/icons/Swirl';
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import { useChat } from '@/hooks/use-chat';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { Heart, Send } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Keyboard, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import GroupedFeelingsSelector from './GroupedFeelingsSelector';
 import GroupedNeedsSelector from './GroupedNeedsSelector';
 
@@ -268,7 +269,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
           activeOpacity={0.7}
         >
           {isSending ? (
-            <ActivityIndicator size="small" color="#ffffff" />
+            <LoadingIndicator inline />
           ) : (
             <Send size={16} color={isSending || !text.trim() ? "#ffffff" : "#ffffff"} />
           )}

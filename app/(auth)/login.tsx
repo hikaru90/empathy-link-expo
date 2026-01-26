@@ -1,8 +1,9 @@
 import baseColors from '@/baseColors.config';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import { useAuth } from '@/hooks/use-auth';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 // Helper function to parse query parameters from URL
 // On web, Expo Router uses hash-based routing, so we need to check both location.search and hash
@@ -241,7 +242,7 @@ export default function SigninScreen() {
               disabled={isResending}
             >
               {isResending ? (
-                <ActivityIndicator color="#ffffff" />
+                <LoadingIndicator inline />
               ) : (
                 <Text className="text-white text-center font-semibold">
                   Bestätigungslink erneut senden?
@@ -303,7 +304,7 @@ export default function SigninScreen() {
           testID="signin-button"
         >
           {isLoading ? (
-            <ActivityIndicator color="#ffffff" />
+            <LoadingIndicator size="small" inline />
           ) : (
             <Text className="text-white text-center font-semibold text-lg">
               Anmelden

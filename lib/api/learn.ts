@@ -4,9 +4,9 @@
  * Uses backend API for learning sessions (user progress)
  */
 
-import { POCKETBASE_URL } from '../pocketbase';
-import { API_BASE_URL } from '../config';
 import { authClient } from '../auth';
+import { API_BASE_URL } from '../config';
+import { POCKETBASE_URL } from '../pocketbase';
 
 export interface TopicCategory {
   id: string;
@@ -41,6 +41,7 @@ export interface Topic {
   expand?: {
     currentVersion?: TopicVersion;
   };
+  position?: number;
   created: string;
   updated: string;
 }
