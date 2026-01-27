@@ -9,10 +9,10 @@ import GroupedFeelingsSelector from '@/components/chat/GroupedFeelingsSelector';
 import LearnNavigation from '@/components/learn/LearnNavigation';
 import { getFeelings, type Feeling } from '@/lib/api/chat';
 import { feelingsDetectiveAI, type LearningSession } from '@/lib/api/learn';
-import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, ChevronRight, Send } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Keyboard,
   Platform,
   ScrollView,
@@ -363,41 +363,38 @@ export default function LearnFeelingsDetective({
 
         {/* Input Section */}
         <View
-          className="px-4 pb-4"
+          className=""
           style={{
-            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 16 : 16,
+            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
           }}
         >
-          <View className="flex flex-col gap-2 rounded-2xl border border-white p-2 shadow-lg overflow-hidden">
-            <LinearGradient
-              colors={['#ffffff', baseColors.offwhite]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <View className="flex flex-col gap-2 relative z-10">
-              <TextInput
-                ref={situationInputRef}
-                value={situationInput}
-                onChangeText={setSituationInput}
-                placeholder="Mein Chef meinte ich würde seine Erwartungen enttäuschen..."
-                placeholderTextColor="rgba(0, 0, 0, 0.5)"
-                className="flex-1 rounded-md bg-transparent px-2 py-1 text-base"
-                style={styles.textInput}
-                multiline
-                scrollEnabled={true}
-                maxLength={2000}
-                editable={!isLoading}
-                returnKeyType="send"
-                blurOnSubmit
-                onSubmitEditing={() => {
-                  submitSituation();
-                }}
-              />
+          <View className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl" style={{ backgroundColor: baseColors.background, width: '100%' }}>
+            <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite+'ee' }}>
+              {/* Input Row */}
+              <View className="p-1 flex-row items-end gap-3 overflow-hidden">
+                <TextInput
+                  ref={situationInputRef}
+                  value={situationInput}
+                  onChangeText={setSituationInput}
+                  placeholder="Mein Chef meinte ich würde seine Erwartungen enttäuschen..."
+                  placeholderTextColor="rgba(0, 0, 0, 0.5)"
+                  className="flex-1 rounded-[18px] p-3 text-base"
+                  style={styles.textInput}
+                  multiline
+                  scrollEnabled={true}
+                  maxLength={2000}
+                  editable={!isLoading}
+                  returnKeyType="send"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => {
+                    submitSituation();
+                  }}
+                />
+              </View>
 
               {/* Action Buttons */}
-              <View className="flex-row items-end justify-between">
-                <View className="flex-row items-center gap-2">
+              <View className="flex-row px-3 pb-2 gap-3 justify-between w-full">
+                <View className="flex-row gap-2 items-center">
                   {gotoPrevStep ? (
                     <TouchableOpacity
                       onPress={gotoPrevStep}
@@ -427,11 +424,16 @@ export default function LearnFeelingsDetective({
                 <TouchableOpacity
                   onPress={submitSituation}
                   disabled={!situationInput.trim() || isLoading}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-black"
-                  style={styles.shadowButton}
+                  className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
+                  style={{
+                    backgroundColor: isLoading || !situationInput.trim()
+                      ? baseColors.forest+'33'
+                      : `${baseColors.forest}`
+                  }}
+                  activeOpacity={0.7}
                 >
                   {isLoading ? (
-                    <LoadingIndicator inline />
+                    <ActivityIndicator size="small" color="#fff" />
                   ) : (
                     <Send size={16} color="#fff" />
                   )}
@@ -517,7 +519,7 @@ export default function LearnFeelingsDetective({
                   style={{ opacity: isLoading ? 0.5 : 1 }}
                 >
                   {isLoading ? (
-                    <LoadingIndicator inline />
+                    <ActivityIndicator size="small" color="#fff" />
                   ) : (
                     <Text className="text-center text-white">Reflexion neu erstellen</Text>
                   )}
@@ -555,60 +557,64 @@ export default function LearnFeelingsDetective({
 
         {/* Input Section */}
         <View
-          className="px-4 pb-4"
+          className=""
           style={{
-            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 16 : 16,
+            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
           }}
         >
-          <View className="flex flex-col gap-2 rounded-2xl border border-white p-2 shadow-lg overflow-hidden">
-            <LinearGradient
-              colors={['#ffffff', baseColors.offwhite]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <View className="flex flex-col gap-2 relative z-10">
-              <TextInput
-                ref={thoughtsInputRef}
-                value={thoughtsInput}
-                onChangeText={setThoughtsInput}
-                placeholder="Ich habe gedacht ich sei nicht gut genug..."
-                placeholderTextColor="rgba(0, 0, 0, 0.5)"
-                className="flex-1 rounded-md bg-transparent px-2 py-1 text-base"
-                style={styles.textInput}
-                multiline
-                scrollEnabled={true}
-                maxLength={2000}
-                editable={!isLoading}
-                returnKeyType="send"
-                blurOnSubmit
-                onSubmitEditing={() => {
-                  submitThoughts();
-                }}
-              />
+          <View className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl" style={{ backgroundColor: baseColors.background, width: '100%' }}>
+            <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite+'ee' }}>
+              {/* Input Row */}
+              <View className="p-1 flex-row items-end gap-3 overflow-hidden">
+                <TextInput
+                  ref={thoughtsInputRef}
+                  value={thoughtsInput}
+                  onChangeText={setThoughtsInput}
+                  placeholder="Ich habe gedacht ich sei nicht gut genug..."
+                  placeholderTextColor="rgba(0, 0, 0, 0.5)"
+                  className="flex-1 rounded-[18px] p-3 text-base"
+                  style={styles.textInput}
+                  multiline
+                  scrollEnabled={true}
+                  maxLength={2000}
+                  editable={!isLoading}
+                  returnKeyType="send"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => {
+                    submitThoughts();
+                  }}
+                />
+              </View>
 
               {/* Action Buttons */}
-              <View className="flex-row items-end justify-between">
-                {gotoPrevStep ? (
-                  <TouchableOpacity
-                    onPress={gotoPrevStep}
-                    className="flex items-center gap-2 rounded-full bg-white px-1 py-1"
-                    style={styles.shadowButton}
-                  >
-                    <View className="flex h-4 w-4 items-center justify-center rounded-full">
-                      <ChevronLeft size={12} color="#000" />
-                    </View>
-                  </TouchableOpacity>
-                ) : null}
+              <View className="flex-row px-3 pb-2 gap-3 justify-between w-full">
+                <View className="flex-row gap-2 items-center">
+                  {gotoPrevStep ? (
+                    <TouchableOpacity
+                      onPress={gotoPrevStep}
+                      className="flex items-center gap-2 rounded-full bg-white px-1 py-1"
+                      style={styles.shadowButton}
+                    >
+                      <View className="flex h-4 w-4 items-center justify-center rounded-full">
+                        <ChevronLeft size={12} color="#000" />
+                      </View>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
 
                 <TouchableOpacity
                   onPress={submitThoughts}
                   disabled={!thoughtsInput.trim() || isLoading}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-black"
-                  style={styles.shadowButton}
+                  className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
+                  style={{
+                    backgroundColor: isLoading || !thoughtsInput.trim()
+                      ? baseColors.forest+'33'
+                      : `${baseColors.forest}`
+                  }}
+                  activeOpacity={0.7}
                 >
                   {isLoading ? (
-                    <LoadingIndicator inline />
+                    <ActivityIndicator size="small" color="#fff" />
                   ) : (
                     <Send size={16} color="#fff" />
                   )}
@@ -846,10 +852,10 @@ export default function LearnFeelingsDetective({
 
 const styles = StyleSheet.create({
   textInput: {
-    fontSize: 16,
-    color: '#000',
-    minHeight: 40,
-    maxHeight: 120,
+    minHeight: 44, // min-h-11 equivalent
+    maxHeight: 104, // 4 lines: (4 * 20px line height) + (12px top padding) + (12px bottom padding) = 104px
+    fontSize: 16, // text-base
+    lineHeight: 20, // Approximate line height for calculation
   },
   shadowButton: {
     shadowColor: '#000',

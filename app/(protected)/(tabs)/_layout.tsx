@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { BarChart3, Book, BotMessageSquare, Users } from 'lucide-react-native';
+import { BarChart3, Book, BotMessageSquare } from 'lucide-react-native';
 import React from 'react';
 import { Platform, StatusBar, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -103,13 +103,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Book size={ICON_SIZE} color={color} />,
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="community"
         options={{
           title: 'Community',
           tabBarIcon: ({ color }) => <Users size={ICON_SIZE} color={color} />,
         }}
-      />
+      /> */}
     </Tabs>
     </View>
   );

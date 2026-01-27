@@ -1,21 +1,27 @@
 import FlameIconImage from '@/assets/icons/Flame.png';
 import baseColors from '@/baseColors.config';
+import BottomDrawer from '@/components/BottomDrawer';
 import { useAuth } from '@/hooks/use-auth';
+import { useRestartDrawer } from '@/hooks/use-restart-drawer';
 import { getAllAnalyses } from '@/lib/api/analysis';
+import { createLearningSession } from '@/lib/api/learn';
 import { getSuperCommunicatorData, type SuperCommunicatorData } from '@/lib/api/stats';
 import { getStreak, type StreakResponse } from '@/lib/api/streak';
 import { authClient } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/config';
 import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-calculator';
-import { Image } from 'expo-image';
+import { Image, ImageBackground } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Bell, Brain, FileText, LogOut, UserRoundCog } from 'lucide-react-native';
+import { Bell, Brain, FileText, LogOut, RotateCcw, UserRoundCog } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Animated, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import LoadingIndicator from './LoadingIndicator';
 import SparklePill from './SparklePill';
 import StatsStreak from './stats/StatsStreak';
 import SuperCommunicatorBadge from './stats/SuperCommunicatorBadge';
+
+const jungleImage = require('@/assets/images/Jungle.jpg');
 
 interface HeaderProps {
   className?: string;
@@ -24,16 +30,14 @@ interface HeaderProps {
 function Header({ className }: HeaderProps) {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const { isOpen: isRestartDrawerOpen, selectedTopic, closeDrawer: closeRestartDrawer } = useRestartDrawer();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isStreakSheetOpen, setIsStreakSheetOpen] = useState(false);
   const [streakData, setStreakData] = useState<StreakResponse | null>(null);
   const [superCommunicatorData, setSuperCommunicatorData] = useState<SuperCommunicatorData | null>(null);
-
-  // Animation for modal slide-up
-  const slideAnim = useState(new Animated.Value(300))[0];
-  const streakSlideAnim = useState(new Animated.Value(300))[0];
+  const [isRestartingTopic, setIsRestartingTopic] = useState(false);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -48,42 +52,6 @@ function Header({ className }: HeaderProps) {
       clearInterval(superCommInterval);
     };
   }, []);
-
-  useEffect(() => {
-    if (isStreakSheetOpen) {
-      Animated.spring(streakSlideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
-    } else {
-      Animated.spring(streakSlideAnim, {
-        toValue: 300,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
-    }
-  }, [isStreakSheetOpen]);
-
-  useEffect(() => {
-    if (isUserMenuOpen || isNotificationsOpen) {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
-    } else {
-      Animated.spring(slideAnim, {
-        toValue: 300,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
-    }
-  }, [isUserMenuOpen, isNotificationsOpen]);
 
   async function fetchUnreadCount() {
     try {
@@ -167,6 +135,39 @@ function Header({ className }: HeaderProps) {
     router.push('/chat-settings');
   }
 
+  async function handleRestartTopic() {
+    if (!user?.id || !selectedTopic?.expand?.currentVersion?.id || isRestartingTopic) {
+      return;
+    }
+
+    setIsRestartingTopic(true);
+    try {
+      const newSession = await createLearningSession(
+        user.id,
+        selectedTopic.id,
+        selectedTopic.expand.currentVersion.id
+      );
+
+      if (newSession) {
+        closeRestartDrawer();
+        router.push(`/(protected)/learn/${selectedTopic.slug}` as any);
+      } else {
+        console.error('Failed to create a new learning session.');
+      }
+    } catch (error) {
+      console.error('Failed to restart topic:', error);
+    } finally {
+      setIsRestartingTopic(false);
+    }
+  }
+
+  function handleViewResults() {
+    if (selectedTopic) {
+      closeRestartDrawer();
+      router.push(`/(protected)/learn/${selectedTopic.slug}` as any);
+    }
+  }
+
   return (
     <>
       <View style={styles.nav} pointerEvents="box-none">
@@ -236,145 +237,123 @@ function Header({ className }: HeaderProps) {
         </View>
       </View>
 
-      <Modal
+      <BottomDrawer
         visible={isUserMenuOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsUserMenuOpen(false)}
+        onClose={() => setIsUserMenuOpen(false)}
+        title="Profil"
+        subtitle={user?.email}
       >
+        <SuperCommunicatorBadge
+          data={superCommunicatorData}
+          onPress={handleProfileNavigation}
+        />
         <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsUserMenuOpen(false)}
+          style={styles.menuItem}
+          onPress={handleMemoryNavigation}
         >
-          <Animated.View
-            style={[
-              styles.drawerContent,
-              { transform: [{ translateY: slideAnim }] },
-            ]}
-            onStartShouldSetResponder={() => true}
-          >
-            <View style={styles.drawerHandle} />
-            <View style={styles.drawerHeader}>
-              <Text style={styles.drawerTitle}>Profil</Text>
-              {user && (
-                <Text style={styles.drawerSubtitle}>{user.email}</Text>
-              )}
-            </View>
-            <View style={styles.drawerBody}>
-              {/* Super Communicator Badge */}
-              <SuperCommunicatorBadge 
-                data={superCommunicatorData} 
-                onPress={handleProfileNavigation}
-              />
-
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={handleMemoryNavigation}
-              >
-                <Text style={styles.menuItemText}>Erinnerungsspeicher</Text>
-                <Brain size={16} color="#000" />
-              </TouchableOpacity>
-
-              {/* <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={handleProfileNavigation}
-              >
-                <Text style={styles.menuItemText}>Profil</Text>
-                <UserRoundCog size={16} color="#000" />
-              </TouchableOpacity> */}
-
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={handleChatSettingsNavigation}
-              >
-                <Text style={styles.menuItemText}>Chat-Einstellungen</Text>
-                <FileText size={16} color="#000" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.menuItemDark}
-                onPress={handleLogout}
-              >
-                <Text style={styles.menuItemTextDark}>Logout</Text>
-                <LogOut size={16} color="#ef4444" />
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
+          <Text style={styles.menuItemText}>Erinnerungsspeicher</Text>
+          <Brain size={16} color="#000" />
         </TouchableOpacity>
-      </Modal>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleChatSettingsNavigation}
+        >
+          <Text style={styles.menuItemText}>Chat-Einstellungen</Text>
+          <FileText size={16} color="#000" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItemDark}
+          onPress={handleLogout}
+        >
+          <Text style={styles.menuItemTextDark}>Logout</Text>
+          <LogOut size={16} color="#ef4444" />
+        </TouchableOpacity>
+      </BottomDrawer>
 
-      <Modal
+      <BottomDrawer
         visible={isNotificationsOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsNotificationsOpen(false)}
+        onClose={() => setIsNotificationsOpen(false)}
+        title="Messages"
+        tall
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsNotificationsOpen(false)}
-        >
-          <Animated.View
-            style={[
-              styles.drawerContent,
-              styles.drawerContentTall,
-              { transform: [{ translateY: slideAnim }] },
-            ]}
-            onStartShouldSetResponder={() => true}
-          >
-            <View style={styles.drawerHandle} />
-            <View style={styles.drawerHeader}>
-              <Text style={styles.drawerTitle}>Messages</Text>
-            </View>
-            <ScrollView style={styles.drawerBody}>
-              {/* Inbox component would go here */}
-              <Text style={styles.placeholderText}>No new messages</Text>
-            </ScrollView>
-          </Animated.View>
-        </TouchableOpacity>
-      </Modal>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <Text style={styles.placeholderText}>No new messages</Text>
+        </ScrollView>
+      </BottomDrawer>
 
-      {/* Streak Modal */}
-      <Modal
+      <BottomDrawer
         visible={isStreakSheetOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsStreakSheetOpen(false)}
+        onClose={() => setIsStreakSheetOpen(false)}
+        title="Streak"
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setIsStreakSheetOpen(false)}
-        >
-          <Animated.View
-            style={[
-              styles.drawerContent,
-              { transform: [{ translateY: streakSlideAnim }] },
-            ]}
-            onStartShouldSetResponder={() => true}
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {streakData ? (
+            <StatsStreak
+              data={{
+                currentStreak: streakData.currentStreak,
+                longestStreak: streakData.longestStreak,
+                lastChatDate: streakData.lastChatDate,
+                totalChatsCompleted: streakData.totalChatsCompleted,
+              }}
+            />
+          ) : (
+            <Text style={styles.placeholderText}>Loading streak data...</Text>
+          )}
+        </ScrollView>
+      </BottomDrawer>
+
+      <BottomDrawer
+        visible={isRestartDrawerOpen}
+        onClose={closeRestartDrawer}
+        title="Modul neu starten?"
+      >
+        <Text style={{ marginLeft: 8 }}>
+          Möchtest du das Modul "{selectedTopic?.expand?.currentVersion?.titleDE?.split('||')[0]?.trim()}" neu starten oder deine bisherigen Ergebnisse ansehen?
+        </Text>
+        <View style={{ gap: 12, marginTop: 16 }}>
+          <TouchableOpacity
+            onPress={handleViewResults}
+            style={styles.menuItem}
           >
-            <View style={styles.drawerHandle} />
-            <View style={styles.drawerHeader}>
-              <Text style={styles.drawerTitle}>Streak</Text>
-            </View>
-            <ScrollView style={styles.drawerBody} showsVerticalScrollIndicator={false}>
-              {streakData ? (
-                <StatsStreak
-                  data={{
-                    currentStreak: streakData.currentStreak,
-                    longestStreak: streakData.longestStreak,
-                    lastChatDate: streakData.lastChatDate,
-                    totalChatsCompleted: streakData.totalChatsCompleted,
-                  }}
-                />
+            <Text style={styles.menuItemText}>Ergebnisse ansehen</Text>
+            <FileText size={16} color="#000" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleRestartTopic}
+            disabled={isRestartingTopic}
+            style={{ opacity: isRestartingTopic ? 0.5 : 1 }}
+          >
+            <ImageBackground
+              source={jungleImage}
+              resizeMode="cover"
+              style={{
+                width: '100%',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingLeft: 16,
+                paddingRight: 12,
+                paddingVertical: 10,
+                borderRadius: 20,
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: 'rgba(0, 0, 0, 0.1)',
+              }}
+            >
+              {isRestartingTopic ? (
+                <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.placeholderText}>Loading streak data...</Text>
+                <>
+                  <Text style={{ fontSize: 14, color: baseColors.offwhite }}>
+                    Neu starten
+                  </Text>
+                  <RotateCcw size={16} color="#fff" style={{ position: 'relative', backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
+                </>
               )}
-            </ScrollView>
-          </Animated.View>
-        </TouchableOpacity>
-      </Modal>
+            </ImageBackground>
+          </TouchableOpacity>
+        </View>
+      </BottomDrawer>
     </>
   );
 }
@@ -444,50 +423,9 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: 'bold',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'flex-end',
-  },
-  drawerContent: {
-    backgroundColor: baseColors.background,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxWidth: 600,
-    width: '100%',
-    alignSelf: 'center',
-    paddingBottom: 32,
-  },
-  drawerContentTall: {
-    height: '80%',
-  },
-  drawerHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: baseColors.black+'33',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  drawerHeader: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    marginLeft: 8
-  },
-  drawerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000',
-  },
-  drawerSubtitle: {
+  placeholderText: {
     fontSize: 14,
     color: '#666',
-    marginTop: 4,
-  },
-  drawerBody: {
-    paddingHorizontal: 16,
-    gap: 8,
   },
   menuItem: {
     flexDirection: 'row',
@@ -499,8 +437,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
     marginBottom: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    position: 'relative',
+    zIndex: 10,
+    borderColor: 'white',
   },
   menuItemText: {
     fontSize: 14,
@@ -520,12 +464,6 @@ const styles = StyleSheet.create({
   menuItemTextDark: {
     fontSize: 14,
     color: '#fff',
-  },
-  placeholderText: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    marginTop: 32,
   },
 });
 

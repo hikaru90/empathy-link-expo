@@ -9,7 +9,7 @@ import { useChat } from '@/hooks/use-chat';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { Heart, Send } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Keyboard, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Keyboard, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import GroupedFeelingsSelector from './GroupedFeelingsSelector';
 import GroupedNeedsSelector from './GroupedNeedsSelector';
 
@@ -269,7 +269,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
           activeOpacity={0.7}
         >
           {isSending ? (
-            <LoadingIndicator inline />
+            <ActivityIndicator size="small" color="#fff" />
           ) : (
             <Send size={16} color={isSending || !text.trim() ? "#ffffff" : "#ffffff"} />
           )}

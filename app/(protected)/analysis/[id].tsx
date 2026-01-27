@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronDown, ChevronLeft, MessageSquare, Play, RefreshCw, Square } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
 import LoadingIndicator from '@/components/LoadingIndicator';
@@ -283,7 +283,7 @@ export default function AnalysisDetailScreen() {
               disabled={isReopeningChat}
             >
               {isReopeningChat ? (
-                <LoadingIndicator inline />
+                <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <>
                   <MessageSquare size={16} color="#fff" />

@@ -5,16 +5,15 @@
 
 import Swirl from '@/assets/icons/Swirl';
 import baseColors from '@/baseColors.config';
-import LoadingIndicator from '@/components/LoadingIndicator';
 import GroupedFeelingsSelector from '@/components/chat/GroupedFeelingsSelector';
 import GroupedNeedsSelector from '@/components/chat/GroupedNeedsSelector';
 import LearnNavigation from '@/components/learn/LearnNavigation';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { askAIQuestion, type LearningSession } from '@/lib/api/learn';
-import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, ChevronRight, Heart, Send } from 'lucide-react-native';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Keyboard,
   Platform,
   ScrollView,
@@ -296,14 +295,12 @@ export default function LearnAIQuestion({
             contentContainerStyle={{ flexGrow: 1 }}
           >
             <View className="flex-grow items-center justify-center px-4">
-              <View className="max-w-sm max-h-80 rounded-lg p-4">
+              <View className="max-h-80 rounded-lg">
                 <Markdown
                   markdownit={markdownItInstance}
                   style={{
                     body: {
-                      fontSize: 16,
-                      color: '#1f2937',
-                      lineHeight: 22,
+                      fontSize: 18,
                     },
                     paragraph: {
                       marginBottom: 12,
@@ -323,8 +320,16 @@ export default function LearnAIQuestion({
 
         {/* Navigation - ALWAYS show when on response step */}
         <View 
-          className="px-4 py-4 border-t border-black/10"
-          style={{ backgroundColor: baseColors.background }}
+          className="border-t border-black/10"
+          style={{ 
+            backgroundColor: baseColors.background,
+            paddingTop: 16,
+            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 23 : 23,
+            marginLeft: -16,
+            marginRight: -16,
+            paddingLeft: 16,
+            paddingRight: 16,
+          }}
         >
           <LearnNavigation
             onNext={() => {
@@ -373,169 +378,158 @@ export default function LearnAIQuestion({
 
         {/* Input Section */}
         <View
-          className="px-4 pb-4"
+          className=""
           style={{
-            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 16 : 16,
+            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
           }}
         >
-          <View className="flex flex-col gap-2 rounded-2xl border border-white p-2 shadow-lg overflow-hidden">
-            <LinearGradient
-              colors={['#ffffff', baseColors.offwhite]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={StyleSheet.absoluteFill}
-            />
-            <View className="flex flex-col gap-2 relative z-10">
-              {/* Text Input */}
-            <TextInput
-              ref={textInputRef}
-              value={userAnswer}
-              onChangeText={setUserAnswer}
-              placeholder={content.placeholder || 'Schreibe deine Antwort hier...'}
-              placeholderTextColor="rgba(0, 0, 0, 0.5)"
-              className="flex-1 rounded-md bg-transparent px-2 py-1 text-base"
-              style={styles.textInput}
-              multiline
-              scrollEnabled={true}
-              maxLength={2000}
-              editable={!isLoading}
-              returnKeyType="send"
-              blurOnSubmit
-              onSubmitEditing={() => {
-                setFeelingSelectorVisible(false);
-                setNeedSelectorVisible(false);
-                submitAnswer();
-              }}
-            />
+          <View className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl" style={{ backgroundColor: baseColors.background, width: '100%' }}>
+            <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite+'ee' }}>
+              {/* Feelings Selector */}
+              {content.showFeelingsButton && feelingSelectorVisible && (
+                <View className="max-h-40 border-b border-black/5">
+                  <GroupedFeelingsSelector
+                    feelings={feelings}
+                    onFeelingPress={addText}
+                    isLoading={isLoadingData}
+                  />
+                </View>
+              )}
 
-            {/* Feelings selector */}
-            {content.showFeelingsButton && feelingSelectorVisible && (
-              <View className="max-h-40 border-b border-gray-200">
-                <GroupedFeelingsSelector
-                  feelings={feelings}
-                  onFeelingPress={addText}
-                  isLoading={isLoadingData}
+              {/* Needs Selector */}
+              {content.showNeedsButton && needSelectorVisible && (
+                <View className="max-h-40 border-b border-black/5">
+                  <GroupedNeedsSelector
+                    needs={needs}
+                    onNeedPress={addText}
+                    isLoading={isLoadingData}
+                  />
+                </View>
+              )}
+
+              {/* Input Row */}
+              <View className="p-1 flex-row items-end gap-3 overflow-hidden">
+                <TextInput
+                  ref={textInputRef}
+                  value={userAnswer}
+                  onChangeText={setUserAnswer}
+                  placeholder={content.placeholder || 'Schreibe deine Antwort hier...'}
+                  placeholderTextColor="rgba(0, 0, 0, 0.5)"
+                  className="flex-1 rounded-[18px] p-3 text-base"
+                  style={styles.textInput}
+                  multiline
+                  scrollEnabled={true}
+                  maxLength={2000}
+                  editable={!isLoading}
+                  returnKeyType="send"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => {
+                    setFeelingSelectorVisible(false);
+                    setNeedSelectorVisible(false);
+                    submitAnswer();
+                  }}
                 />
               </View>
-            )}
 
-            {/* Needs selector */}
-            {content.showNeedsButton && needSelectorVisible && (
-              <View className="max-h-40 border-b border-gray-200">
-                <GroupedNeedsSelector
-                  needs={needs}
-                  onNeedPress={addText}
-                  isLoading={isLoadingData}
-                />
-              </View>
-            )}
+              {/* Action Buttons */}
+              <View className="flex-row px-3 pb-2 gap-3 justify-between w-full">
+                <View className="flex-row gap-2 items-center">
+                  {/* Previous Button */}
+                  {gotoPrevStep && (
+                    <TouchableOpacity
+                      onPress={gotoPrevStep}
+                      className="flex items-center gap-2 rounded-full bg-white px-1 py-1"
+                      style={styles.shadowButton}
+                    >
+                      <View className="flex h-4 w-4 items-center justify-center rounded-full">
+                        <ChevronLeft size={12} color="#000" />
+                      </View>
+                    </TouchableOpacity>
+                  )}
 
-            {/* Action Buttons */}
-            <View className="flex-row items-end justify-between">
-              <View className="flex-row items-center gap-2">
-                {/* Previous Button */}
-                {gotoPrevStep && (
-                  <TouchableOpacity
-                    onPress={gotoPrevStep}
-                    className="flex items-center gap-2 rounded-full bg-white px-1 py-1"
-                    style={styles.shadowButton}
-                  >
-                    <View className="flex h-4 w-4 items-center justify-center rounded-full">
-                      <ChevronLeft size={12} color="#000" />
-                    </View>
-                  </TouchableOpacity>
-                )}
+                  {/* Show existing response button */}
+                  {existingResponse && (
+                    <TouchableOpacity
+                      onPress={gotoNextStep}
+                      className="flex flex-row items-center gap-2 rounded-full bg-white py-1 pl-3 pr-1"
+                      style={styles.shadowButton}
+                    >
+                      <Text className="text-xs">Zur vorherigen Antwort</Text>
+                      <View className="flex h-4 w-4 items-center justify-center rounded-full bg-black/5">
+                        <ChevronRight size={12} color="#000" />
+                      </View>
+                    </TouchableOpacity>
+                  )}
 
-                {/* Show existing response button */}
-                {existingResponse && (
-                  <TouchableOpacity
-                    onPress={gotoNextStep}
-                    className="flex flex-row items-center gap-2 rounded-full bg-white py-1 pl-3 pr-1"
-                    style={styles.shadowButton}
-                  >
-                    <Text className="text-xs">Zur vorherigen Antwort</Text>
-                    <View className="flex h-4 w-4 items-center justify-center rounded-full bg-black/5">
-                      <ChevronRight size={12} color="#000" />
-                    </View>
-                  </TouchableOpacity>
-                )}
-
-                {/* Feelings button */}
-                {content.showFeelingsButton && !isPreview && (
-                  <TouchableOpacity
-                    onPress={toggleFeelingSelector}
-                    className={`flex-row items-center gap-1 rounded-full pl-1 pr-2 py-1 ${
-                      feelingSelectorVisible
-                        ? 'bg-black/10 shadow-inner'
-                        : 'bg-white'
-                    }`}
-                    style={!feelingSelectorVisible ? styles.shadowButton : undefined}
-                    disabled={isLoadingData}
-                  >
-                    <View
-                      className={`w-[1.2em] rounded-full p-[0.1em] ${
+                  {/* Feelings button */}
+                  {content.showFeelingsButton && !isPreview && (
+                    <TouchableOpacity
+                      onPress={toggleFeelingSelector}
+                      className={`flex-row items-center gap-1.5 rounded-full pl-1 pr-3 py-1 border border-black/5 ${
                         feelingSelectorVisible
-                          ? 'bg-black'
-                          : 'bg-black/10'
+                          ? 'bg-black/5 shadow-inner'
+                          : 'bg-white shadow-sm shadow-black/20'
                       }`}
+                      disabled={isLoadingData}
                     >
-                      <Heart
-                        size={12}
-                        color={feelingSelectorVisible ? '#fff' : baseColors.pink}
-                        fill={feelingSelectorVisible ? '#fff' : baseColors.pink}
-                      />
-                    </View>
-                    <Text className={`text-xs ${feelingSelectorVisible ? 'text-black' : 'text-black/60'}`}>Gefühle</Text>
-                  </TouchableOpacity>
-                )}
+                      <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: feelingSelectorVisible ? baseColors.white : baseColors.forest+'33' }}>
+                        <Heart
+                          size={14}
+                          color='transparent'
+                          fill={feelingSelectorVisible ? baseColors.lilac : baseColors.forest+'33'}
+                        />
+                      </View>
+                      <Text className={`text-sm font-medium`}>
+                        Gefühle
+                      </Text>
+                    </TouchableOpacity>
+                  )}
 
-                {/* Needs button */}
-                {content.showNeedsButton && !isPreview && (
-                  <TouchableOpacity
-                    onPress={toggleNeedSelector}
-                    className={`flex-row items-center gap-1 rounded-full pl-1 pr-2 py-1 ${
-                      needSelectorVisible
-                        ? 'bg-black/10 shadow-inner'
-                        : 'bg-white'
-                    }`}
-                    style={!needSelectorVisible ? styles.shadowButton : undefined}
-                    disabled={isLoadingData}
-                  >
-                    <View
-                      className={`w-[1.2em] rounded-full p-[0.1em] ${
+                  {/* Needs button */}
+                  {content.showNeedsButton && !isPreview && (
+                    <TouchableOpacity
+                      onPress={toggleNeedSelector}
+                      className={`flex-row items-center gap-1.5 rounded-full pl-1 pr-3 py-1 border border-black/5 ${
                         needSelectorVisible
-                          ? 'bg-black'
-                          : 'bg-black/10'
+                          ? 'bg-black/5 shadow-inner'
+                          : 'bg-white shadow-sm shadow-black/20'
                       }`}
+                      disabled={isLoadingData}
                     >
-                      <Swirl
-                        size={12}
-                        color={needSelectorVisible ? '#fff' : baseColors.forest}
-                      />
-                    </View>
-                    <Text className={`text-xs ${needSelectorVisible ? 'text-black' : 'text-black/60'}`}>Bedürfnisse</Text>
-                  </TouchableOpacity>
-                )}
+                      <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: needSelectorVisible ? baseColors.white : baseColors.forest+'33' }}>
+                        <Swirl
+                          size={12}
+                          color={needSelectorVisible ? baseColors.forest : baseColors.forest+'55'}
+                        />
+                      </View>
+                      <Text className={`text-sm font-medium`}>
+                        Bedürfnisse
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setFeelingSelectorVisible(false);
+                    setNeedSelectorVisible(false);
+                    submitAnswer();
+                  }}
+                  disabled={!userAnswer.trim() || isLoading}
+                  className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
+                  style={{
+                    backgroundColor: isLoading || !userAnswer.trim()
+                      ? baseColors.forest+'33'
+                      : `${baseColors.forest}`
+                  }}
+                  activeOpacity={0.7}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Send size={16} color="#fff" />
+                  )}
+                </TouchableOpacity>
               </View>
-
-              {/* Submit Button */}
-              <TouchableOpacity
-                onPress={() => {
-                  setFeelingSelectorVisible(false);
-                  setNeedSelectorVisible(false);
-                  submitAnswer();
-                }}
-                disabled={!userAnswer.trim() || isLoading}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-black"
-                style={styles.shadowButton}
-              >
-                {isLoading ? (
-                  <LoadingIndicator inline />
-                ) : (
-                  <Send size={16} color="#fff" />
-                )}
-              </TouchableOpacity>
-            </View>
             </View>
           </View>
 
@@ -557,10 +551,10 @@ export default function LearnAIQuestion({
 
 const styles = StyleSheet.create({
   textInput: {
-    fontSize: 16,
-    color: '#000',
-    minHeight: 40,
-    maxHeight: 120,
+    minHeight: 44, // min-h-11 equivalent
+    maxHeight: 104, // 4 lines: (4 * 20px line height) + (12px top padding) + (12px bottom padding) = 104px
+    fontSize: 16, // text-base
+    lineHeight: 20, // Approximate line height for calculation
   },
   shadowButton: {
     shadowColor: '#000',

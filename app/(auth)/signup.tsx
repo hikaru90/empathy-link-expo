@@ -3,7 +3,7 @@ import LoadingIndicator from '@/components/LoadingIndicator';
 import { useAuth } from '@/hooks/use-auth';
 import { Link, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -163,7 +163,7 @@ export default function SignupScreen() {
         testID="signup-button"
       >
         {isLoading ? (
-          <LoadingIndicator inline />
+          <ActivityIndicator size="small" color="#fff" />
         ) : (
           <Text className="text-white text-center font-semibold text-lg">
             Konto erstellen

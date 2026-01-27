@@ -5,11 +5,12 @@ import { Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 
 import baseColors from '@/baseColors.config';
-import LoadingIndicator from '@/components/LoadingIndicator';
 import Header from '@/components/Header';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import TabBar from '@/components/TabBar';
 import LearnAIQuestion from '@/components/learn/LearnAIQuestion';
 import LearnAudio from '@/components/learn/LearnAudio';
+import LearnBodyMap from '@/components/learn/LearnBodyMap';
 import LearnBreathe from '@/components/learn/LearnBreathe';
 import LearnFeelingsDetective from '@/components/learn/LearnFeelingsDetective';
 import LearnNavigation from '@/components/learn/LearnNavigation';
@@ -77,6 +78,7 @@ export default function LearnDetailScreen() {
         const getComponentStepCount = (component: any) => {
           if (component.type === 'aiQuestion') return 2;
           if (component.type === 'feelingsDetective') return 5;
+          if (component.type === 'bodymap') return 2;
           return 1;
         };
         const totalSteps =
@@ -130,6 +132,9 @@ export default function LearnDetailScreen() {
       }
       if (component.type === 'feelingsDetective') {
         return 5;
+      }
+      if (component.type === 'bodymap') {
+        return 2;
       }
       return 1;
     };
@@ -223,13 +228,16 @@ export default function LearnDetailScreen() {
   const topicVersion = topic.expand.currentVersion;
   const content = topicVersion.content || [];
   
-  // Calculate step count: each aiQuestion takes 2 steps, feelingsDetective takes 5 steps, others take 1
+  // Calculate step count: each aiQuestion takes 2 steps, feelingsDetective takes 5 steps, bodymap takes 2, others take 1
   const getComponentStepCount = (component: any) => {
     if (component.type === 'aiQuestion') {
       return 2;
     }
     if (component.type === 'feelingsDetective') {
       return 5;
+    }
+    if (component.type === 'bodymap') {
+      return 2;
     }
     return 1;
   };
@@ -271,7 +279,8 @@ export default function LearnDetailScreen() {
   // For components like aiQuestion and feelingsDetective, childWantsParentNavigation will be set to false
   // Also check component type - components with internal steps should not show parent navigation by default
   const componentHandlesOwnNavigation = currentStepData?.component === 'aiQuestion' || 
-                                        currentStepData?.component === 'feelingsDetective';
+                                        currentStepData?.component === 'feelingsDetective' ||
+                                        currentStepData?.component === 'bodymap';
   
   const showBottomNavigation = childWantsParentNavigation !== null
     ? childWantsParentNavigation
@@ -279,9 +288,6 @@ export default function LearnDetailScreen() {
       ? false // Don't show parent navigation for components that handle their own navigation
       : currentStep > 0 && currentStep <= totalSteps - 1; // Show navigation on summary page too
   
-  console.log('currentContentItem type:', currentContentItem?.type);
-  console.log('================================');
-
   return (
     <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
       <Header />
@@ -562,6 +568,35 @@ export default function LearnDetailScreen() {
                         onParentNavigationVisibilityChange={setChildWantsParentNavigation}
                       />
                     );
+                  case 'bodymap':
+                    return (
+                      <LearnBodyMap
+                        content={contentItem}
+                        color={categoryColor}
+                        session={session}
+                        contentBlock={contentItem}
+                        currentStep={currentStep}
+                        totalSteps={totalStepsArray}
+                        onResponse={async (response) => {
+                          if (session && currentStepData?.blockIndex >= 0) {
+                            const updatedSession = await saveLearningSessionResponse(
+                              session.id,
+                              currentStepData.blockIndex,
+                              'bodymap',
+                              response,
+                              topicVersion.id,
+                              contentItem
+                            );
+                            if (updatedSession) {
+                              setSession(updatedSession);
+                            }
+                          }
+                        }}
+                        gotoNextStep={handleNextStep}
+                        gotoPrevStep={handlePrevStep}
+                        onParentNavigationVisibilityChange={setChildWantsParentNavigation}
+                      />
+                    );
                   default:
                     return (
                       <View className="bg-white rounded-lg p-6 mb-4">
@@ -580,7 +615,7 @@ export default function LearnDetailScreen() {
       {/* Fixed Bottom Navigation */}
       {showBottomNavigation && (
         <View 
-          className="absolute left-0 right-0 px-4 py-4"
+          className="absolute left-0 right-0 px-4 py-4 "
           style={{ 
             bottom: 70, // Position above TabBar
             backgroundColor: baseColors.background,

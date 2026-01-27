@@ -4,7 +4,7 @@ import { authClient } from '@/lib/auth';
 import { BETTER_AUTH_URL } from '@/lib/config';
 import { Link, Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function VerifyEmailTokenScreen() {
@@ -223,7 +223,7 @@ export default function VerifyEmailTokenScreen() {
               disabled={isVerifying}
             >
               {isVerifying ? (
-                <LoadingIndicator inline />
+                <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <Text className="text-white text-center font-semibold text-lg">
                   Erneut versuchen

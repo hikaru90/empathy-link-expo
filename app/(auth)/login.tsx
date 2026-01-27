@@ -1,9 +1,12 @@
 import baseColors from '@/baseColors.config';
-import LoadingIndicator from '@/components/LoadingIndicator';
+import SparklePill from '@/components/SparklePill';
 import { useAuth } from '@/hooks/use-auth';
+import { ImageBackground } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
+const jungleImage = require('@/assets/images/Jungle.jpg');
 
 // Helper function to parse query parameters from URL
 // On web, Expo Router uses hash-based routing, so we need to check both location.search and hash
@@ -11,7 +14,7 @@ import { Alert, Platform, Text, TextInput, TouchableOpacity, View } from 'react-
 function parseQueryParams(): Record<string, string> {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     const params: Record<string, string> = {};
-    
+
     // First check sessionStorage (stored before hash conversion)
     try {
       const stored = sessionStorage.getItem('login_query_params');
@@ -24,7 +27,7 @@ function parseQueryParams(): Record<string, string> {
     } catch (e) {
       // Ignore sessionStorage errors
     }
-    
+
     // Then try window.location.search (standard query params)
     if (window.location.search) {
       const searchParams = new URLSearchParams(window.location.search);
@@ -32,7 +35,7 @@ function parseQueryParams(): Record<string, string> {
         params[key] = value;
       });
     }
-    
+
     // Also check hash for hash-based routing (Expo Router on web uses hash)
     if (window.location.hash) {
       const hash = window.location.hash.substring(1); // Remove the #
@@ -47,7 +50,7 @@ function parseQueryParams(): Record<string, string> {
         });
       }
     }
-    
+
     return params;
   }
   return {};
@@ -64,24 +67,24 @@ export default function SigninScreen() {
   const { signIn, resendVerificationEmail } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ fromSignup?: string; email?: string; initial?: string; pop?: string; path?: string }>();
-  
+
   // Parse query params manually (for web platform where useLocalSearchParams might not work)
   // Parse synchronously on every render to catch URL changes
   const queryParams = parseQueryParams();
-  
+
   // Check if we're coming from signup (via query params or URL)
   // Handle both string and array formats from useLocalSearchParams, and also manual query parsing
   const initialParam = queryParams.initial || (Array.isArray(params.initial) ? params.initial[0] : params.initial);
   const fromSignupParam = queryParams.fromSignup || (Array.isArray(params.fromSignup) ? params.fromSignup[0] : params.fromSignup);
   // Check for 'true' string or boolean true, and also check for '1' as some systems use that
-  const isFromSignup = 
-    fromSignupParam === 'true' || 
+  const isFromSignup =
+    fromSignupParam === 'true' ||
     fromSignupParam === true ||
     fromSignupParam === '1' ||
-    initialParam === 'true' || 
+    initialParam === 'true' ||
     initialParam === true ||
     initialParam === '1';
-  
+
   useEffect(() => {
     if (__DEV__) {
       console.log('=== Login Page Debug ===');
@@ -96,7 +99,7 @@ export default function SigninScreen() {
       console.log('=======================');
     }
   }, [queryParams, initialParam, fromSignupParam, isFromSignup, params]);
-  
+
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
 
@@ -147,7 +150,7 @@ export default function SigninScreen() {
     setErrorMessage(null);
     setShowResendButton(false);
     setResendSuccess(false);
-    
+
     if (!email || !password) {
       const msg = 'Bitte fülle alle Felder aus';
       setErrorMessage(msg);
@@ -162,7 +165,7 @@ export default function SigninScreen() {
       console.log('signIn returned successfully:', result);
       // Wait a bit for state to update, then navigate
       setTimeout(() => {
-        console.log('result',result);
+        console.log('result', result);
         if (result.needsVerification) {
           router.replace('/(auth)/verify-email');
         } else {
@@ -174,28 +177,28 @@ export default function SigninScreen() {
       // Extract error message from various possible formats
       let msg = 'Anmeldung fehlgeschlagen';
       let is403Error = false;
-      
+
       // Get status code and message
       const status = (error as any)?.status || error?.error?.status;
       const errorMsg = error?.message || error?.error?.message || (error instanceof Error ? error.message : '');
-      
+
       if (errorMsg) {
         msg = errorMsg;
       }
-      
+
       // Check if it's a 403 error about email verification
       // The backend translates this to: "Deine E-Mail-Adresse wurde noch nicht verifiziert..."
-      console.log('is403Error',is403Error);
-      is403Error = status === 403 || 
-                   msg.includes('nicht verifiziert') || 
-                   msg.includes('E-Mail-Postfach') ||
-                   msg.toLowerCase().includes('email not verified') ||
-                   msg.toLowerCase().includes('email verification required');
-      
+      console.log('is403Error', is403Error);
+      is403Error = status === 403 ||
+        msg.includes('nicht verifiziert') ||
+        msg.includes('E-Mail-Postfach') ||
+        msg.toLowerCase().includes('email not verified') ||
+        msg.toLowerCase().includes('email verification required');
+
       if (__DEV__) {
         console.log('Login error:', { status, msg, is403Error });
       }
-      
+
       // Display error in UI and Alert
       setErrorMessage(msg);
       setShowResendButton(is403Error);
@@ -207,10 +210,20 @@ export default function SigninScreen() {
   return (
     <View className="flex-1 justify-center px-6" style={{ backgroundColor: baseColors.background }}>
       <View className="mb-8">
-        <Text className="text-3xl font-bold text-gray-800 mb-2 text-center">
-          Willkommen zurück
-        </Text>
-        <Text className="text-gray-600 text-center">
+        <View className="items-center mb-4 flex-row gap-2 justify-center">
+          <SparklePill />
+          <Text
+            style={{
+              fontWeight: 'bold',
+              fontSize: 22,
+              color: baseColors.forest,
+              letterSpacing: 1,
+            }}
+          >
+            Empathy Link
+          </Text>
+        </View>
+        <Text className="text-center" style={{ color: baseColors.forest+'99' }}>
           Melde dich in deinem Empathy Link Konto an
         </Text>
       </View>
@@ -242,7 +255,7 @@ export default function SigninScreen() {
               disabled={isResending}
             >
               {isResending ? (
-                <LoadingIndicator inline />
+                <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <Text className="text-white text-center font-semibold">
                   Bestätigungslink erneut senden?
@@ -291,8 +304,6 @@ export default function SigninScreen() {
 
       <View className="flex-row justify-center">
         <TouchableOpacity
-          className={`rounded-full py-2 px-6 ${isLoading ? 'opacity-50' : ''}`}
-          style={{ backgroundColor: baseColors.primary }}
           onPress={() => {
             console.log('Button pressed, calling handleSignin');
             handleSignin();
@@ -302,21 +313,51 @@ export default function SigninScreen() {
           accessibilityLabel="Anmelden"
           accessibilityState={{ disabled: isLoading }}
           testID="signin-button"
+          style={{
+            width: '100%',
+            maxWidth: 300,
+            height: 48,
+            opacity: isLoading ? 0.5 : 1,
+          }}
         >
-          {isLoading ? (
-            <LoadingIndicator size="small" inline />
-          ) : (
-            <Text className="text-white text-center font-semibold text-lg">
-              Anmelden
-            </Text>
-          )}
+          <ImageBackground
+            source={jungleImage}
+            resizeMode="cover"
+            style={{
+              flex: 1,
+              height: '100%',
+              width: '100%',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 12,
+              paddingVertical: 12,
+              paddingHorizontal: 24,
+              borderRadius: 999,
+              overflow: 'hidden',
+              borderWidth: 1,
+              borderColor: 'rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color={baseColors.offwhite} />
+            ) : (
+              <Text style={{
+                fontSize: 16,
+                color: baseColors.offwhite,
+                fontWeight: '600',
+              }}>
+                Anmelden
+              </Text>
+            )}
+          </ImageBackground>
         </TouchableOpacity>
       </View>
       <View className="mt-6 flex-row justify-center">
-        <Text className="text-gray-600">Noch kein Konto? </Text>
+        <Text className="" style={{ color: baseColors.forest+'99' }}>Noch kein Konto? </Text>
         <Link href="/(auth)/signup" asChild>
           <TouchableOpacity>
-            <Text className="font-semibold" style={{ color: baseColors.primary }}>
+            <Text className="font-semibold" style={{ color: baseColors.forest }}>
               Registrieren
             </Text>
           </TouchableOpacity>

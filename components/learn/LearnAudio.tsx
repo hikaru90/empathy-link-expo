@@ -3,11 +3,10 @@
  * Plays audio content with custom controls and completion tracking
  */
 
-import LoadingIndicator from '@/components/LoadingIndicator';
 import { Audio } from 'expo-av';
 import { Pause, Play, RotateCcw } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 
 // Initialize MarkdownIt with HTML support enabled
@@ -445,7 +444,7 @@ export default function LearnAudio({
               {hasError ? (
                 <Text className="text-red-400 text-lg">⚠️</Text>
               ) : isLoading ? (
-                <LoadingIndicator inline />
+                <ActivityIndicator size="small" color="#fff" />
               ) : isPlaying ? (
                 <Pause size={24} color="#fff" />
               ) : (

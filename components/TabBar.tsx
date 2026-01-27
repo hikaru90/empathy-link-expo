@@ -1,6 +1,6 @@
-import { useRouter, usePathname } from 'expo-router';
-import { BarChart3, Book, BotMessageSquare, Users } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { usePathname, useRouter } from 'expo-router';
+import { BarChart3, Book, BotMessageSquare } from 'lucide-react-native';
 import React from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -13,7 +13,7 @@ const tabs = [
   { name: 'index', path: '/(protected)/(tabs)/', label: 'Chat', icon: BotMessageSquare },
   { name: 'stats', path: '/(protected)/(tabs)/stats', label: 'Statistik', icon: BarChart3 },
   { name: 'learn', path: '/(protected)/(tabs)/learn', label: 'Lernen', icon: Book },
-  { name: 'community', path: '/(protected)/(tabs)/community', label: 'Community', icon: Users },
+  // { name: 'community', path: '/(protected)/(tabs)/community', label: 'Community', icon: Users },
 ];
 
 export default function TabBar() {

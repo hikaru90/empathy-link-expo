@@ -3,7 +3,7 @@ import LoadingIndicator from '@/components/LoadingIndicator';
 import { authClient } from '@/lib/auth';
 import { Link, Redirect, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function VerifyEmailScreen() {
@@ -76,7 +76,7 @@ export default function VerifyEmailScreen() {
         accessibilityLabel="Verifizierung prüfen"
       >
         {isChecking ? (
-          <LoadingIndicator inline />
+          <ActivityIndicator size="small" color="#fff" />
         ) : (
           <Text className="text-white text-center font-semibold text-lg">
             Verifizierung prüfen

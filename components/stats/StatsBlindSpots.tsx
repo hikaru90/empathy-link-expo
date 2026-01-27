@@ -5,7 +5,7 @@ import { ImageBackground } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Clock4, Eye, RefreshCcwDot, RefreshCw } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function StatsBlindSpots() {
   const [insight, setInsight] = useState<BlindSpotInsight | null>(null);
@@ -147,7 +147,7 @@ export default function StatsBlindSpots() {
           >
             {isGenerating ? (
               <>
-                <LoadingIndicator inline />
+                <ActivityIndicator size="small" color="#fff" />
                 <Text className="text-sm font-semibold text-white ml-2">
                   Erstelle Analyse...
                 </Text>
@@ -185,7 +185,7 @@ export default function StatsBlindSpots() {
           >
             {isGenerating ? (
               <>
-                <LoadingIndicator inline />
+                <ActivityIndicator size="small" color="#000" />
                 <Text className="text-xs text-black ml-1">Erstelle...</Text>
               </>
             ) : (
