@@ -3,19 +3,26 @@
  * Port of ../empathy-link LearnBodyMap.svelte – bodyscan map to place points and assign feelings
  */
 
+import baseColors from '@/baseColors.config';
+import GroupedFeelingsSelector from '@/components/chat/GroupedFeelingsSelector';
 import LearnNavigation from '@/components/learn/LearnNavigation';
-import { useFeelingsDrawer } from '@/hooks/use-feelings-drawer';
+import { useBottomDrawerSlot } from '@/hooks/use-bottom-drawer-slot';
 import { getFeelings, type Feeling } from '@/lib/api/chat';
 import type { LearningSession } from '@/lib/api/learn';
+import { Trash2 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   LayoutChangeEvent,
   PanResponder,
+  ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
+
+const DRAWER_CHROME = 28 + 52 + 32;
 
 // PNG export of assets/images/character.svg – use Image so it works on web and native without SVG transformer
 const characterImage = require('@/assets/images/illustration-character.png');
@@ -62,7 +69,8 @@ export default function LearnBodyMap({
     onParentNavigationVisibilityChange?.(false);
   }, [internalStep, onParentNavigationVisibilityChange]);
 
-  const { openDrawer: openFeelingsDrawer, closeDrawer: closeFeelingsDrawer } = useFeelingsDrawer();
+  const { openDrawer, closeDrawer } = useBottomDrawerSlot();
+  const [drawerContentHeight, setDrawerContentHeight] = useState(0);
   const [points, setPoints] = useState<BodymapPoint[]>([]);
   const [showFeelings, setShowFeelings] = useState(false);
   const [activePointId, setActivePointId] = useState<number | null>(null);
@@ -76,12 +84,15 @@ export default function LearnBodyMap({
   const dragStartPointPosRef = useRef({ x: 0, y: 0 });
   const nextPointIdRef = useRef(0);
   const hasEmitted = useRef(false);
+  const onResponseRef = useRef(onResponse);
+  onResponseRef.current = onResponse;
 
   pointsRef.current = points;
   nextPointIdRef.current = nextPointId;
   activePointIdRef.current = activePointId;
 
   // Debounce onResponse so we don't hammer the API on every drag move (save ~400ms after last change)
+  // Only depend on points so parent re-renders (e.g. after setSession) don't retrigger and loop
   useEffect(() => {
     if (!hasEmitted.current) {
       hasEmitted.current = true;
@@ -89,10 +100,10 @@ export default function LearnBodyMap({
     }
     const payload = { points: points.map((p) => ({ x: p.x, y: p.y, feelings: p.feelings })) };
     const t = setTimeout(() => {
-      onResponse(payload);
+      onResponseRef.current(payload);
     }, 400);
     return () => clearTimeout(t);
-  }, [points, onResponse]);
+  }, [points]);
 
   // Load feelings
   useEffect(() => {
@@ -111,7 +122,7 @@ export default function LearnBodyMap({
     return () => { cancelled = true; };
   }, []);
 
-  // Restore from session
+  // Restore from session – only update state when restored data differs to avoid save→restore→save loop
   useEffect(() => {
     if (!contentBlock || !session?.responses) return;
     const existing = session.responses.find(
@@ -125,8 +136,20 @@ export default function LearnBodyMap({
         y: p.y,
         feelings: p.feelings || [],
       }));
-      setPoints(restored);
-      setNextPointId(restored.length);
+      const current = pointsRef.current;
+      const same =
+        current.length === restored.length &&
+        restored.every(
+          (r: { x: number; y: number; feelings: string[] }, i: number) =>
+            current[i] &&
+            r.x === current[i].x &&
+            r.y === current[i].y &&
+            JSON.stringify(r.feelings) === JSON.stringify(current[i].feelings)
+        );
+      if (!same) {
+        setPoints(restored);
+        setNextPointId(restored.length);
+      }
     }
   }, [contentBlock, session?.responses]);
 
@@ -210,45 +233,83 @@ export default function LearnBodyMap({
     setShowFeelings(false);
   }, []);
 
-  const handleFeelingPress = useCallback(
-    (feelingName: string) => {
-      if (activePointId === null) return;
-      const feeling = feelings.find((f) => f.nameDE === feelingName);
-      if (!feeling) return;
-      setPoints((prev) =>
-        prev.map((p) => {
-          if (p.id !== activePointId) return p;
-          const has = p.feelings.includes(feeling.id);
-          return {
-            ...p,
-            feelings: has ? p.feelings.filter((id) => id !== feeling.id) : [...p.feelings, feeling.id],
-          };
-        })
-      );
-    },
-    [activePointId, feelings]
-  );
-
   const activePoint = points.find((p) => p.id === activePointId);
 
-  // Sync feelings drawer when a point is selected
+  // Open bottom drawer with bodymap feelings slot when a point is selected
   useEffect(() => {
-    if (showFeelings && activePoint) {
-      openFeelingsDrawer({
-        feelings,
-        activePoint,
-        onFeelingPress: handleFeelingPress,
-        removePoint,
+    if (showFeelings && activePoint && activePointId !== null) {
+      openDrawer({
+        title: 'Gefühle wählen',
+        headerRight: (
+          <TouchableOpacity
+            onPress={() => {
+              removePoint(activePointId);
+              closeDrawer();
+            }}
+            className="flex-row items-center justify-between gap-1 rounded-full pl-3 pr-2 py-2"
+            style={{ backgroundColor: baseColors.brick }}
+          >
+            <Text className="text-xs font-medium text-white">Punkt löschen</Text>
+            <View className="rounded-full bg-white/20 flex items-center justify-center p-1">
+              <Trash2 size={12} color="#fff" />
+            </View>
+          </TouchableOpacity>
+        ),
+        tall: true,
+        initialHeight: drawerContentHeight > 0 ? drawerContentHeight + DRAWER_CHROME : undefined,
         onClose: () => {
           setShowFeelings(false);
           setActivePointId(null);
         },
-        feelingsLoading,
+        children: (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={{ flex: 1 }}
+            onContentSizeChange={(_w, h) => setDrawerContentHeight(h)}
+          >
+            <View className="mb-2 flex-row flex-wrap gap-1">
+              {activePoint.feelings.map((id) => {
+                const f = feelings.find((x) => x.id === id);
+                return (
+                  <View
+                    key={id}
+                    className="rounded-full bg-gray-200 px-2 py-1"
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <Text className="text-xs text-gray-800">{f?.nameDE ?? id}</Text>
+                  </View>
+                );
+              })}
+            </View>
+            <GroupedFeelingsSelector
+              feelings={feelings}
+              isLoading={feelingsLoading}
+              selectType="multiple"
+              highlightSelection={true}
+              selectedFeelingIds={activePoint.feelings}
+              onSelectionChange={(ids) =>
+                setPoints((prev) =>
+                  prev.map((p) => (p.id !== activePointId ? p : { ...p, feelings: ids }))
+                )
+              }
+            />
+          </ScrollView>
+        ),
       });
     } else {
-      closeFeelingsDrawer();
+      closeDrawer();
     }
-  }, [showFeelings, activePoint, feelings, feelingsLoading, handleFeelingPress, removePoint, openFeelingsDrawer, closeFeelingsDrawer]);
+  }, [
+    showFeelings,
+    activePoint,
+    activePointId,
+    feelings,
+    feelingsLoading,
+    removePoint,
+    openDrawer,
+    closeDrawer,
+    drawerContentHeight,
+  ]);
 
   // Internal step 0: splash "Zeit zu Fühlen" and Weiter to enter the map
   if (internalStep === 0) {

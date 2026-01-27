@@ -13,8 +13,15 @@ import LearnAudio from '@/components/learn/LearnAudio';
 import LearnBodyMap from '@/components/learn/LearnBodyMap';
 import LearnBreathe from '@/components/learn/LearnBreathe';
 import LearnFeelingsDetective from '@/components/learn/LearnFeelingsDetective';
+import LearnImage from '@/components/learn/LearnImage';
+import LearnMultipleChoice from '@/components/learn/LearnMultipleChoice';
+import LearnNeedsDetective from '@/components/learn/LearnNeedsDetective';
+import LearnNeedsRubiksCube from '@/components/learn/LearnNeedsRubiksCube';
 import LearnNavigation from '@/components/learn/LearnNavigation';
+import LearnSortable from '@/components/learn/LearnSortable';
+import LearnTask from '@/components/learn/LearnTask';
 import LearnText from '@/components/learn/LearnText';
+import LearnTimer from '@/components/learn/LearnTimer';
 import LearnTitleCard from '@/components/learn/LearnTitleCard';
 import LearningSummary from '@/components/learn/LearningSummary';
 import { useAuthGuard } from '@/hooks/use-auth';
@@ -79,6 +86,8 @@ export default function LearnDetailScreen() {
           if (component.type === 'aiQuestion') return 2;
           if (component.type === 'feelingsDetective') return 5;
           if (component.type === 'bodymap') return 2;
+          if (component.type === 'needsDetective') return 4;
+          if (component.type === 'needsRubiksCube') return 2;
           return 1;
         };
         const totalSteps =
@@ -228,7 +237,7 @@ export default function LearnDetailScreen() {
   const topicVersion = topic.expand.currentVersion;
   const content = topicVersion.content || [];
   
-  // Calculate step count: each aiQuestion takes 2 steps, feelingsDetective takes 5 steps, bodymap takes 2, others take 1
+  // Calculate step count: each aiQuestion takes 2 steps, feelingsDetective takes 5 steps, bodymap takes 2, needsDetective 4, needsRubiksCube 2, others take 1
   const getComponentStepCount = (component: any) => {
     if (component.type === 'aiQuestion') {
       return 2;
@@ -237,6 +246,12 @@ export default function LearnDetailScreen() {
       return 5;
     }
     if (component.type === 'bodymap') {
+      return 2;
+    }
+    if (component.type === 'needsDetective') {
+      return 4;
+    }
+    if (component.type === 'needsRubiksCube') {
       return 2;
     }
     return 1;
@@ -278,9 +293,13 @@ export default function LearnDetailScreen() {
   // Otherwise, use default logic (show for steps that aren't first or last)
   // For components like aiQuestion and feelingsDetective, childWantsParentNavigation will be set to false
   // Also check component type - components with internal steps should not show parent navigation by default
-  const componentHandlesOwnNavigation = currentStepData?.component === 'aiQuestion' || 
+  const componentHandlesOwnNavigation = currentStepData?.component === 'aiQuestion' ||
                                         currentStepData?.component === 'feelingsDetective' ||
-                                        currentStepData?.component === 'bodymap';
+                                        currentStepData?.component === 'bodymap' ||
+                                        currentStepData?.component === 'needsDetective' ||
+                                        currentStepData?.component === 'needsRubiksCube' ||
+                                        currentStepData?.component === 'sortable' ||
+                                        currentStepData?.component === 'multipleChoice';
   
   const showBottomNavigation = childWantsParentNavigation !== null
     ? childWantsParentNavigation
@@ -477,6 +496,101 @@ export default function LearnDetailScreen() {
                         </View>
                       </View>
                     );
+                  case 'image':
+                    return (
+                      <LearnImage
+                        content={contentItem}
+                        collectionId={topicVersion.collectionId}
+                        recordId={topicVersion.id}
+                      />
+                    );
+                  case 'timer':
+                    return (
+                      <LearnTimer
+                        duration={contentItem.duration ?? 60}
+                        color={categoryColor}
+                        session={session}
+                        onResponse={async (response) => {
+                          if (session && currentStepData?.blockIndex >= 0) {
+                            const updatedSession = await saveLearningSessionResponse(
+                              session.id,
+                              currentStepData.blockIndex,
+                              'timer',
+                              response,
+                              topicVersion.id,
+                              contentItem,
+                              session
+                            );
+                            if (updatedSession) setSession(updatedSession);
+                          }
+                        }}
+                      />
+                    );
+                  case 'task':
+                    return (
+                      <LearnTask
+                        content={contentItem}
+                        color={categoryColor}
+                        onComplete={handleNextStep}
+                      />
+                    );
+                  case 'sortable':
+                    return (
+                      <LearnSortable
+                        content={contentItem}
+                        color={categoryColor}
+                        initialUserSorting={
+                          session?.responses?.find(
+                            (r) =>
+                              r.blockIndex === currentStepData?.blockIndex &&
+                              r.blockType === 'sortable' &&
+                              JSON.stringify(r.blockContent) === JSON.stringify(contentItem)
+                          )?.response?.userSorting
+                        }
+                        onResponse={async (response) => {
+                          if (session && currentStepData?.blockIndex >= 0) {
+                            const updatedSession = await saveLearningSessionResponse(
+                              session.id,
+                              currentStepData.blockIndex,
+                              'sortable',
+                              response,
+                              topicVersion.id,
+                              contentItem,
+                              session
+                            );
+                            if (updatedSession) setSession(updatedSession);
+                          }
+                        }}
+                        onNext={handleNextStep}
+                        onPrev={handlePrevStep}
+                      />
+                    );
+                  case 'multipleChoice':
+                    return (
+                      <LearnMultipleChoice
+                        content={contentItem}
+                        color={categoryColor}
+                        session={session}
+                        contentBlock={contentItem}
+                        topicVersionId={topicVersion.id}
+                        onResponse={async (response) => {
+                          if (session && currentStepData?.blockIndex >= 0) {
+                            const updatedSession = await saveLearningSessionResponse(
+                              session.id,
+                              currentStepData.blockIndex,
+                              'multipleChoice',
+                              response,
+                              topicVersion.id,
+                              contentItem,
+                              session
+                            );
+                            if (updatedSession) setSession(updatedSession);
+                          }
+                        }}
+                        gotoNextStep={handleNextStep}
+                        gotoPrevStep={handlePrevStep}
+                      />
+                    );
                   case 'breathe':
                     return (
                       <LearnBreathe
@@ -499,7 +613,8 @@ export default function LearnDetailScreen() {
                               'audio',
                               response,
                               topicVersion.id,
-                              contentItem
+                              contentItem,
+                              session
                             );
                             if (updatedSession) {
                               setSession(updatedSession);
@@ -526,7 +641,8 @@ export default function LearnDetailScreen() {
                               'aiQuestion',
                               response,
                               topicVersion.id,
-                              contentItem
+                              contentItem,
+                              session
                             );
                             if (updatedSession) {
                               setSession(updatedSession);
@@ -556,7 +672,8 @@ export default function LearnDetailScreen() {
                               'feelingsDetective',
                               response,
                               topicVersion.id,
-                              contentItem
+                              contentItem,
+                              session
                             );
                             if (updatedSession) {
                               setSession(updatedSession);
@@ -585,7 +702,8 @@ export default function LearnDetailScreen() {
                               'bodymap',
                               response,
                               topicVersion.id,
-                              contentItem
+                              contentItem,
+                              session
                             );
                             if (updatedSession) {
                               setSession(updatedSession);
@@ -595,6 +713,62 @@ export default function LearnDetailScreen() {
                         gotoNextStep={handleNextStep}
                         gotoPrevStep={handlePrevStep}
                         onParentNavigationVisibilityChange={setChildWantsParentNavigation}
+                      />
+                    );
+                  case 'needsDetective':
+                    return (
+                      <LearnNeedsDetective
+                        content={contentItem}
+                        color={categoryColor}
+                        session={session}
+                        contentBlock={contentItem}
+                        currentStep={currentStep}
+                        totalSteps={totalStepsArray}
+                        topicVersionId={topicVersion.id}
+                        onResponse={async (response) => {
+                          if (session && currentStepData?.blockIndex >= 0) {
+                            const updatedSession = await saveLearningSessionResponse(
+                              session.id,
+                              currentStepData.blockIndex,
+                              'needsDetective',
+                              response,
+                              topicVersion.id,
+                              contentItem,
+                              session
+                            );
+                            if (updatedSession) setSession(updatedSession);
+                          }
+                        }}
+                        gotoNextStep={handleNextStep}
+                        gotoPrevStep={handlePrevStep}
+                      />
+                    );
+                  case 'needsRubiksCube':
+                    return (
+                      <LearnNeedsRubiksCube
+                        content={contentItem}
+                        color={categoryColor}
+                        session={session}
+                        contentBlock={contentItem}
+                        currentStep={currentStep}
+                        totalSteps={totalStepsArray}
+                        topicVersionId={topicVersion.id}
+                        onResponse={async (response) => {
+                          if (session && currentStepData?.blockIndex >= 0) {
+                            const updatedSession = await saveLearningSessionResponse(
+                              session.id,
+                              currentStepData.blockIndex,
+                              'needsRubiksCube',
+                              response,
+                              topicVersion.id,
+                              contentItem,
+                              session
+                            );
+                            if (updatedSession) setSession(updatedSession);
+                          }
+                        }}
+                        gotoNextStep={handleNextStep}
+                        gotoPrevStep={handlePrevStep}
                       />
                     );
                   default:

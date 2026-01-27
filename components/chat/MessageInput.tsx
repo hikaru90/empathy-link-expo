@@ -4,7 +4,6 @@
 
 import Swirl from '@/assets/icons/Swirl';
 import baseColors from '@/baseColors.config';
-import LoadingIndicator from '@/components/LoadingIndicator';
 import { useChat } from '@/hooks/use-chat';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { Heart, Send } from 'lucide-react-native';
@@ -180,6 +179,9 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
             feelings={feelings}
             onFeelingPress={addText}
             isLoading={isLoadingData}
+            selectType="single"
+            highlightSelection={false}
+            prependText="+ "
           />
         </View>
       )}

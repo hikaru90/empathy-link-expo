@@ -1,6 +1,6 @@
 /**
- * Global bottom drawer component. Used by Header and other parts of the app
- * (e.g. FeelingsDrawer for the bodymap feelings selector).
+ * Global bottom drawer component. Used by Header and by slot content (e.g.
+ * LearnBodyMap and LearnFeelingsDetective pass their own logic/markup as a slot).
  * When tall=true, the handle follows the touch during drag then snaps to initial or expanded.
  * Drag up from initial → expanded. Drag down from expanded → initial.
  * Drag down from initial → close. No sizes smaller than initial or in between.
@@ -32,6 +32,8 @@ export interface BottomDrawerProps {
   onClose: () => void;
   title?: string;
   subtitle?: string;
+  /** Optional slot: rendered in the header row, right next to the title (e.g. action button). */
+  headerRight?: React.ReactNode;
   /** When true, drawer has two snap points (initial/expanded). Drag handle to switch or close from initial. */
   tall?: boolean;
   children: React.ReactNode;
@@ -48,6 +50,7 @@ export default function BottomDrawer({
   onClose,
   title,
   subtitle,
+  headerRight,
   tall = false,
   children,
   contentStyle,
@@ -209,11 +212,16 @@ export default function BottomDrawer({
             style={styles.drawerHandle}
             {...(tall ? panResponder.panHandlers : {})}
           />
-          {(title != null || subtitle != null) && (
+          {(title != null || subtitle != null || headerRight != null) && (
             <View style={styles.drawerHeader}>
-              {title != null && <Text style={styles.drawerTitle}>{title}</Text>}
-              {subtitle != null && (
-                <Text style={styles.drawerSubtitle}>{subtitle}</Text>
+              <View style={styles.drawerHeaderLeft}>
+                {title != null && <Text style={styles.drawerTitle}>{title}</Text>}
+                {subtitle != null && (
+                  <Text style={styles.drawerSubtitle}>{subtitle}</Text>
+                )}
+              </View>
+              {headerRight != null && (
+                <View style={styles.drawerHeaderRight}>{headerRight}</View>
               )}
             </View>
           )}
@@ -257,9 +265,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   drawerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 16,
     marginLeft: 8,
+  },
+  drawerHeaderLeft: {
+    flex: 1,
+  },
+  drawerHeaderRight: {
+    marginLeft: 12,
   },
   drawerTitle: {
     fontSize: 20,

@@ -10,6 +10,7 @@ interface LearnNavigationProps {
   variant?: 'default' | 'light';
   className?: string;
   style?: any;
+  disabled?: boolean;
 }
 
 export default function LearnNavigation({
@@ -20,6 +21,7 @@ export default function LearnNavigation({
   variant = 'default',
   className = '',
   style,
+  disabled = false,
 }: LearnNavigationProps) {
   const shouldShowPrev = showPrev !== undefined ? showPrev : !!onPrev;
   const nextButtonBg = variant === 'light' ? 'bg-white' : 'bg-black';
@@ -39,8 +41,9 @@ export default function LearnNavigation({
         </TouchableOpacity>
       )}
       <TouchableOpacity
-        onPress={onNext}
-        className={`flex h-10 flex-grow flex-row items-center justify-between gap-2 rounded-full ${nextButtonBg} py-3 pl-6 pr-2`}
+        onPress={disabled ? undefined : onNext}
+        disabled={disabled}
+        className={`flex h-10 flex-grow flex-row items-center justify-between gap-2 rounded-full ${nextButtonBg} py-3 pl-6 pr-2 ${disabled ? 'opacity-50' : ''}`}
       >
         <Text className={`font-medium ${nextButtonTextColor}`}>
           {nextText || 'Weiter'}

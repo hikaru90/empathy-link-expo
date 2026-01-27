@@ -104,38 +104,62 @@ async function authenticatedFetch<T = any>(url: string, options: RequestInit = {
   }
 }
 
+/** In-memory cache for content (categories, topics, topic by slug) to cut repeated calls. */
+const contentCache = {
+  categories: null as TopicCategory[] | null,
+  topics: null as Topic[] | null,
+  topicBySlug: {} as Record<string, Topic>,
+};
+
 /**
- * Get all topic categories (public access - no auth required)
+ * Get all topic categories (public access - no auth required).
+ * Uses in-memory cache to avoid repeated calls when navigating learn list ↔ topic.
  */
 export async function getCategories(): Promise<TopicCategory[]> {
+  if (contentCache.categories) return contentCache.categories;
   const { pb } = await import('../pocketbase');
-  return pb.collection('topicCategory').getFullList<TopicCategory>({
+  const data = await pb.collection('topicCategory').getFullList<TopicCategory>({
     sort: 'order',
   });
+  contentCache.categories = data;
+  return data;
 }
 
 /**
- * Get all topics with their current versions and categories (public access - no auth required)
+ * Get all topics with their current versions and categories (public access - no auth required).
+ * Uses in-memory cache to avoid repeated calls when navigating learn list ↔ topic.
  */
 export async function getTopics(): Promise<Topic[]> {
+  if (contentCache.topics) return contentCache.topics;
   const { pb } = await import('../pocketbase');
-  return pb.collection('topics').getFullList<Topic>({
+  const data = await pb.collection('topics').getFullList<Topic>({
     sort: 'order',
     expand: 'currentVersion,currentVersion.category',
   });
+  contentCache.topics = data;
+  return data;
 }
 
 /**
- * Get a single topic by slug (public access - no auth required)
+ * Get a single topic by slug (public access - no auth required).
+ * Uses in-memory cache; falls back to getTopics() when possible to reuse list data.
  */
 export async function getTopicBySlug(slug: string): Promise<Topic> {
-  const { pb } = await import('../pocketbase');
-  return pb.collection('topics').getFirstListItem<Topic>(
-    `slug = "${slug}"`,
-    {
-      expand: 'currentVersion,currentVersion.category',
+  if (contentCache.topicBySlug[slug]) return contentCache.topicBySlug[slug];
+  if (contentCache.topics) {
+    const found = contentCache.topics.find((t) => t.slug === slug);
+    if (found) {
+      contentCache.topicBySlug[slug] = found;
+      return found;
     }
+  }
+  const { pb } = await import('../pocketbase');
+  const data = await pb.collection('topics').getFirstListItem<Topic>(
+    `slug = "${slug}"`,
+    { expand: 'currentVersion,currentVersion.category' }
   );
+  contentCache.topicBySlug[slug] = data;
+  return data;
 }
 
 /**
@@ -244,8 +268,9 @@ export async function getLearningSessionById(sessionId: string): Promise<Learnin
 }
 
 /**
- * Save a response to a learning session
- * Uses backend API with Better Auth authentication
+ * Save a response to a learning session.
+ * Uses backend API with Better Auth authentication.
+ * Pass currentSession when the caller already has it to avoid an extra GET.
  */
 export async function saveLearningSessionResponse(
   sessionId: string,
@@ -253,16 +278,13 @@ export async function saveLearningSessionResponse(
   blockType: string,
   response: any,
   topicVersionId: string,
-  blockContent: any
+  blockContent: any,
+  currentSession?: LearningSession | null
 ): Promise<LearningSession | null> {
   try {
-    // Get current session first to update responses array
-    const session = await getLearningSessionById(sessionId);
-    if (!session) {
-      return null;
-    }
-    
-    // Update responses array
+    let session = currentSession ?? (await getLearningSessionById(sessionId));
+    if (!session) return null;
+
     const existingResponses = session.responses || [];
     const updatedResponses = existingResponses.filter(
       (r) =>
@@ -271,7 +293,6 @@ export async function saveLearningSessionResponse(
           JSON.stringify(r.blockContent) === JSON.stringify(blockContent)
         )
     );
-    
     updatedResponses.push({
       blockIndex,
       blockType,
@@ -280,7 +301,7 @@ export async function saveLearningSessionResponse(
       topicVersionId,
       blockContent,
     });
-    
+
     const updateResponse = await authenticatedFetch<{ session: LearningSession }>(
       `${API_BASE_URL}/api/learn/sessions/${sessionId}`,
       {
@@ -451,6 +472,67 @@ export async function feelingsDetectiveAI(
     return response.response || '';
   } catch (error: any) {
     console.error('Failed to get feelings detective AI response:', error?.message || error);
+    throw error;
+  }
+}
+
+/**
+ * Needs Detective API - reflection or summary
+ */
+export async function needsDetectiveAI(
+  step: 'reflection' | 'summary',
+  situation?: string,
+  thoughts?: string,
+  needs?: string
+): Promise<string> {
+  try {
+    const body: any = { step };
+    if (step === 'reflection' && situation) {
+      body.situation = situation;
+      body.thoughts = thoughts ?? situation;
+    } else if (step === 'summary' && situation && thoughts && needs) {
+      body.situation = situation;
+      body.thoughts = thoughts;
+      body.needs = needs;
+    }
+
+    const response = await authenticatedFetch<{ response: string }>(
+      `${API_BASE_URL}/api/ai/learn/needsDetective`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+    return response.response || '';
+  } catch (error: any) {
+    console.error('Failed to get needs detective AI response:', error?.message || error);
+    throw error;
+  }
+}
+
+/**
+ * Needs Rubiks Cube API - transform sentence into needs
+ */
+export async function needsRubiksCubeAI(
+  sentence: string,
+  instruction?: string
+): Promise<{ needs: string[] }> {
+  try {
+    const response = await authenticatedFetch<{ needs: string[] }>(
+      `${API_BASE_URL}/api/ai/learn/needsRubiksCube`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sentence: sentence.trim(),
+          instruction: instruction || 'Transform this sentence into underlying needs',
+        }),
+      }
+    );
+    return { needs: response.needs ?? [] };
+  } catch (error: any) {
+    console.error('Failed to transform sentence into needs:', error?.message || error);
     throw error;
   }
 }

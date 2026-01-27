@@ -4,9 +4,10 @@
  */
 
 import baseColors from '@/baseColors.config';
-import LoadingIndicator from '@/components/LoadingIndicator';
 import GroupedFeelingsSelector from '@/components/chat/GroupedFeelingsSelector';
 import LearnNavigation from '@/components/learn/LearnNavigation';
+import LoadingIndicator from '@/components/LoadingIndicator';
+import { useBottomDrawerSlot } from '@/hooks/use-bottom-drawer-slot';
 import { getFeelings, type Feeling } from '@/lib/api/chat';
 import { feelingsDetectiveAI, type LearningSession } from '@/lib/api/learn';
 import { ChevronLeft, ChevronRight, Send } from 'lucide-react-native';
@@ -74,8 +75,10 @@ export default function LearnFeelingsDetective({
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [lastReflectionInput, setLastReflectionInput] = useState<string | null>(null);
   const [lastSummarySignature, setLastSummarySignature] = useState<string | null>(null);
+  const [feelingsDrawerOpen, setFeelingsDrawerOpen] = useState(false);
   const situationInputRef = useRef<TextInput>(null);
   const thoughtsInputRef = useRef<TextInput>(null);
+  const { openDrawer, closeDrawer } = useBottomDrawerSlot();
 
   const summaryInputSignature = useMemo(() => {
     return JSON.stringify({
@@ -189,6 +192,54 @@ export default function LearnFeelingsDetective({
       setLastSummarySignature(null);
     }
   }, [aiSummary, lastSummarySignature, summaryInputSignature]);
+
+  // Keep detective feelings drawer slot in sync when selection changes (step 3 only)
+  useEffect(() => {
+    if (totalSteps[currentStep]?.internalStep !== 3 || !feelingsDrawerOpen) return;
+    openDrawer({
+      title: 'Gefühle wählen',
+      tall: true,
+      onClose: () => {
+        setFeelingsDrawerOpen(false);
+        closeDrawer();
+      },
+      children: (
+        <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+          <View className="mb-2 flex-row flex-wrap gap-1">
+            {selectedFeelings.map((id) => {
+              const f = feelings.find((x) => x.id === id);
+              return (
+                <View
+                  key={id}
+                  className="rounded-full bg-gray-200 px-2 py-1"
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                >
+                  <Text className="text-xs text-gray-800">{f?.nameDE ?? id}</Text>
+                </View>
+              );
+            })}
+          </View>
+          <GroupedFeelingsSelector
+            feelings={feelings}
+            isLoading={feelingsLoading}
+            selectType="multiple"
+            highlightSelection={true}
+            selectedFeelingIds={selectedFeelings}
+            onSelectionChange={setSelectedFeelings}
+          />
+        </ScrollView>
+      ),
+    });
+  }, [
+    currentStep,
+    totalSteps,
+    feelingsDrawerOpen,
+    selectedFeelings,
+    feelings,
+    feelingsLoading,
+    openDrawer,
+    closeDrawer,
+  ]);
 
   const submitSituation = async () => {
     if (!situationInput.trim() || isLoading) return;
@@ -369,7 +420,7 @@ export default function LearnFeelingsDetective({
           }}
         >
           <View className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl" style={{ backgroundColor: baseColors.background, width: '100%' }}>
-            <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite+'ee' }}>
+            <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite + 'ee' }}>
               {/* Input Row */}
               <View className="p-1 flex-row items-end gap-3 overflow-hidden">
                 <TextInput
@@ -427,7 +478,7 @@ export default function LearnFeelingsDetective({
                   className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
                   style={{
                     backgroundColor: isLoading || !situationInput.trim()
-                      ? baseColors.forest+'33'
+                      ? baseColors.forest + '33'
                       : `${baseColors.forest}`
                   }}
                   activeOpacity={0.7}
@@ -563,7 +614,7 @@ export default function LearnFeelingsDetective({
           }}
         >
           <View className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl" style={{ backgroundColor: baseColors.background, width: '100%' }}>
-            <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite+'ee' }}>
+            <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite + 'ee' }}>
               {/* Input Row */}
               <View className="p-1 flex-row items-end gap-3 overflow-hidden">
                 <TextInput
@@ -608,7 +659,7 @@ export default function LearnFeelingsDetective({
                   className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
                   style={{
                     backgroundColor: isLoading || !thoughtsInput.trim()
-                      ? baseColors.forest+'33'
+                      ? baseColors.forest + '33'
                       : `${baseColors.forest}`
                   }}
                   activeOpacity={0.7}
@@ -634,11 +685,15 @@ export default function LearnFeelingsDetective({
     );
   }
 
-  // Step 3: Feelings Selection
+  // Step 3: Feelings Selection (uses BottomDrawer slot)
   if (internalStep === 3) {
     const selectedFeelingItems = selectedFeelings
       .map((id) => feelings.find((f) => f.id === id))
       .filter((feeling): feeling is Feeling => Boolean(feeling));
+
+    function openFeelingsSelectionDrawer() {
+      setFeelingsDrawerOpen(true);
+    }
 
     return (
       <View className="flex-grow flex-col justify-between">
@@ -669,9 +724,9 @@ export default function LearnFeelingsDetective({
             </View>
           ) : null}
 
-          <View className="max-h-64">
+          <View className="px-4">
             {feelingsLoading ? (
-              <View className="flex items-center justify-center p-8">
+              <View className="flex items-center justify-center py-6">
                 <LoadingIndicator inline />
                 <Text className="ml-2 text-sm text-gray-600">Gefühle werden geladen...</Text>
               </View>
@@ -699,25 +754,12 @@ export default function LearnFeelingsDetective({
                 </TouchableOpacity>
               </View>
             ) : (
-              <ScrollView className="max-h-64">
-                <GroupedFeelingsSelector
-                  feelings={feelings}
-                  onFeelingPress={(feelingName) => {
-                    // Find feeling by nameDE
-                    const feeling = feelings.find((f) => f.nameDE === feelingName);
-                    if (feeling) {
-                      setSelectedFeelings((prev) => {
-                        if (prev.includes(feeling.id)) {
-                          return prev.filter((id) => id !== feeling.id);
-                        } else {
-                          return [...prev, feeling.id];
-                        }
-                      });
-                    }
-                  }}
-                  isLoading={feelingsLoading}
-                />
-              </ScrollView>
+              <TouchableOpacity
+                onPress={openFeelingsSelectionDrawer}
+                className="rounded-2xl border border-black/10 bg-white/80 py-4 px-6 items-center justify-center"
+              >
+                <Text className="text-base font-medium text-gray-800">Gefühle wählen</Text>
+              </TouchableOpacity>
             )}
           </View>
         </View>

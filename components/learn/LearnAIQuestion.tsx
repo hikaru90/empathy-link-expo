@@ -392,6 +392,8 @@ export default function LearnAIQuestion({
                     feelings={feelings}
                     onFeelingPress={addText}
                     isLoading={isLoadingData}
+                    selectType="single"
+                    highlightSelection={false}
                   />
                 </View>
               )}

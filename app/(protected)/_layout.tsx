@@ -1,11 +1,31 @@
-import FeelingsDrawer from '@/components/FeelingsDrawer';
+import BottomDrawer from '@/components/BottomDrawer';
 import { useAuth } from '@/hooks/use-auth';
 import { ChatProvider } from '@/hooks/use-chat';
-import { FeelingsDrawerProvider } from '@/hooks/use-feelings-drawer';
+import {
+  BottomDrawerSlotProvider,
+  useBottomDrawerSlot,
+} from '@/hooks/use-bottom-drawer-slot';
 import { RestartDrawerProvider } from '@/hooks/use-restart-drawer';
 import { Redirect, Stack } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
+
+function BottomDrawerFromSlot() {
+  const { slot, visible, closeDrawer } = useBottomDrawerSlot();
+  if (!slot) return null;
+  return (
+    <BottomDrawer
+      visible={visible}
+      onClose={closeDrawer}
+      title={slot.title}
+      headerRight={slot.headerRight}
+      tall={slot.tall}
+      initialHeight={slot.initialHeight}
+    >
+      {slot.children}
+    </BottomDrawer>
+  );
+}
 
 export default function ProtectedLayout() {
   const { user, isLoading } = useAuth();
@@ -25,7 +45,7 @@ export default function ProtectedLayout() {
   return (
     <ChatProvider>
       <RestartDrawerProvider>
-        <FeelingsDrawerProvider>
+        <BottomDrawerSlotProvider>
           <View style={{ flex: 1 }}>
             <Stack
               screenOptions={{
@@ -43,9 +63,9 @@ export default function ProtectedLayout() {
               <Stack.Screen name="chat-settings" />
               <Stack.Screen name="profile" />
             </Stack>
-            <FeelingsDrawer />
+            <BottomDrawerFromSlot />
           </View>
-        </FeelingsDrawerProvider>
+        </BottomDrawerSlotProvider>
       </RestartDrawerProvider>
     </ChatProvider>
   );

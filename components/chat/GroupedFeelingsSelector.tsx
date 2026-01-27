@@ -1,6 +1,6 @@
 /**
- * Grouped feelings selector component with collapsible categories
- * Based on the FeelingSelector from empathy-link
+ * Grouped feelings selector component with collapsible categories.
+ * Supports single/multiple select, optional highlight, and prepend text.
  */
 
 import baseColors from '@/baseColors.config';
@@ -9,10 +9,23 @@ import type { Feeling } from '@/lib/api/chat';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleProp, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 
-interface GroupedFeelingsProps {
+export type GroupedFeelingsSelectType = 'single' | 'multiple';
+
+export interface GroupedFeelingsProps {
   feelings: Feeling[];
-  onFeelingPress: (feelingName: string) => void;
+  /** Called per tap when not using onSelectionChange. Value is nameDE or id depending on selection mode. */
+  onFeelingPress?: (value: string) => void;
   isLoading?: boolean;
+  /** When provided (and highlightSelection !== false), feelings in this array use the selected chip style. */
+  selectedFeelingIds?: string[];
+  /** Single: one choice per tap (e.g. add name to text). Multiple: toggle many by id. Used when onSelectionChange is provided. */
+  selectType?: GroupedFeelingsSelectType;
+  /** When false, no selection styling. When true and selectedFeelingIds provided, chips are highlighted. Default true when selection is used. */
+  highlightSelection?: boolean;
+  /** When provided, selection is driven by this callback instead of onFeelingPress. Use with selectType and selectedFeelingIds. */
+  onSelectionChange?: (ids: string[]) => void;
+  /** Optional text shown before each feeling name in non-header chips (e.g. "+ "). */
+  prependText?: string;
 }
 
 interface GroupedCategory {
@@ -43,9 +56,36 @@ const groupBy = <T extends Record<string, any>>(array: T[], key: keyof T): Recor
 export default function GroupedFeelingsSelector({
   feelings,
   onFeelingPress,
-  isLoading = false
+  isLoading = false,
+  selectedFeelingIds = [],
+  selectType = 'multiple',
+  highlightSelection = true,
+  onSelectionChange,
+  prependText = '',
 }: GroupedFeelingsProps) {
   const [groupedFeelings, setGroupedFeelings] = useState<GroupedFeelings[]>([]);
+  const isSelectionMode = onSelectionChange != null;
+  const idsForStyle =
+    highlightSelection && selectedFeelingIds.length > 0 ? selectedFeelingIds : undefined;
+
+  const handleChipPress = (value: string) => {
+    if (isSelectionMode) {
+      const feeling = feelings.find((f) => f.id === value || f.nameDE === value);
+      if (!feeling) return;
+      const id = feeling.id;
+      if (selectType === 'single') {
+        onSelectionChange(selectedFeelingIds.includes(id) ? [] : [id]);
+      } else {
+        onSelectionChange(
+          selectedFeelingIds.includes(id)
+            ? selectedFeelingIds.filter((x) => x !== id)
+            : [...selectedFeelingIds, id]
+        );
+      }
+    } else {
+      onFeelingPress?.(value);
+    }
+  };
 
   useEffect(() => {
     if (feelings.length === 0) return;
@@ -105,16 +145,47 @@ export default function GroupedFeelingsSelector({
     return isCategoryHeader(feeling, category) || category.visible;
   };
 
-  const getChipStyle = (feeling: Feeling, category: GroupedCategory, isPositive: boolean, isHeader: boolean, isVisible: boolean): StyleProp<ViewStyle> => {
+  const getSelectedCountInCategory = (category: GroupedCategory): number => {
+    return category.feelings.filter(
+      (f) => f.nameEN !== category.category && selectedFeelingIds.includes(f.id)
+    ).length;
+  };
+
+  const getChipStyle = (
+    feeling: Feeling,
+    category: GroupedCategory,
+    isPositive: boolean,
+    isHeader: boolean,
+    isVisible: boolean,
+    isSelected?: boolean,
+    selectedInCategory?: number
+  ): StyleProp<ViewStyle> => {
     if (isHeader) {
-      if(isPositive) {
-        return { 
-          backgroundColor: isVisible ? `${baseColors.lilac}` : `${baseColors.lilac}80`, 
-          boxShadow: isVisible ? `inset 0 0 4px 0 rgba(0, 0, 0, 0.3)` : `` 
+      const hasSelected = (selectedInCategory ?? 0) > 0;
+      if (isPositive) {
+        return {
+          backgroundColor: isVisible ? `${baseColors.lilac}` : `${baseColors.lilac}80`,
+          boxShadow: isVisible ? `inset 0 0 4px 0 rgba(0, 0, 0, 0.3)` : ``,
+          ...(hasSelected && {
+            borderWidth: 2,
+            borderColor: baseColors.purple,
+          }),
         };
-      } 
-      return { backgroundColor: isVisible ? `#dddddd` : `#dddddd80`, 
-        boxShadow: isVisible ? `inset 0 0 4px 0 rgba(0, 0, 0, 0.3)` : `` 
+      }
+      return {
+        backgroundColor: isVisible ? baseColors.forest+'88' : `${baseColors.forest}22`,
+        boxShadow: isVisible ? `inset 0 0 4px 0 rgba(0, 0, 0, 0.3)` : ``,
+        ...(hasSelected && {
+          borderWidth: 2,
+          borderColor: baseColors.purple,
+        }),
+      };
+    }
+    if (isSelected) {
+      return {
+        borderRadius: 0,
+        borderBottomWidth: 1,
+        borderBottomColor: baseColors.purple,
       };
     }
     return { backgroundColor: `transparent`, boxShadow: `none` };
@@ -153,6 +224,9 @@ export default function GroupedFeelingsSelector({
               const isHeader = isCategoryHeader(feeling, category);
               const shouldShow = shouldShowFeeling(feeling, category);
               const isPositive = feeling.positive;
+              const isSelected = !isHeader && (idsForStyle?.includes(feeling.id) ?? false);
+              const chipValue = isSelectionMode || idsForStyle != null ? feeling.id : feeling.nameDE;
+              const selectedInCategory = getSelectedCountInCategory(category);
 
               if (!shouldShow) return null;
 
@@ -163,24 +237,19 @@ export default function GroupedFeelingsSelector({
                     if (isHeader) {
                       toggleCategory(category.category);
                     } else {
-                      onFeelingPress(feeling.nameDE);
+                      handleChipPress(chipValue);
                     }
                   }}
                   className={`rounded-full py-1 flex-row items-center gap-1 ${
-                    isHeader
-                      ? 'px-2'
-                      : 'px-1'
-                  }` }
-                  style={getChipStyle(feeling, category, isPositive, isHeader, category.visible)}
+                    isHeader ? 'px-2' : 'px-0.5'
+                  }`}
+                  style={getChipStyle(feeling, category, isPositive, isHeader, category.visible, isSelected, selectedInCategory)}
                 >
-                  {!isHeader && (
-                    <View
-                      className=""
-                    >
-                      <Text className="text-xs text-black">+</Text>
-                    </View>
-                  )}
-                  <Text className="text-black">{feeling.nameDE}</Text>
+                  <Text className={isSelected ? 'text-black font-semibold' : 'text-black'}>
+                    {!isHeader && prependText !== '' && (<Text className="text-xs text-black/40">{prependText}</Text>)}
+                    {feeling.nameDE}
+                    {isHeader && selectedInCategory > 0 ? ` (${selectedInCategory})` : ''}
+                  </Text>
                 </TouchableOpacity>
               );
             })
