@@ -1,6 +1,7 @@
 import baseColors from '@/baseColors.config';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import SelectDropdown from '@/components/ui/SelectDropdown';
+import { USER_GOALS } from '@/constants/onboarding';
 import { getChatSettings, updateChatSettings, type ChatSettings } from '@/lib/api/chat';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -25,6 +26,11 @@ const knowledgeOptions: Array<{ value: ChatSettings['nvcKnowledge']; label: stri
   { value: 'advanced', label: 'Experte', description: 'Umfassende GFK-Kenntnisse' },
 ];
 
+const userGoalOptions = [
+  { value: '', label: 'Kein Ziel ausgewählt' },
+  ...USER_GOALS.map((goal) => ({ value: goal, label: goal })),
+];
+
 export default function ChatSettingsPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
@@ -33,6 +39,7 @@ export default function ChatSettingsPage() {
     aiAnswerLength: 'short',
     toneOfVoice: 'heartfelt',
     nvcKnowledge: 'beginner',
+    userGoal: undefined,
   });
 
   useEffect(() => {
@@ -87,6 +94,14 @@ export default function ChatSettingsPage() {
     const newSettings = {
       ...settings,
       nvcKnowledge: value as ChatSettings['nvcKnowledge'],
+    };
+    handleSave(newSettings);
+  };
+
+  const handleUserGoalChange = (value: string) => {
+    const newSettings = {
+      ...settings,
+      userGoal: value || undefined,
     };
     handleSave(newSettings);
   };
@@ -186,6 +201,22 @@ export default function ChatSettingsPage() {
               selectedValue={settings.nvcKnowledge}
               onValueChange={handleNvcKnowledgeChange}
               placeholder="Kenntnisstand wählen"
+            />
+          </View>
+
+          {/* User Goal */}
+          <View style={styles.settingCard}>
+            <View style={styles.settingHeader}>
+              <Text style={styles.settingTitle}>Was möchtest du mit Empathy-Link erreichen?</Text>
+              <Text style={styles.settingDescription}>
+                Dein Ziel aus der Einführung
+              </Text>
+            </View>
+            <SelectDropdown
+              options={userGoalOptions}
+              selectedValue={settings.userGoal ?? ''}
+              onValueChange={handleUserGoalChange}
+              placeholder="Ziel wählen"
             />
           </View>
         </View>

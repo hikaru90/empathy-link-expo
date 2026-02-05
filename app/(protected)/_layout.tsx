@@ -5,6 +5,7 @@ import {
   BottomDrawerSlotProvider,
   useBottomDrawerSlot,
 } from '@/hooks/use-bottom-drawer-slot';
+import { OnboardingProvider } from '@/hooks/use-onboarding';
 import { RestartDrawerProvider } from '@/hooks/use-restart-drawer';
 import { Redirect, Stack } from 'expo-router';
 import React from 'react';
@@ -44,29 +45,31 @@ export default function ProtectedLayout() {
 
   return (
     <ChatProvider>
-      <RestartDrawerProvider>
-        <BottomDrawerSlotProvider>
-          <View style={{ flex: 1 }}>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'fade',
-                animationDuration: 400,
-              }}
-            >
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="analysis/[id]" />
-              <Stack.Screen name="learn/[slug]" />
-              <Stack.Screen name="memories" />
-              <Stack.Screen name="modal" />
-              <Stack.Screen name="conflict-resolutions" />
-              <Stack.Screen name="chat-settings" />
-              <Stack.Screen name="profile" />
-            </Stack>
-            <BottomDrawerFromSlot />
-          </View>
-        </BottomDrawerSlotProvider>
-      </RestartDrawerProvider>
+      <OnboardingProvider>
+        <RestartDrawerProvider>
+          <BottomDrawerSlotProvider>
+            <View style={{ flex: 1 }}>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: 'fade',
+                  animationDuration: 400,
+                }}
+              >
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="analysis/[id]" />
+                <Stack.Screen name="learn/[slug]" />
+                <Stack.Screen name="memories" />
+                <Stack.Screen name="modal" />
+                <Stack.Screen name="conflict-resolutions" />
+                <Stack.Screen name="chat-settings" />
+                <Stack.Screen name="profile" />
+              </Stack>
+              <BottomDrawerFromSlot />
+            </View>
+          </BottomDrawerSlotProvider>
+        </RestartDrawerProvider>
+      </OnboardingProvider>
     </ChatProvider>
   );
 }

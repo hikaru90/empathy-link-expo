@@ -81,23 +81,16 @@ export default function RootLayout() {
     initializeI18n();
   }, []);
 
-  // Configure hash-based routing for web to prevent 404s on reload
+  // Configure web routing: normalize hash-based URLs so Expo Router receives the correct path
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    if (window.location.pathname !== '/' && !window.location.hash) {
-      const path = window.location.pathname + window.location.search;
-      if (window.location.search && window.location.pathname.includes('/login')) {
-        try {
-          const searchParams = new URLSearchParams(window.location.search);
-          const params: Record<string, string> = {};
-          searchParams.forEach((value, key) => {
-            params[key] = value;
-          });
-          sessionStorage.setItem('login_query_params', JSON.stringify(params));
-        } catch (e) {
-          // Ignore
-        }
-      }
-      window.location.replace(`#${path}`);
+    const { pathname, hash, search } = window.location;
+
+    // When pathname is / and hash is #/path (e.g. /#/analysis/xxx), redirect to path-based URL.
+    // Expo Router's getStateFromPath uses pathname for matching and ignores hash, so /#/analysis/xxx
+    // incorrectly matches / (chat) instead of /analysis/xxx. Path-based URLs work correctly.
+    if (pathname === '/' && hash && hash.startsWith('#/') && hash.length > 2) {
+      const pathFromHash = hash.slice(1); // Remove leading #
+      window.location.replace(window.location.origin + pathFromHash + search);
       return null;
     }
   }

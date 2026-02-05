@@ -9,7 +9,9 @@ import MessageInput from '@/components/chat/MessageInput';
 import SafetyResources from '@/components/chat/SafetyResources';
 import TypingIndicator from '@/components/chat/TypingIndicator';
 import LoadingIndicator from '@/components/LoadingIndicator';
+import OnboardingWelcome from '@/components/onboarding/OnboardingWelcome';
 import { useAuthGuard } from '@/hooks/use-auth';
+import { useOnboarding } from '@/hooks/use-onboarding';
 import { ChatProvider, useChat } from '@/hooks/use-chat';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check } from 'lucide-react-native';
@@ -307,7 +309,8 @@ function ChatContent() {
 }
 
 export default function ChatScreen() {
-  const { isAuthenticated, isLoading, user } = useAuthGuard();
+  const { isAuthenticated, isLoading } = useAuthGuard();
+  const { showOnboarding, completeOnboarding } = useOnboarding();
 
   if (isLoading) {
     return (
@@ -328,6 +331,10 @@ export default function ChatScreen() {
       <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
         <ChatContent />
       </View>
+      <OnboardingWelcome
+        visible={showOnboarding === true}
+        onComplete={completeOnboarding}
+      />
     </ChatProvider>
   );
 }

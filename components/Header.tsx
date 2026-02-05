@@ -2,6 +2,7 @@ import FlameIconImage from '@/assets/icons/Flame.png';
 import baseColors from '@/baseColors.config';
 import BottomDrawer from '@/components/BottomDrawer';
 import { useAuth } from '@/hooks/use-auth';
+import { useOnboarding } from '@/hooks/use-onboarding';
 import { useRestartDrawer } from '@/hooks/use-restart-drawer';
 import { getAllAnalyses } from '@/lib/api/analysis';
 import { createLearningSession } from '@/lib/api/learn';
@@ -13,7 +14,7 @@ import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-c
 import { Image, ImageBackground } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Bell, Brain, FileText, LogOut, RotateCcw, UserRoundCog } from 'lucide-react-native';
+import { Bell, Brain, FileText, LogOut, RotateCcw, RotateCcwSquare, UserRoundCog } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import LoadingIndicator from './LoadingIndicator';
@@ -29,6 +30,7 @@ interface HeaderProps {
 
 function Header({ className }: HeaderProps) {
   const { user, signOut } = useAuth();
+  const { restartOnboarding } = useOnboarding();
   const router = useRouter();
   const { isOpen: isRestartDrawerOpen, selectedTopic, closeDrawer: closeRestartDrawer } = useRestartDrawer();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -133,6 +135,11 @@ function Header({ className }: HeaderProps) {
   function handleChatSettingsNavigation() {
     setIsUserMenuOpen(false);
     router.push('/chat-settings');
+  }
+
+  async function handleRestartOnboarding() {
+    setIsUserMenuOpen(false);
+    await restartOnboarding();
   }
 
   async function handleRestartTopic() {
@@ -260,6 +267,13 @@ function Header({ className }: HeaderProps) {
         >
           <Text style={styles.menuItemText}>Chat-Einstellungen</Text>
           <FileText size={16} color="#000" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleRestartOnboarding}
+        >
+          <Text style={styles.menuItemText}>Onboarding erneut starten</Text>
+          <RotateCcwSquare size={16} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItemDark}

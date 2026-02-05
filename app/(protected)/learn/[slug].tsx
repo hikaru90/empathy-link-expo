@@ -18,6 +18,7 @@ import LearnMultipleChoice from '@/components/learn/LearnMultipleChoice';
 import LearnNeedsDetective from '@/components/learn/LearnNeedsDetective';
 import LearnNeedsRubiksCube from '@/components/learn/LearnNeedsRubiksCube';
 import LearnNavigation from '@/components/learn/LearnNavigation';
+import LearnStepIndicator from '@/components/learn/LearnStepIndicator';
 import LearnSortable from '@/components/learn/LearnSortable';
 import LearnTask from '@/components/learn/LearnTask';
 import LearnText from '@/components/learn/LearnText';
@@ -320,23 +321,11 @@ export default function LearnDetailScreen() {
         }}
       >
         <View className={`flex flex-grow flex-col px-4 pt-4 pb-6`}>
-          {/* Step Indicator */}
-          <View className="mb-4 flex items-center justify-center">
-            <View className="flex-row items-center justify-center gap-0.5 rounded-full bg-neutral-500/5 p-1 shadow-inner w-3/4">
-              {Array.from({ length: totalSteps }, (_, index) => index).map((stepIndex) => (
-                <View
-                  key={stepIndex}
-                  className="h-2 flex-grow rounded-md"
-                  style={{
-                    backgroundColor: currentStep >= stepIndex 
-                      ? categoryColor 
-                      : 'rgba(255,255,255,0.8)',
-                    opacity: stepIndex >= totalSteps ? 0.8 : 1,
-                  }}
-                />
-              ))}
-            </View>
-          </View>
+          <LearnStepIndicator
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            color={categoryColor}
+          />
 
           {/* Content */}
           {currentStep === 0 ? (

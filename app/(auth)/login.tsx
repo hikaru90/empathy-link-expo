@@ -386,7 +386,7 @@ export default function SigninScreen() {
             <Text style={{ color: '#333', fontWeight: '600' }}>Mit Google anmelden</Text>
           )}
         </TouchableOpacity>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={async () => {
             setSocialLoading('apple');
             setErrorMessage(null);
@@ -409,7 +409,7 @@ export default function SigninScreen() {
           ) : (
             <Text style={{ color: '#fff', fontWeight: '600' }}>Mit Apple anmelden</Text>
           )}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <View className="mt-6 flex-row justify-center">

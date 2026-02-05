@@ -271,6 +271,7 @@ export interface ChatSettings {
   aiAnswerLength: 'short' | 'medium' | 'long';
   toneOfVoice: 'heartfelt' | 'analytical';
   nvcKnowledge: 'beginner' | 'intermediate' | 'advanced';
+  userGoal?: string;
 }
 
 /**
