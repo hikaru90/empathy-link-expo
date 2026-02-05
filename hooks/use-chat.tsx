@@ -4,11 +4,18 @@
 
 import type { HistoryEntry, PathState } from '@/lib/api/chat';
 import * as chatApi from '@/lib/api/chat';
+import type { CrisisResource } from '@/lib/api/safety';
+import * as safetyApi from '@/lib/api/safety';
 import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 
 export interface AnalysisResult {
   analysisId: string;
   newChatId: string;
+}
+
+export interface SafetyStatusState {
+  showResources: boolean;
+  suspended: boolean;
 }
 
 interface ChatContextType {
@@ -20,11 +27,16 @@ interface ChatContextType {
   isSending: boolean;
   isAnalyzing: boolean;
   error: string | null;
+  safetyStatus: SafetyStatusState | null;
+  crisisResources: CrisisResource[] | null;
   initializeChat: (locale: string, initialPath?: string) => Promise<void>;
   reopenChat: (chatId: string) => Promise<void>;
   sendMessage: (message: string) => Promise<void>;
   finishChat: (locale: string) => Promise<AnalysisResult>;
   clearError: () => void;
+  loadCrisisResources: (lang?: string) => Promise<void>;
+  requestAppeal: () => Promise<{ success: boolean; message: string }>;
+  refetchSafetyStatus: () => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -38,12 +50,36 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [isSending, setIsSending] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [safetyStatus, setSafetyStatus] = useState<SafetyStatusState | null>(null);
+  const [crisisResources, setCrisisResources] = useState<CrisisResource[] | null>(null);
+
+  const refetchSafetyStatus = useCallback(async () => {
+    try {
+      const status = await safetyApi.getSafetyStatus();
+      setSafetyStatus({
+        showResources: status.showResources,
+        suspended: status.suspended,
+      });
+    } catch (err) {
+      console.error('Failed to fetch safety status:', err);
+      setSafetyStatus(null);
+    }
+  }, []);
 
   const initializeChat = useCallback(async (locale: string, initialPath?: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Call safety status when loading chat (required by safety mechanism)
+      const status = await safetyApi.getSafetyStatus();
+      setSafetyStatus({ showResources: status.showResources, suspended: status.suspended });
+
+      if (status.suspended) {
+        setIsLoading(false);
+        return;
+      }
+
       // First, try to get the latest active chat
       const latestChat = await chatApi.getLatestChat();
 
@@ -65,13 +101,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         console.log('Created new chat:', result.chatId);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize chat';
-      setError(errorMessage);
+      const code = (err as Error & { code?: string }).code;
+      if (code === 'safety_suspended') {
+        await refetchSafetyStatus();
+        setSafetyStatus((prev) => (prev ? { ...prev, suspended: true } : { showResources: true, suspended: true }));
+      } else {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to initialize chat';
+        setError(errorMessage);
+      }
       console.error('Failed to initialize chat:', err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [refetchSafetyStatus]);
 
   const reopenChat = useCallback(async (chatIdToReopen: string) => {
     setIsLoading(true);
@@ -101,14 +143,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       
       console.log('Reopened chat in new chat:', newChatResult.chatId, 'from old chat:', chatIdToReopen);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to reopen chat';
-      setError(errorMessage);
+      const code = (err as Error & { code?: string }).code;
+      if (code === 'safety_suspended') {
+        await refetchSafetyStatus();
+        setSafetyStatus((prev) => (prev ? { ...prev, suspended: true } : { showResources: true, suspended: true }));
+      } else {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to reopen chat';
+        setError(errorMessage);
+      }
       console.error('Failed to reopen chat:', err);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [refetchSafetyStatus]);
 
   const sendMessage = useCallback(async (message: string) => {
     if (!chatId) {
@@ -168,8 +216,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Don't fail the whole operation if memory extraction fails
       });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
-      setError(errorMessage);
+      const code = (err as Error & { code?: string }).code;
+      if (code === 'safety_suspended') {
+        await refetchSafetyStatus();
+        setSafetyStatus((prev) => (prev ? { ...prev, suspended: true } : { showResources: true, suspended: true }));
+      } else {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
+        setError(errorMessage);
+      }
       console.error('Failed to send message:', err);
 
       // Remove optimistic message on error
@@ -177,7 +231,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsSending(false);
     }
-  }, [chatId, history]);
+  }, [chatId, history, refetchSafetyStatus]);
 
   const finishChat = useCallback(async (locale: string): Promise<AnalysisResult> => {
     if (!chatId) {
@@ -243,6 +297,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
+  const loadCrisisResources = useCallback(async (lang = 'de') => {
+    try {
+      const { resources } = await safetyApi.getCrisisResources(lang);
+      setCrisisResources(resources);
+    } catch (err) {
+      console.error('Failed to load crisis resources:', err);
+      setCrisisResources([]);
+    }
+  }, []);
+
+  const requestAppeal = useCallback(async () => {
+    return safetyApi.requestAppeal();
+  }, []);
+
   return (
     <ChatContext.Provider
       value={{
@@ -254,11 +322,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         isSending,
         isAnalyzing,
         error,
+        safetyStatus,
+        crisisResources,
         initializeChat,
         reopenChat,
         sendMessage,
         finishChat,
         clearError,
+        loadCrisisResources,
+        requestAppeal,
+        refetchSafetyStatus,
       }}
     >
       {children}

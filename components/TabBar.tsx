@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { usePathname, useRouter } from 'expo-router';
-import { BarChart3, Book, BotMessageSquare } from 'lucide-react-native';
+import { BarChart3, Book, BotMessageSquare, MessageCirclePlus } from 'lucide-react-native';
 import React from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -10,10 +10,10 @@ import baseColors from '@/baseColors.config';
 const ICON_SIZE = 18;
 
 const tabs = [
-  { name: 'index', path: '/(protected)/(tabs)/', label: 'Chat', icon: BotMessageSquare },
-  { name: 'stats', path: '/(protected)/(tabs)/stats', label: 'Statistik', icon: BarChart3 },
-  { name: 'learn', path: '/(protected)/(tabs)/learn', label: 'Lernen', icon: Book },
-  // { name: 'community', path: '/(protected)/(tabs)/community', label: 'Community', icon: Users },
+  { name: 'index', path: '/(protected)/(tabs)/', label: 'Chat', icon: BotMessageSquare, highlight: false },
+  { name: 'stats', path: '/(protected)/(tabs)/stats', label: 'Statistik', icon: BarChart3, highlight: false },
+  { name: 'learn', path: '/(protected)/(tabs)/learn', label: 'Lernen', icon: Book, highlight: false },
+  { name: 'feedback', path: '/(protected)/(tabs)/feedback', label: 'Feedback', icon: MessageCirclePlus, highlight: true },
 ];
 
 export default function TabBar() {
@@ -36,23 +36,34 @@ export default function TabBar() {
     if (path.includes('/learn')) {
       return pathname.includes('/learn');
     }
-    return pathname === path;
+    // Match feedback tab
+    if (path.includes('/feedback')) {
+      return pathname.includes('/feedback');
+    }
+    // Index (Chat): active when we're on the root tab (pathname varies by platform/routing)
+    const onStats = pathname.includes('/stats') || pathname.includes('/analysis');
+    const onLearn = pathname.includes('/learn');
+    const onFeedback = pathname.includes('/feedback');
+    return !onStats && !onLearn && !onFeedback;
   };
 
   return (
     <View style={styles.container}>
-      <InvertedBorder color="#f2f2f2" style={styles.borderLeft} />
-      <InvertedBorder color="#f2f2f2" style={styles.borderRight} />
+      <InvertedBorder color={baseColors.white} style={styles.borderLeft} />
+      <InvertedBorder color={baseColors.white} style={styles.borderRight} />
       <View style={styles.tabBar}>
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = isActive(tab.path);
-          const color = active ? '#222222' : '#999999';
+          const isHighlight = tab.highlight === true;
+          const color = isHighlight
+            ? (active ? baseColors.primary : baseColors.purple)
+            : (active ? '#222222' : '#999999');
 
           return (
             <TouchableOpacity
               key={tab.name}
-              style={styles.tab}
+              style={[styles.tab, isHighlight && styles.tabHighlight]}
               onPress={() => handleTabPress(tab.path)}
             >
               <Icon size={ICON_SIZE} color={color} />
@@ -91,23 +102,29 @@ const styles = StyleSheet.create({
     transform: [{ scaleX: -1 }],
   },
   tabBar: {
+    position:'relative',
+    zIndex: 1000,
     flexDirection: 'row',
-    backgroundColor: baseColors.offwhite,
+    backgroundColor: 'white',
     borderTopColor: 'transparent',
     paddingTop: 2,
     height: 70,
-    ...Platform.select({
-      ios: {
-        paddingBottom: 8,
-      },
-      android: {},
-    }),
+    paddingBottom: 8,
+    // ...Platform.select({
+    //   ios: {
+    //   },
+    //   android: {},
+    // }),
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
+  },
+  tabHighlight: {
+    marginHorizontal: 4,
+    borderRadius: 12,
   },
   label: {
     fontSize: 10,

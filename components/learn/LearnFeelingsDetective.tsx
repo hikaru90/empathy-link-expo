@@ -10,7 +10,7 @@ import LoadingIndicator from '@/components/LoadingIndicator';
 import { useBottomDrawerSlot } from '@/hooks/use-bottom-drawer-slot';
 import { getFeelings, type Feeling } from '@/lib/api/chat';
 import { feelingsDetectiveAI, type LearningSession } from '@/lib/api/learn';
-import { ChevronLeft, ChevronRight, Send } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Send, SquareMousePointer } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -756,9 +756,10 @@ export default function LearnFeelingsDetective({
             ) : (
               <TouchableOpacity
                 onPress={openFeelingsSelectionDrawer}
-                className="rounded-2xl border border-black/10 bg-white/80 py-4 px-6 items-center justify-center"
+                className="rounded-full border border-white bg-white/80 py-1 px-6 flex items-center justify-center"
               >
                 <Text className="text-base font-medium text-gray-800">Gefühle wählen</Text>
+                <SquareMousePointer size={16} color="#666" />
               </TouchableOpacity>
             )}
           </View>

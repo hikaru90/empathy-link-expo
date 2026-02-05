@@ -16,21 +16,16 @@ async function authenticatedFetch<T = any>(url: string, options: RequestInit = {
 
   // Better Auth returns {data: ..., error: ...}
   if (result.error) {
-    // Extract error information properly
-    const errorMessage = typeof result.error === 'string' 
-      ? result.error 
-      : result.error?.message || JSON.stringify(result.error);
-    
-    // Check for HTTP status codes in the error
-    const statusCode = result.error?.status || result.error?.statusCode;
-    
-    // Create an error with status code information
+    const err = result.error as { message?: string; error?: string; status?: number; statusCode?: number };
+    const errorMessage = typeof result.error === 'string'
+      ? result.error
+      : err?.message || JSON.stringify(result.error);
+
     const error = new Error(errorMessage);
-    if (statusCode) {
-      (error as any).status = statusCode;
-      (error as any).statusCode = statusCode;
-    }
-    
+    if (err?.status) (error as Error & { status: number }).status = err.status;
+    if (err?.statusCode) (error as Error & { statusCode: number }).statusCode = err.statusCode;
+    if (err?.error) (error as Error & { code?: string }).code = err.error;
+
     throw error;
   }
 

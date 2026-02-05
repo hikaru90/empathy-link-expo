@@ -3,7 +3,7 @@
  * Plays audio content with custom controls and completion tracking
  */
 
-import { Audio } from 'expo-av';
+import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
 import { Pause, Play, RotateCcw } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -42,8 +42,15 @@ export default function LearnAudio({
   const [hasError, setHasError] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  // Audio refs
-  const soundRef = useRef<any>(null);
+  // Audio source for native: only load when not web and src is valid
+  const nativeAudioSource = Platform.OS === 'web' || !content?.src?.trim() ? null : content.src;
+  const player = useAudioPlayer(nativeAudioSource, {
+    updateInterval: 100,
+    downloadFirst: true,
+  });
+  const playerStatus = useAudioPlayerStatus(player);
+
+  // Audio refs (web only for native we use player)
   const audioWebRef = useRef<HTMLAudioElement | null>(null);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const expandAnim1 = useRef(new Animated.Value(1)).current;
@@ -106,9 +113,62 @@ export default function LearnAudio({
     }
   }, [isPlaying]);
 
-  // Load audio on mount
+  // Native: set audio mode and sync player status to state
   useEffect(() => {
-    loadAudio();
+    if (Platform.OS !== 'web') {
+      setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: false,
+      }).catch(() => {});
+    }
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' && player) {
+      player.loop = content.loop ?? false;
+    }
+  }, [Platform.OS, player, content.loop]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' && playerStatus) {
+      setCurrentTime(playerStatus.currentTime ?? 0);
+      setDuration(playerStatus.duration ?? 0);
+      setIsPlaying(playerStatus.playing ?? false);
+      if (playerStatus.isLoaded) {
+        setIsLoading(false);
+      }
+      if (playerStatus.didJustFinish && !content.loop) {
+        setIsPlaying(false);
+        markCompleted('played');
+      }
+    }
+  }, [Platform.OS, playerStatus?.currentTime, playerStatus?.duration, playerStatus?.playing, playerStatus?.isLoaded, playerStatus?.didJustFinish, content.loop]);
+
+  // Native: autoplay once when loaded
+  const nativeAutoplayDoneRef = useRef(false);
+  useEffect(() => {
+    if (
+      Platform.OS !== 'web' &&
+      player &&
+      playerStatus?.isLoaded &&
+      content.autoplay &&
+      !nativeAutoplayDoneRef.current
+    ) {
+      nativeAutoplayDoneRef.current = true;
+      player.play();
+      setIsPlaying(true);
+      setIsLoading(false);
+    }
+  }, [Platform.OS, player, playerStatus?.isLoaded, content.autoplay]);
+
+  // Load audio on mount (web only; native uses useAudioPlayer)
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      loadAudio();
+    } else if (nativeAudioSource === null) {
+      setIsLoading(false);
+      setHasError(true);
+    }
     return () => {
       unloadAudio();
     };
@@ -194,58 +254,6 @@ export default function LearnAudio({
         if (content.autoplay) {
           await audio.play();
         }
-      } else {
-        // Native: Use expo-av
-        if (Audio && Audio.Sound) {
-          await Audio.setAudioModeAsync({
-            playsInSilentModeIOS: true,
-            staysActiveInBackground: false,
-          });
-
-          const { sound } = await Audio.Sound.createAsync(
-            { uri: content.src },
-            {
-              shouldPlay: false,
-              volume: 1.0,
-              isLooping: content.loop || false,
-            }
-          );
-
-          soundRef.current = sound;
-
-          // Get status to set initial duration
-          const status = await sound.getStatusAsync();
-          if (status.isLoaded) {
-            setDuration(status.durationMillis ? status.durationMillis / 1000 : 0);
-            setIsLoading(false);
-          }
-
-          // Set up status update listener
-          sound.setOnPlaybackStatusUpdate((status) => {
-            if (status.isLoaded) {
-              setCurrentTime(status.positionMillis ? status.positionMillis / 1000 : 0);
-              setDuration(status.durationMillis ? status.durationMillis / 1000 : 0);
-
-              if (status.didJustFinish && !content.loop) {
-                setIsPlaying(false);
-                markCompleted('played');
-              }
-            } else if (status.error) {
-              console.error('Audio playback error:', status.error);
-              setIsLoading(false);
-              setIsPlaying(false);
-              setHasError(true);
-            }
-          });
-
-          if (content.autoplay) {
-            await sound.playAsync();
-            setIsPlaying(true);
-            setIsLoading(false);
-          } else {
-            setIsLoading(false);
-          }
-        }
       }
     } catch (error) {
       console.error('Error loading audio:', error);
@@ -261,12 +269,8 @@ export default function LearnAudio({
         audioWebRef.current.pause();
         audioWebRef.current = null;
       }
-    } else {
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
     }
+    // Native: useAudioPlayer hook releases the player on unmount
   };
 
   const startProgressTracking = () => {
@@ -321,13 +325,13 @@ export default function LearnAudio({
           }
         }
       } else {
-        if (soundRef.current) {
+        if (player) {
           if (isPlaying) {
-            await soundRef.current.pauseAsync();
+            player.pause();
             setIsPlaying(false);
           } else {
             setIsLoading(true);
-            await soundRef.current.playAsync();
+            player.play();
             setIsPlaying(true);
             setIsLoading(false);
           }
@@ -347,8 +351,8 @@ export default function LearnAudio({
           audioWebRef.current.currentTime = 0;
         }
       } else {
-        if (soundRef.current) {
-          await soundRef.current.setPositionAsync(0);
+        if (player) {
+          player.seekTo(0);
         }
       }
     } catch (error) {

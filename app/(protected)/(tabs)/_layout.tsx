@@ -1,15 +1,12 @@
 import { Tabs } from 'expo-router';
-import { BarChart3, Book, BotMessageSquare } from 'lucide-react-native';
 import React from 'react';
 import { Platform, StatusBar, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import InvertedBorder from '@/assets/icons/InvertedBorder';
 import baseColors from '@/baseColors.config';
-import { HapticTab } from '@/components/haptic-tab';
 import Header from '@/components/Header';
-
-const ICON_SIZE = 18;
+import TabBar from '@/components/TabBar';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -50,66 +47,15 @@ export default function TabLayout() {
       <InvertedBorder color={baseColors.white} style={{ zIndex: 1002, position: 'absolute', bottom: Platform.OS === 'android' ? 70 + tabBarBottom : 70, left: 0, height: 28, width: 28 }} />
       <InvertedBorder color={baseColors.white} style={{ zIndex: 1002, position: 'absolute', bottom: Platform.OS === 'android' ? 70 + tabBarBottom : 70, right: 0, height: 28, width: 28, transform: [{ scaleX: -1 }] }} />
       <Tabs
+          tabBar={() => <TabBar />}
           screenOptions={{
-            tabBarActiveTintColor: '#222222',
-            tabBarInactiveTintColor: '#999999',
             headerShown: false,
-            tabBarButton: HapticTab,
             animation: 'fade',
-            animationDuration: 400,
-            tabBarStyle: {
-              backgroundColor: baseColors.white,
-              borderTopColor: 'transparent',
-              paddingTop: 2,
-              height: 70,
-              
-              ...Platform.select({
-                ios: {
-                  paddingBottom: 8,
-                  position: 'absolute',
-                  bottom: 0, // iOS: position at bottom, let safe area handle system UI
-                },
-                android: {
-                  position: 'absolute',
-                  bottom: tabBarBottom, // Android: explicitly account for navigation bar
-                  // Don't use paddingBottom on Android as it might conflict with bottom positioning
-                },
-              }),
-            },
-            tabBarLabelStyle: {
-              fontSize: 10,
-              fontWeight: '500',
-            },
-            tabBarLabelPosition: 'below-icon',
           }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Chat',
-          tabBarIcon: ({ color }) => <BotMessageSquare size={ICON_SIZE} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="stats"
-        options={{
-          title: 'Statistik',
-          tabBarIcon: ({ color }) => <BarChart3 size={ICON_SIZE} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="learn"
-        options={{
-          title: 'Lernen',
-          tabBarIcon: ({ color }) => <Book size={ICON_SIZE} color={color} />,
-        }}
-      />
-      {/* <Tabs.Screen
-        name="community"
-        options={{
-          title: 'Community',
-          tabBarIcon: ({ color }) => <Users size={ICON_SIZE} color={color} />,
-        }}
-      /> */}
+      <Tabs.Screen name="index" options={{ title: 'Chat' }} />
+      <Tabs.Screen name="stats" options={{ title: 'Statistik' }} />
+      <Tabs.Screen name="learn" options={{ title: 'Lernen' }} />
+      <Tabs.Screen name="feedback" options={{ title: 'Feedback' }} />
     </Tabs>
     </View>
   );

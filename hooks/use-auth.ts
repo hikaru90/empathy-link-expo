@@ -16,6 +16,7 @@ interface AuthContextType {
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ needsVerification: boolean }>;
   signUp: (email: string, password: string, name?: string) => Promise<{ needsVerification: boolean }>;
+  signInWithSocial: (provider: 'google' | 'apple') => Promise<void>;
   signOut: () => Promise<void>;
   resendVerificationEmail: (email: string) => Promise<void>;
 }
@@ -403,6 +404,18 @@ export function useAuthProvider(): AuthContextType {
     }
   };
 
+  const signInWithSocial = async (provider: 'google' | 'apple') => {
+    const callbackURL = `${EXPO_APP_URL}/`;
+    const result = await authClient.signIn.social({
+      provider,
+      callbackURL,
+    });
+    if (result?.error) {
+      throw new Error(result.error.message || `Anmeldung mit ${provider} fehlgeschlagen`);
+    }
+    await loadUser();
+  };
+
   const signOut = async () => {
     await authClient.signOut();
     setUser(null);
@@ -434,6 +447,7 @@ export function useAuthProvider(): AuthContextType {
     isLoading,
     signIn,
     signUp,
+    signInWithSocial,
     signOut,
     resendVerificationEmail,
   };

@@ -164,18 +164,23 @@ export default function SelectDropdown({
                         styles.optionText,
                         selectedValue === option.value && styles.selectedOptionText,
                       ]}
+                      numberOfLines={2}
                     >
                       {option.label}
                     </Text>
                     {option.description && (
-                      <Text style={styles.optionDescription}>{option.description}</Text>
+                      <Text style={styles.optionDescription} numberOfLines={1}>
+                        {option.description}
+                      </Text>
                     )}
                   </View>
-                  {selectedValue === option.value && (
-                    <View style={styles.checkmark}>
-                      <Text style={styles.checkmarkText}>✓</Text>
-                    </View>
-                  )}
+                  <View style={styles.checkmarkSlot}>
+                    {selectedValue === option.value && (
+                      <View style={styles.checkmark}>
+                        <Text style={styles.checkmarkText}>✓</Text>
+                      </View>
+                    )}
+                  </View>
                 </TouchableOpacity>
               ))}
             </View>
@@ -221,7 +226,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 12,
     zIndex: 2000,
-    minWidth: 180,
+    minWidth: 200, // leaves room for option content + checkmark slot (30px)
   },
   tooltipArrow: {
     position: 'absolute',
@@ -260,6 +265,7 @@ const styles = StyleSheet.create({
   },
   optionContent: {
     flex: 1,
+    minWidth: 0, // allow text to shrink so checkmark slot is never overlapped
   },
   optionText: {
     fontSize: 14,
@@ -274,6 +280,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
+  checkmarkSlot: {
+    width: 30, // 18 checkmark + 12 marginLeft, reserved so dropdown width accounts for it
+    marginLeft: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   checkmark: {
     width: 18,
     height: 18,
@@ -281,7 +293,6 @@ const styles = StyleSheet.create({
     backgroundColor: baseColors.black,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
   },
   checkmarkText: {
     color: '#fff',

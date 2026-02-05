@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 import { Play } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
@@ -65,9 +65,15 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isBreathingRef = useRef(false);
 
-  // Audio refs
-  const inhaleSoundRef = useRef<any>(null);
-  const exhaleSoundRef = useRef<any>(null);
+  // Native: expo-audio players (only used when not web)
+  const inhalePlayer = useAudioPlayer(
+    Platform.OS === 'web' ? null : require('@/assets/audio/breathe-in.mp3')
+  );
+  const exhalePlayer = useAudioPlayer(
+    Platform.OS === 'web' ? null : require('@/assets/audio/breathe-out.mp3')
+  );
+
+  // Web: HTML5 audio refs
   const inhaleAudioWebRef = useRef<HTMLAudioElement | null>(null);
   const exhaleAudioWebRef = useRef<HTMLAudioElement | null>(null);
 
@@ -81,7 +87,6 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
   }, []);
   const loadAudio = async () => {
     if (Platform.OS === 'web') {
-      // Web: Use HTML5 Audio
       try {
         const BrowserAudio = (window as any).Audio || (globalThis as any).Audio;
         const inhaleAudio = new BrowserAudio('/audio/breathe-in.mp3');
@@ -96,26 +101,8 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
       } catch (error) {
         console.error('Error loading audio:', error);
       }
-    } else {
-      // Native: Use expo-av
-      try {
-        if (Audio && Audio.Sound) {
-          const { sound: inhaleSound } = await Audio.Sound.createAsync(
-            require('@/assets/audio/breathe-in.mp3'),
-            { shouldPlay: false, volume: 1.0 }
-          );
-          inhaleSoundRef.current = inhaleSound;
-
-          const { sound: exhaleSound } = await Audio.Sound.createAsync(
-            require('@/assets/audio/breathe-out.mp3'),
-            { shouldPlay: false, volume: 1.0 }
-          );
-          exhaleSoundRef.current = exhaleSound;
-        }
-      } catch (error) {
-        console.error('Error loading audio:', error);
-      }
     }
+    // Native: useAudioPlayer hooks load on mount and release on unmount
   };
   const unloadAudio = async () => {
     if (Platform.OS === 'web') {
@@ -127,15 +114,6 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
         exhaleAudioWebRef.current.pause();
         exhaleAudioWebRef.current = null;
       }
-    } else {
-      if (inhaleSoundRef.current) {
-        await inhaleSoundRef.current.unloadAsync();
-        inhaleSoundRef.current = null;
-      }
-      if (exhaleSoundRef.current) {
-        await exhaleSoundRef.current.unloadAsync();
-        exhaleSoundRef.current = null;
-      }
     }
   };
   const playInhaleSound = () => {
@@ -145,9 +123,9 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
         inhaleAudioWebRef.current.play().catch(() => { });
       }
     } else {
-      if (Audio && Audio.Sound && inhaleSoundRef.current) {
-        inhaleSoundRef.current.setPositionAsync(0);
-        inhaleSoundRef.current.playAsync().catch(() => { });
+      if (inhalePlayer) {
+        inhalePlayer.seekTo(0);
+        inhalePlayer.play();
       }
     }
   };
@@ -158,9 +136,9 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
         exhaleAudioWebRef.current.play().catch(() => { });
       }
     } else {
-      if (Audio && Audio.Sound && exhaleSoundRef.current) {
-        exhaleSoundRef.current.setPositionAsync(0);
-        exhaleSoundRef.current.playAsync().catch(() => { });
+      if (exhalePlayer) {
+        exhalePlayer.seekTo(0);
+        exhalePlayer.play();
       }
     }
   };
@@ -328,10 +306,8 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
       if (inhaleAudioWebRef.current) inhaleAudioWebRef.current.pause();
       if (exhaleAudioWebRef.current) exhaleAudioWebRef.current.pause();
     } else {
-      if (Audio && Audio.Sound) {
-        if (inhaleSoundRef.current) inhaleSoundRef.current.stopAsync().catch(() => { });
-        if (exhaleSoundRef.current) exhaleSoundRef.current.stopAsync().catch(() => { });
-      }
+      if (inhalePlayer) inhalePlayer.pause();
+      if (exhalePlayer) exhalePlayer.pause();
     }
   };
   const startTimer = () => {
@@ -375,10 +351,8 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
       if (inhaleAudioWebRef.current) inhaleAudioWebRef.current.pause();
       if (exhaleAudioWebRef.current) exhaleAudioWebRef.current.pause();
     } else {
-      if (Audio && Audio.Sound) {
-        if (inhaleSoundRef.current) inhaleSoundRef.current.stopAsync().catch(() => { });
-        if (exhaleSoundRef.current) exhaleSoundRef.current.stopAsync().catch(() => { });
-      }
+      if (inhalePlayer) inhalePlayer.pause();
+      if (exhalePlayer) exhalePlayer.pause();
     }
 
     setTimeout(() => {

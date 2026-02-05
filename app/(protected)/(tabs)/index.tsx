@@ -6,6 +6,7 @@ import baseColors from '@/baseColors.config';
 import ChatAnalysisModal from '@/components/chat/ChatAnalysisModal';
 import MessageBubble from '@/components/chat/MessageBubble';
 import MessageInput from '@/components/chat/MessageInput';
+import SafetyResources from '@/components/chat/SafetyResources';
 import TypingIndicator from '@/components/chat/TypingIndicator';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { useAuthGuard } from '@/hooks/use-auth';
@@ -15,7 +16,20 @@ import { Check } from 'lucide-react-native';
 import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 
 function ChatContent() {
-  const { history, isLoading, error, initializeChat, isSending, finishChat, isAnalyzing, chatId } = useChat();
+  const {
+    history,
+    isLoading,
+    error,
+    initializeChat,
+    isSending,
+    finishChat,
+    isAnalyzing,
+    chatId,
+    safetyStatus,
+    crisisResources,
+    loadCrisisResources,
+    requestAppeal,
+  } = useChat();
   const flatListRef = useRef<FlatList>(null);
   const [feelingSelectorVisible, setFeelingSelectorVisible] = useState(false);
   const [needSelectorVisible, setNeedSelectorVisible] = useState(false);
@@ -24,17 +38,23 @@ function ChatContent() {
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [analysisFailed, setAnalysisFailed] = useState(false);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [appealInProgress, setAppealInProgress] = useState(false);
   const itemHeights = useRef<Map<number, number>>(new Map());
   const hasInitialized = useRef(false);
 
   useEffect(() => {
-    // Only initialize if we don't already have a chat loaded
-    // This prevents overriding a chat that was just reopened
     if (!hasInitialized.current && !chatId) {
       hasInitialized.current = true;
       initializeChat('de', 'idle');
     }
   }, [initializeChat, chatId]);
+
+  // Load crisis resources when safety status indicates we should show them
+  useEffect(() => {
+    if (safetyStatus?.showResources || safetyStatus?.suspended) {
+      loadCrisisResources('de');
+    }
+  }, [safetyStatus?.showResources, safetyStatus?.suspended, loadCrisisResources]);
 
   // Helper function to scroll to last message with offset
   const scrollToBottom = () => {
@@ -123,6 +143,27 @@ function ChatContent() {
     );
   }
 
+  // When suspended, show crisis resources full-screen (no chat)
+  if (safetyStatus?.suspended) {
+    return (
+      <View style={[styles.centerContainer, { flex: 1 }]}>
+        <SafetyResources
+          resources={crisisResources || []}
+          suspended={true}
+          onAppeal={async () => {
+            setAppealInProgress(true);
+            try {
+              return await requestAppeal();
+            } finally {
+              setAppealInProgress(false);
+            }
+          }}
+          appealInProgress={appealInProgress}
+        />
+      </View>
+    );
+  }
+
   if (error) {
     return (
       <View style={styles.centerContainer}>
@@ -165,6 +206,18 @@ function ChatContent() {
         ref={flatListRef}
         data={history || []}
         keyExtractor={(item, index) => `${index}-${item.timestamp}`}
+        ListHeaderComponent={
+          safetyStatus?.showResources && !safetyStatus?.suspended ? (
+            <View style={styles.safetyBanner}>
+              <SafetyResources
+                resources={crisisResources || []}
+                suspended={false}
+                onAppeal={requestAppeal}
+                compact
+              />
+            </View>
+          ) : null
+        }
         renderItem={({ item, index }) => (
           <View
             onLayout={(event) => {
@@ -330,6 +383,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 16,
     overflow: 'hidden',
+  },
+  safetyBanner: {
+    marginBottom: 16,
   },
   finishButtonText: {
     fontSize: 14,

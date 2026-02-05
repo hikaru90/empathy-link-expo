@@ -257,9 +257,12 @@ DATABASE_URL=postgresql://...
 SCHEDULED_TASK_AUTH_KEY=...
 ```
 
-### Expo:
-- Base URL hardcoded in `lib/auth.ts`: `http://localhost:4000`
-- Change for production deployment
+### Expo (`.env` in app root):
+- `EXPO_PUBLIC_API_URL` – Backend API URL (optional; auto-detected for native)
+- `EXPO_PUBLIC_BETTER_AUTH_URL` – Better Auth base URL (optional)
+- `EXPO_PUBLIC_POSTHOG_API_KEY` – PostHog project API key (optional; enables analytics and error tracking)
+- `EXPO_PUBLIC_POSTHOG_HOST` – PostHog host (optional; default `https://us.i.posthog.com`)
+- `EXPO_PUBLIC_POSTHOG_DEV_ENABLED` – Set to enable PostHog in `__DEV__` (optional)
 
 ---
 

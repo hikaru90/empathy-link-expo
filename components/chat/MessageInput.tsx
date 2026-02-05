@@ -6,6 +6,7 @@ import Swirl from '@/assets/icons/Swirl';
 import baseColors from '@/baseColors.config';
 import { useChat } from '@/hooks/use-chat';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, Send } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -135,15 +136,13 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
     setNeedSelectorVisible(prev => !prev);
   }, []);
 
-  // Tab bar height constant (matches tab bar configuration)
-  const TAB_BAR_HEIGHT = 14;
-  
+  // Tab bar height constant (matches TabBar.tsx: height 70)
+  const TAB_BAR_HEIGHT = 70;
+
   // Calculate bottom offset using tab bar height and keyboard height
-  // Use fixed tab bar height instead of safe area insets for consistency
-  // Safe area insets can be inconsistent on first render vs reload
-  const bottomOffset = keyboardHeight > 0 
-    ? keyboardHeight + 0 // When keyboard is visible, position above keyboard with padding
-    : TAB_BAR_HEIGHT + 8; // When keyboard is hidden, use tab bar height + smaller padding
+  const bottomOffset = keyboardHeight > 0
+    ? keyboardHeight + 0 // When keyboard is visible, position above keyboard
+    : TAB_BAR_HEIGHT + 20; // When keyboard is hidden, sit above tab bar with padding
 
   // Log bottom offset whenever keyboardHeight changes
   useEffect(() => {
@@ -152,131 +151,146 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
       keyboardHeight,
       tabBarHeight: TAB_BAR_HEIGHT,
       bottomOffset,
-      calculation: keyboardHeight > 0 
+      calculation: keyboardHeight > 0
         ? `keyboardHeight (${keyboardHeight}) + 16 = ${bottomOffset}`
         : `tabBar (${TAB_BAR_HEIGHT}) + 8 = ${bottomOffset}`,
     });
   }, [keyboardHeight, bottomOffset]);
 
   return (
-    <View
-      className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl"
-      style={{
-        backgroundColor: baseColors.background,
-        position: 'absolute',
-        bottom: bottomOffset,
-        left: 16,
-        right: 16,
-        zIndex: 1000,
-        maxHeight: '65%', // Prevent overflow when selectors are open
-      }}
-    >
-      <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite+'ee' }}>
-      {/* Feelings Selector */}
-      {feelingSelectorVisible && (
-        <View className="max-h-40 border-b border-black/5">
-          <GroupedFeelingsSelector
-            feelings={feelings}
-            onFeelingPress={addText}
-            isLoading={isLoadingData}
-            selectType="single"
-            highlightSelection={false}
-            prependText="+ "
-          />
-        </View>
-      )}
-
-      {/* Needs Selector */}
-      {needSelectorVisible && (
-        <View className="max-h-40 border-b border-black/5">
-          <GroupedNeedsSelector
-            needs={needs}
-            onNeedPress={addText}
-            isLoading={isLoadingData}
-          />
-        </View>
-      )}
-
-      {/* Input Row */}
-      <View className="p-1 flex-row items-end gap-3 overflow-hidden">
-        <TextInput
-          ref={textInputRef}
-          value={text}
-          onChangeText={setText}
-          onKeyPress={handleKeyPress}
-          placeholder="Schreibe eine Nachricht..."
-          placeholderTextColor="rgba(0, 0, 0, 0.5)"
-          className="flex-1 rounded-[18px] p-3 text-base"
-          style={styles.textInput}
-          multiline
-          scrollEnabled={true}
-          maxLength={2000}
-          editable={!isSending}
-          returnKeyType="send"
-          blurOnSubmit={false}
-          onSubmitEditing={handleSend}
-        />
-      </View>
-
-      {/* Action Buttons */}
-      <View className="flex-row px-3 pb-2 gap-3 justify-between w-full">
-        <View className="flex-row gap-2 items-center">
-          <TouchableOpacity
-            onPress={toggleFeelingSelector}
-            className={`flex-row items-center gap-1.5 rounded-full pl-1 pr-3 py-1 border border-black/5 ${
-              feelingSelectorVisible
-                ? 'bg-black/5 shadow-inner'
-                : 'bg-white shadow-sm shadow-black/20'
-              }`}
-            disabled={isLoadingData}
-          >
-            <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: feelingSelectorVisible ? baseColors.white : baseColors.forest+'33' }}>
-              <Heart
-                size={14} color='transparent' fill={feelingSelectorVisible ? baseColors.lilac : baseColors.forest+'33'}
+    <View style={{
+      backgroundColor: baseColors.background,
+      position: 'absolute',
+      bottom: bottomOffset,
+      left: 16,
+      right: 16,
+      maxHeight: '65%',
+    }}>
+      <LinearGradient
+        colors={[baseColors.background + '00', baseColors.background]}
+        style={{
+          position: 'absolute',
+          bottom: -20,
+          left: -20,
+          right: -20,
+          height: 50,
+          zIndex: 1,
+        }}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      />
+      <View
+        className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl"
+        style={{
+          zIndex: 1000,
+        }}
+      >
+        <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite + 'ee' }}>
+          {/* Feelings Selector */}
+          {feelingSelectorVisible && (
+            <View className="max-h-40 border-b border-black/5">
+              <GroupedFeelingsSelector
+                feelings={feelings}
+                onFeelingPress={addText}
+                isLoading={isLoadingData}
+                selectType="single"
+                highlightSelection={false}
+                prependText="+ "
               />
             </View>
-            <Text className={`text-sm font-medium`}>
-              Gefühle
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={toggleNeedSelector}
-            className={`flex-row items-center gap-1.5 rounded-full pl-1 pr-3 py-1 border border-black/5 ${needSelectorVisible
-              ? 'bg-black/5 shadow-inner'
-              : 'bg-white shadow-sm shadow-black/20'
-              }`}
-            disabled={isLoadingData}
-          >
-            <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: needSelectorVisible ? baseColors.white : baseColors.forest+'33' }}>
-              <Swirl
-                size={12} color={needSelectorVisible ? baseColors.forest : baseColors.forest+'55'}
-              />
-            </View>
-            <Text className={`text-sm font-medium`}>
-              Bedürfnisse
-            </Text>
-          </TouchableOpacity>
-
-        </View>
-        <TouchableOpacity
-          onPress={handleSend}
-          disabled={isSending || !text.trim()}
-          className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
-          style={{
-            backgroundColor: isSending || !text.trim() 
-              ? baseColors.forest+'33'
-              : `${baseColors.forest}`
-          }}
-          activeOpacity={0.7}
-        >
-          {isSending ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Send size={16} color={isSending || !text.trim() ? "#ffffff" : "#ffffff"} />
           )}
-        </TouchableOpacity>
-      </View>
+
+          {/* Needs Selector */}
+          {needSelectorVisible && (
+            <View className="max-h-40 border-b border-black/5">
+              <GroupedNeedsSelector
+                needs={needs}
+                onNeedPress={addText}
+                isLoading={isLoadingData}
+              />
+            </View>
+          )}
+
+          {/* Input Row */}
+          <View className="p-1 flex-row items-end gap-3 overflow-hidden">
+            <TextInput
+              ref={textInputRef}
+              value={text}
+              onChangeText={setText}
+              onKeyPress={handleKeyPress}
+              placeholder="Schreibe eine Nachricht..."
+              placeholderTextColor="rgba(0, 0, 0, 0.5)"
+              className="flex-1 rounded-[18px] p-3 text-base"
+              style={styles.textInput}
+              multiline
+              scrollEnabled={true}
+              maxLength={2000}
+              editable={!isSending}
+              returnKeyType="send"
+              blurOnSubmit={false}
+              onSubmitEditing={handleSend}
+            />
+          </View>
+
+          {/* Action Buttons */}
+          <View className="flex-row px-3 pb-2 gap-3 justify-between w-full">
+            <View className="flex-row gap-2 items-center">
+              <TouchableOpacity
+                onPress={toggleFeelingSelector}
+                className={`flex-row items-center gap-1.5 rounded-full pl-1 pr-3 py-1 border border-black/5 ${feelingSelectorVisible
+                  ? 'bg-black/5 shadow-inner'
+                  : 'bg-white shadow-sm shadow-black/20'
+                  }`}
+                disabled={isLoadingData}
+              >
+                <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: feelingSelectorVisible ? baseColors.white : baseColors.forest + '33' }}>
+                  <Heart
+                    size={14} color='transparent' fill={feelingSelectorVisible ? baseColors.lilac : baseColors.forest + '33'}
+                  />
+                </View>
+                <Text className={`text-sm font-medium`}>
+                  Gefühle
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={toggleNeedSelector}
+                className={`flex-row items-center gap-1.5 rounded-full pl-1 pr-3 py-1 border border-black/5 ${needSelectorVisible
+                  ? 'bg-black/5 shadow-inner'
+                  : 'bg-white shadow-sm shadow-black/20'
+                  }`}
+                disabled={isLoadingData}
+              >
+                <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: needSelectorVisible ? baseColors.white : baseColors.forest + '33' }}>
+                  <Swirl
+                    size={12} color={needSelectorVisible ? baseColors.forest : baseColors.forest + '55'}
+                  />
+                </View>
+                <Text className={`text-sm font-medium`}>
+                  Bedürfnisse
+                </Text>
+              </TouchableOpacity>
+
+            </View>
+            <TouchableOpacity
+              onPress={handleSend}
+              disabled={isSending || !text.trim()}
+              className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
+              style={{
+                backgroundColor: isSending || !text.trim()
+                  ? baseColors.forest + '33'
+                  : `${baseColors.forest}`
+              }}
+              activeOpacity={0.7}
+            >
+              {isSending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Send size={16} color={isSending || !text.trim() ? "#ffffff" : "#ffffff"} />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </View>
   );

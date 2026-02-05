@@ -64,7 +64,8 @@ export default function SigninScreen() {
   const [showResendButton, setShowResendButton] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
-  const { signIn, resendVerificationEmail } = useAuth();
+  const [socialLoading, setSocialLoading] = useState<'google' | 'apple' | null>(null);
+  const { signIn, signInWithSocial, resendVerificationEmail } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ fromSignup?: string; email?: string; initial?: string; pop?: string; path?: string }>();
 
@@ -271,7 +272,7 @@ export default function SigninScreen() {
         </View>
       )}
 
-      <View className="mb-6">
+      <View className="mb-3">
         <Text className="text-gray-700 mb-2 font-medium">E-Mail</Text>
         <TextInput
           ref={emailInputRef}
@@ -353,6 +354,64 @@ export default function SigninScreen() {
           </ImageBackground>
         </TouchableOpacity>
       </View>
+
+      <View className="mt-6 mb-2 flex-row items-center gap-3">
+        <View className="flex-1 h-px" style={{ backgroundColor: baseColors.forest + '40' }} />
+        <Text style={{ color: baseColors.forest + '99', fontSize: 14 }}>oder mit</Text>
+        <View className="flex-1 h-px" style={{ backgroundColor: baseColors.forest + '40' }} />
+      </View>
+
+      <View className="gap-3">
+        <TouchableOpacity
+          onPress={async () => {
+            setSocialLoading('google');
+            setErrorMessage(null);
+            try {
+              await signInWithSocial('google');
+              router.replace('/(protected)/(tabs)');
+            } catch (e: any) {
+              setErrorMessage(e?.message || 'Anmeldung mit Google fehlgeschlagen');
+              Alert.alert('Fehler', e?.message || 'Anmeldung mit Google fehlgeschlagen');
+            } finally {
+              setSocialLoading(null);
+            }
+          }}
+          disabled={!!socialLoading}
+          className="rounded-lg py-3 flex-row items-center justify-center gap-2"
+          style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd' }}
+        >
+          {socialLoading === 'google' ? (
+            <ActivityIndicator size="small" color="#333" />
+          ) : (
+            <Text style={{ color: '#333', fontWeight: '600' }}>Mit Google anmelden</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={async () => {
+            setSocialLoading('apple');
+            setErrorMessage(null);
+            try {
+              await signInWithSocial('apple');
+              router.replace('/(protected)/(tabs)');
+            } catch (e: any) {
+              setErrorMessage(e?.message || 'Anmeldung mit Apple fehlgeschlagen');
+              Alert.alert('Fehler', e?.message || 'Anmeldung mit Apple fehlgeschlagen');
+            } finally {
+              setSocialLoading(null);
+            }
+          }}
+          disabled={!!socialLoading}
+          className="rounded-lg py-3 flex-row items-center justify-center gap-2"
+          style={{ backgroundColor: '#000', borderWidth: 1, borderColor: '#333' }}
+        >
+          {socialLoading === 'apple' ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={{ color: '#fff', fontWeight: '600' }}>Mit Apple anmelden</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
       <View className="mt-6 flex-row justify-center">
         <Text className="" style={{ color: baseColors.forest+'99' }}>Noch kein Konto? </Text>
         <Link href="/(auth)/signup" asChild>
