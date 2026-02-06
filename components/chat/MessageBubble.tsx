@@ -4,8 +4,9 @@
 
 import baseColors from '@/baseColors.config';
 import type { HistoryEntry } from '@/lib/api/chat';
-import { Play, RefreshCw, Square } from 'lucide-react-native';
-import { StyleSheet, Text, View } from 'react-native';
+import { Link } from 'expo-router';
+import { BookOpen, ChevronRight, Play, RefreshCw, Square } from 'lucide-react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface MessageBubbleProps {
   message: HistoryEntry;
@@ -20,9 +21,10 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const hasPathMarker = !!message.pathMarker;
   const hasText = message.parts?.[0]?.text;
+  const hasNvcKnowledge = !isUser && !!message.nvcKnowledge?.length;
 
   // Don't render empty model messages (path markers without text)
-  if (!isUser && !hasText && !hasPathMarker) {
+  if (!isUser && !hasText && !hasPathMarker && !hasNvcKnowledge) {
     return null;
   }
 
@@ -43,8 +45,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   // Get path marker icon based on type
   const getPathMarkerIcon = () => {
     if (!message.pathMarker) return null;
-    const iconProps = { size: 14, color: baseColors.lemonade };
-    
+
     switch (message.pathMarker.type) {
       case 'path_start': return <Play size={10} color={baseColors.lemonade} fill={baseColors.lemonade} strokeWidth={2} />;
       case 'path_switch': return <RefreshCw size={10} color="white" strokeWidth={2} />;
@@ -57,7 +58,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   const getPathMarkerText = () => {
     if (!message.pathMarker) return '';
     const pathName = translatePathName(message.pathMarker.path);
-    
+
     switch (message.pathMarker.type) {
       case 'path_start': return `Gestartet: ${pathName}`;
       case 'path_switch': return `Gewechselt zu: ${pathName}`;
@@ -94,6 +95,61 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           <Text style={[styles.text, isUser ? styles.userText : styles.modelText]}>
             {cleanText(message.parts[0].text)}
           </Text>
+        </View>
+      ) : null}
+
+      {/* NVC knowledge links block */}
+      {hasNvcKnowledge && message.nvcKnowledge ? (
+        <View style={{
+          padding: 8,
+
+        }}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            marginBottom: 8,
+            marginLeft:4
+          }}>
+            <BookOpen size={14} color={baseColors.lilac} />
+            <Text style={{
+              fontSize: 12,
+              color: baseColors.black,
+            }}>Vertiefen im Lernbereich</Text>
+          </View>
+          <View style={{
+            gap: 8,
+          }}>
+            {message.nvcKnowledge.map((item, index) => (
+              <Link
+                key={item.learnTopicSlug + (index.toString())}
+                href={item.learnPath as any}
+                asChild
+              >
+                <TouchableOpacity style={{
+                  backgroundColor: '#ffffff66',
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: '#ffffff',
+                  alignSelf: 'flex-start',
+                  width: '100%',
+                  maxWidth: 340,
+                  paddingVertical: 12,
+                  paddingHorizontal: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }} activeOpacity={0.7}>
+                  <Text numberOfLines={1} ellipsizeMode="tail" style={{
+                    fontSize: 15,
+                  }}>{item.title.split('||').map((part) => part.trim()).join(' ')}</Text>
+                  <View style={{ display: 'flex', backgroundColor: '#ffffff99', width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}>
+                    <ChevronRight size={14} color={baseColors.purple} />
+                  </View>
+                </TouchableOpacity>
+              </Link>
+            ))}
+          </View>
         </View>
       ) : null}
     </View>
@@ -150,8 +206,8 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     paddingRight: 12,
     paddingVertical: 6,
-    backgroundColor: baseColors.black+'11',
-    boxShadow: 'inset 0 0 10px 0 '+baseColors.black+'33',
+    backgroundColor: baseColors.black + '11',
+    boxShadow: 'inset 0 0 10px 0 ' + baseColors.black + '33',
     borderRadius: 12,
     marginBottom: 8,
     alignSelf: 'center',

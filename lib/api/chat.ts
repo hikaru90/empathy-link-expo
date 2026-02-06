@@ -32,12 +32,20 @@ async function authenticatedFetch<T = any>(url: string, options: RequestInit = {
   return result.data as T;
 }
 
+export interface NvcKnowledgeItem {
+  title: string;
+  learnTopicSlug: string;
+  learnPath: string;
+  pocketbaseVersionId?: string;
+}
+
 export interface HistoryEntry {
   role: 'user' | 'model';
   parts: { text: string }[];
   timestamp: number;
   hidden?: boolean;
   pathMarker?: PathMarker;
+  nvcKnowledge?: NvcKnowledgeItem[];
 }
 
 export interface PathMarker {

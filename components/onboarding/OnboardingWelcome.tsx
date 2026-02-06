@@ -40,6 +40,13 @@ export default function OnboardingWelcome({ visible, onComplete }: OnboardingWel
   const step = ONBOARDING_STEPS[currentStep];
 
   useEffect(() => {
+    if (visible) {
+      setCurrentStep(0);
+      setSelectedGoal('');
+    }
+  }, [visible]);
+
+  useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 300,

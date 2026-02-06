@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, ImageBackground, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import jungleImage from '@/assets/images/Jungle.jpg';
@@ -12,6 +12,7 @@ import LoadingIndicator from '@/components/LoadingIndicator';
 import OnboardingWelcome from '@/components/onboarding/OnboardingWelcome';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { useOnboarding } from '@/hooks/use-onboarding';
+import type { HistoryEntry } from '@/lib/api/chat';
 import { ChatProvider, useChat } from '@/hooks/use-chat';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check } from 'lucide-react-native';
@@ -44,6 +45,30 @@ function ChatContent() {
   const itemHeights = useRef<Map<number, number>>(new Map());
   const hasInitialized = useRef(false);
 
+  // Merge path-marker-only messages into the previous model message so the path indicator appears above the text
+  const displayHistory = useMemo(() => {
+    if (!history?.length) return history || [];
+    const result: HistoryEntry[] = [];
+    for (let i = 0; i < history.length; i++) {
+      const curr = history[i];
+      const prev = result[result.length - 1];
+      const isPathMarkerOnly =
+        curr.role === 'model' &&
+        curr.pathMarker &&
+        !curr.parts?.[0]?.text &&
+        !curr.nvcKnowledge?.length;
+      const prevIsModelWithText =
+        prev?.role === 'model' && prev.parts?.[0]?.text;
+
+      if (isPathMarkerOnly && prevIsModelWithText && curr.pathMarker) {
+        result[result.length - 1] = { ...prev, pathMarker: curr.pathMarker };
+      } else {
+        result.push(curr);
+      }
+    }
+    return result;
+  }, [history]);
+
   useEffect(() => {
     if (!hasInitialized.current && !chatId) {
       hasInitialized.current = true;
@@ -60,12 +85,13 @@ function ChatContent() {
 
   // Helper function to scroll to last message with offset
   const scrollToBottom = () => {
-    if (history && history.length > 0 && flatListRef.current) {
+    const list = displayHistory || [];
+    if (list.length > 0 && flatListRef.current) {
       // Use a small delay to ensure heights are measured
       setTimeout(() => {
         try {
           flatListRef.current?.scrollToIndex({
-            index: history.length - 1,
+            index: list.length - 1,
             viewPosition: 0, // 0 = top of viewport, 1 = bottom
             viewOffset: 100, // Offset from top in pixels
             animated: true
@@ -206,7 +232,7 @@ function ChatContent() {
       </View>
       <FlatList
         ref={flatListRef}
-        data={history || []}
+        data={displayHistory || []}
         keyExtractor={(item, index) => `${index}-${item.timestamp}`}
         ListHeaderComponent={
           safetyStatus?.showResources && !safetyStatus?.suspended ? (
