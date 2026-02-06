@@ -176,6 +176,12 @@ export default function LearnNeedsDetective({
                   multiline
                   className="min-h-[80px] flex-grow rounded-md bg-transparent px-2 py-1 text-base text-gray-900"
                   style={{ textAlignVertical: 'top' }}
+                  onKeyPress={(e) => {
+                    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
+                      e.preventDefault();
+                      submitCombinedInput();
+                    }
+                  }}
                 />
                 <View className="flex-row items-end justify-between">
                   <View className="flex-row gap-2">
@@ -254,6 +260,12 @@ export default function LearnNeedsDetective({
                   multiline
                   className="min-h-[60px] flex-grow rounded-md bg-transparent px-2 py-1 text-base text-gray-900"
                   style={{ textAlignVertical: 'top' }}
+                  onKeyPress={(e) => {
+                    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
+                      e.preventDefault();
+                      submitNeeds();
+                    }
+                  }}
                 />
                 <View className="flex-row items-end justify-between">
                   <View className="flex-row gap-2">

@@ -437,6 +437,12 @@ export default function LearnFeelingsDetective({
                   editable={!isLoading}
                   returnKeyType="send"
                   blurOnSubmit={false}
+                  onKeyPress={(e) => {
+                    if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
+                      e.preventDefault();
+                      submitSituation();
+                    }
+                  }}
                   onSubmitEditing={() => {
                     submitSituation();
                   }}
@@ -631,6 +637,12 @@ export default function LearnFeelingsDetective({
                   editable={!isLoading}
                   returnKeyType="send"
                   blurOnSubmit={false}
+                  onKeyPress={(e) => {
+                    if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
+                      e.preventDefault();
+                      submitThoughts();
+                    }
+                  }}
                   onSubmitEditing={() => {
                     submitThoughts();
                   }}

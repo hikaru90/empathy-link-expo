@@ -140,6 +140,14 @@ export default function LearnNeedsRubiksCube({
                 multiline
                 className="min-h-[80px] flex-grow rounded-md bg-transparent px-2 py-1 text-base text-gray-900"
                 style={{ textAlignVertical: 'top' }}
+                onKeyPress={(e) => {
+                  if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
+                    e.preventDefault();
+                    if (!userSentence.trim() || isLoading) return;
+                    if (isPreview) handlePreviewNext();
+                    else submitSentence();
+                  }
+                }}
               />
               <View className="flex-row items-end justify-between">
                 <View>

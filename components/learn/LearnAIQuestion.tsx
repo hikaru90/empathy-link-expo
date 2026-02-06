@@ -425,6 +425,14 @@ export default function LearnAIQuestion({
                   editable={!isLoading}
                   returnKeyType="send"
                   blurOnSubmit={false}
+                  onKeyPress={(e) => {
+                    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
+                      e.preventDefault();
+                      setFeelingSelectorVisible(false);
+                      setNeedSelectorVisible(false);
+                      submitAnswer();
+                    }
+                  }}
                   onSubmitEditing={() => {
                     setFeelingSelectorVisible(false);
                     setNeedSelectorVisible(false);

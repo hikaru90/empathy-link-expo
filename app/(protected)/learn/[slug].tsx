@@ -15,11 +15,11 @@ import LearnBreathe from '@/components/learn/LearnBreathe';
 import LearnFeelingsDetective from '@/components/learn/LearnFeelingsDetective';
 import LearnImage from '@/components/learn/LearnImage';
 import LearnMultipleChoice from '@/components/learn/LearnMultipleChoice';
+import LearnNavigation from '@/components/learn/LearnNavigation';
 import LearnNeedsDetective from '@/components/learn/LearnNeedsDetective';
 import LearnNeedsRubiksCube from '@/components/learn/LearnNeedsRubiksCube';
-import LearnNavigation from '@/components/learn/LearnNavigation';
-import LearnStepIndicator from '@/components/learn/LearnStepIndicator';
 import LearnSortable from '@/components/learn/LearnSortable';
+import LearnStepIndicator from '@/components/learn/LearnStepIndicator';
 import LearnTask from '@/components/learn/LearnTask';
 import LearnText from '@/components/learn/LearnText';
 import LearnTimer from '@/components/learn/LearnTimer';
@@ -325,6 +325,7 @@ export default function LearnDetailScreen() {
             currentStep={currentStep}
             totalSteps={totalSteps}
             color={categoryColor}
+            inactiveColor={baseColors.white}
           />
 
           {/* Content */}
