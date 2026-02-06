@@ -101,7 +101,6 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       {/* NVC knowledge links block */}
       {hasNvcKnowledge && message.nvcKnowledge ? (
         <View style={{
-          padding: 8,
 
         }}>
           <View style={{

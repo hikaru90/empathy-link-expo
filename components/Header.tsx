@@ -9,15 +9,24 @@ import { createLearningSession } from '@/lib/api/learn';
 import { getSuperCommunicatorData, type SuperCommunicatorData } from '@/lib/api/stats';
 import { getStreak, type StreakResponse } from '@/lib/api/streak';
 import { authClient } from '@/lib/auth';
-import { API_BASE_URL } from '@/lib/config';
+import { API_BASE_URL, EXPO_APP_URL } from '@/lib/config';
 import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-calculator';
+import * as Clipboard from 'expo-clipboard';
 import { Image, ImageBackground } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Bell, Brain, FileText, LogOut, RotateCcw, RotateCcwSquare, UserRoundCog } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import LoadingIndicator from './LoadingIndicator';
+import { Bell, Brain, FileText, LogOut, RotateCcw, RotateCcwSquare, UserPlus, UserRoundCog } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import SparklePill from './SparklePill';
 import StatsStreak from './stats/StatsStreak';
 import SuperCommunicatorBadge from './stats/SuperCommunicatorBadge';
@@ -40,6 +49,9 @@ function Header({ className }: HeaderProps) {
   const [streakData, setStreakData] = useState<StreakResponse | null>(null);
   const [superCommunicatorData, setSuperCommunicatorData] = useState<SuperCommunicatorData | null>(null);
   const [isRestartingTopic, setIsRestartingTopic] = useState(false);
+  const [inviteCopyFeedback, setInviteCopyFeedback] = useState(false);
+  const inviteFlashAnim = useRef(new Animated.Value(0)).current;
+  const inviteTextOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     fetchUnreadCount();
@@ -140,6 +152,47 @@ function Header({ className }: HeaderProps) {
   async function handleRestartOnboarding() {
     setIsUserMenuOpen(false);
     await restartOnboarding();
+  }
+
+  async function handleInviteFriend() {
+    const inviteText = `Empathy Link – Mach Empathie  zu deiner Superpower. ${EXPO_APP_URL}`;
+    await Clipboard.setStringAsync(inviteText);
+    setInviteCopyFeedback(true);
+
+    // Flash button background
+    inviteFlashAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(inviteFlashAnim, {
+        toValue: 1,
+        duration: 120,
+        useNativeDriver: false,
+      }),
+      Animated.timing(inviteFlashAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    // Fade in "Link copied" text (with delay)
+    inviteTextOpacity.setValue(0);
+    Animated.sequence([
+      Animated.delay(200),
+      Animated.timing(inviteTextOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Fade out and reset after 2.5s
+    setTimeout(() => {
+      Animated.timing(inviteTextOpacity, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => setInviteCopyFeedback(false));
+    }, 2500);
   }
 
   async function handleRestartTopic() {
@@ -246,7 +299,11 @@ function Header({ className }: HeaderProps) {
 
       <BottomDrawer
         visible={isUserMenuOpen}
-        onClose={() => setIsUserMenuOpen(false)}
+        onClose={() => {
+          setIsUserMenuOpen(false);
+          setInviteCopyFeedback(false);
+          inviteTextOpacity.setValue(1);
+        }}
         title="Profil"
         subtitle={user?.email}
       >
@@ -274,6 +331,36 @@ function Header({ className }: HeaderProps) {
         >
           <Text style={styles.menuItemText}>Onboarding erneut starten</Text>
           <RotateCcwSquare size={16} color="#000" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.menuItem, { overflow: 'hidden' }]}
+          onPress={handleInviteFriend}
+          activeOpacity={1}
+        >
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFillObject,
+              styles.inviteFlashOverlay,
+              {
+                opacity: inviteFlashAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 0.35],
+                }),
+              },
+            ]}
+          />
+          <View style={styles.menuItemContent}>
+            <Animated.Text
+              style={[
+                styles.menuItemText,
+                inviteCopyFeedback && styles.inviteFeedback,
+                { opacity: inviteCopyFeedback ? inviteTextOpacity : 1 },
+              ]}
+            >
+              {inviteCopyFeedback ? 'Link in Zwischenablage kopiert' : 'Freund einladen'}
+            </Animated.Text>
+            <UserPlus size={16} color="#000" />
+          </View>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItemDark}
@@ -440,6 +527,20 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: 14,
     color: '#666',
+  },
+  inviteFeedback: {
+    color: baseColors.purple,
+  },
+  inviteFlashOverlay: {
+    backgroundColor: baseColors.forest,
+    borderRadius: 20,
+  },
+  menuItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: 1,
+    zIndex: 1,
   },
   menuItem: {
     flexDirection: 'row',

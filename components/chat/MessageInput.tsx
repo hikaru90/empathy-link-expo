@@ -159,7 +159,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
 
   return (
     <View style={{
-      backgroundColor: baseColors.background,
+      
       position: 'absolute',
       bottom: bottomOffset,
       left: 16,
@@ -183,6 +183,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
         className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl"
         style={{
           zIndex: 1000,
+          backgroundColor: baseColors.background,
         }}
       >
         <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite + 'ee' }}>
