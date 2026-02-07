@@ -201,12 +201,10 @@ export default function LearnNeedsDetective({
       <View className="flex flex-1 flex-col justify-between rounded-lg">
         {internalStep === 0 && (
           <>
-            <View className="flex-grow items-center justify-center px-0">
-              <Text className="max-w-xs text-base font-medium text-gray-900">
-                {content.question ||
-                  'Beschreibe eine Situation, die du erlebt hast und welche Strategie du verwendet hast:'}
-              </Text>
-            </View>
+            <Text className="flex flex-grow items-center justify-center px-0 max-w-xs text-base font-medium text-gray-900">
+              {content.question ||
+                'Beschreibe eine Situation, die du erlebt hast und welche Strategie du verwendet hast:'}
+            </Text>
             <View
               className="px-0"
               style={{
@@ -249,7 +247,7 @@ export default function LearnNeedsDetective({
                     <Markdown
                       markdownit={markdownItInstance}
                       style={{
-                        body: { paddingHorizontal:8,paddingVertical:16, fontSize: 16, color: '#374151', lineHeight: 22 },
+                        body: { paddingHorizontal: 8, paddingVertical: 16, fontSize: 16, color: '#374151', lineHeight: 22 },
                         paragraph: { marginBottom: 12 },
                       }}
                     >
@@ -271,7 +269,7 @@ export default function LearnNeedsDetective({
                 }}
               >
                 <LearnNavigation
-                  onNext={gotoNextStep ?? (() => {})}
+                  onNext={gotoNextStep ?? (() => { })}
                   onPrev={gotoPrevStep}
                   nextText="Genau"
                   showPrev={!!gotoPrevStep}
@@ -349,11 +347,9 @@ export default function LearnNeedsDetective({
                   paddingBottom: 6,
                 }}
               >
-                <View className="flex-grow items-center justify-center px-0">
-                  <Text className="text-center text-base font-medium text-gray-900 mt-4">
-                    Lass uns eine Zusammenfassung deiner Erkenntnisse erstellen.
-                  </Text>
-                </View>
+                <Text className="text-center text-base font-medium text-gray-900 mt-4 flex flex-grow items-center justify-center px-0">
+                  Lass uns eine Zusammenfassung deiner Erkenntnisse erstellen.
+                </Text>
                 {isLoading ? (
                   <View className="py-4 flex flex-row items-center justify-center">
                     <ActivityIndicator size="small" color={baseColors.forest} />
@@ -394,8 +390,17 @@ export default function LearnNeedsDetective({
                     <Markdown
                       markdownit={markdownItInstance}
                       style={{
-                        body: { paddingHorizontal:8, paddingVertical:16, fontSize: 16, color: '#374151', lineHeight: 22 },
+                        body: { paddingHorizontal: 8, paddingVertical: 16, fontSize: 16, color: '#374151', lineHeight: 22 },
                         paragraph: { marginBottom: 12 },
+                      }}
+                      rules={{
+                        paragraph: (node, children, parent, styles) => (
+                          <View key={node.key} style={styles._VIEW_SAFE_paragraph}>
+                            {React.Children.map(children, (child, i) =>
+                              typeof child === 'string' ? <Text key={`${node.key}-txt-${i}`}>{child}</Text> : child
+                            )}
+                          </View>
+                        ),
                       }}
                     >
                       {aiSummary || ''}
@@ -416,7 +421,7 @@ export default function LearnNeedsDetective({
                 }}
               >
                 <LearnNavigation
-                  onNext={gotoNextStep ?? (() => {})}
+                  onNext={gotoNextStep ?? (() => { })}
                   onPrev={gotoPrevStep}
                   nextText="Weiter"
                   showPrev={!!gotoPrevStep}

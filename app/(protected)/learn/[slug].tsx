@@ -241,17 +241,13 @@ export default function LearnDetailScreen() {
 
     const content = topic.expand.currentVersion.content || [];
     
-    // Calculate step count: each aiQuestion takes 2 steps, feelingsDetective takes 5 steps, others take 1
+    // Must match getComponentStepCount used for totalStepsArray
     const getComponentStepCount = (component: any) => {
-      if (component.type === 'aiQuestion') {
-        return 2;
-      }
-      if (component.type === 'feelingsDetective') {
-        return 5;
-      }
-      if (component.type === 'bodymap') {
-        return 2;
-      }
+      if (component.type === 'aiQuestion') return 2;
+      if (component.type === 'feelingsDetective') return 5;
+      if (component.type === 'bodymap') return 2;
+      if (component.type === 'needsDetective') return 4;
+      if (component.type === 'needsRubiksCube') return 2;
       return 1;
     };
     
@@ -416,7 +412,8 @@ export default function LearnDetailScreen() {
   
   const isAiQuestionStep = currentStepData?.component === 'aiQuestion';
   const isSortableStep = currentStepData?.component === 'sortable';
-  const useFlexLayout = isAiQuestionStep || isSortableStep;
+  const isNeedsRubiksCubeStep = currentStepData?.component === 'needsRubiksCube';
+  const useFlexLayout = isAiQuestionStep || isSortableStep || isNeedsRubiksCubeStep;
   const contentPadding = {
     paddingTop: Platform.OS === 'ios' ? 50 : Platform.OS === 'android' ? 60 : 40,
     flexGrow: 1,
@@ -889,12 +886,14 @@ export default function LearnDetailScreen() {
       {/* Fixed Bottom Navigation */}
       {showBottomNavigation && (
         <View 
-          className="absolute left-0 right-0 px-4 py-4 "
+          className="absolute left-0 right-0 px-4 py-4"
           style={{ 
             bottom: 70, // Position above TabBar
             backgroundColor: baseColors.background,
             borderTopWidth: 1,
             borderTopColor: 'rgba(0,0,0,0.1)',
+            zIndex: 100,
+            elevation: 100,
           }}
         >
           {currentStep === totalSteps - 1 ? (

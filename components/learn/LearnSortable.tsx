@@ -6,7 +6,8 @@ import {
   type DragndropData,
 } from '@/lib/dragndrop';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 
 import LearnNavigation from './LearnNavigation';
 
@@ -139,7 +140,7 @@ export default function LearnSortable({
   );
 
   return (
-    <View className="flex flex-col justify-between mb-5" style={{ flex: 1, minHeight: 0 }}>
+    <View className="flex flex-col justify-between mb-5 gap-3" style={{ flex: 1, minHeight: 0 }}>
       <View
         className="flex flex-col gap-3"
         style={{ flex: 1, flexShrink: 1, minHeight: 0 }}
@@ -161,7 +162,7 @@ export default function LearnSortable({
           />
 
           <View style={{ position: 'relative', zIndex: 20 }}>
-            <Text className="text-sm font-medium text-gray-700">{content.items.length - unsortedItems.length} von {content.items.length} zu sortierende Elemente
+            <Text className="text-sm font-medium text-gray-700">Unsortierte Elemente ({unsortedItems.length})
             </Text>
             <DragndropEndPoint
               zoneId="unsorted"
@@ -209,7 +210,7 @@ export default function LearnSortable({
                     style={bucketStyle(isBucketIncorrect)}
                   >
                     <View style={{ flex: 1, minHeight: 0 }}>
-                      <Text className="py-1 text-center text-sm font-medium">{bucket.name}</Text>
+                      <Text className="py-1 text-center text-sm font-medium">{bucket.name} ({items.length})</Text>
                       <ScrollView
                         style={{ flex: 1, minHeight: 0 }}
                         contentContainerStyle={{
@@ -217,9 +218,11 @@ export default function LearnSortable({
                           flexWrap: 'wrap',
                           gap: 4,
                           paddingTop: 4,
+                          alignItems: 'flex-start',
                           flexGrow: items.length === 0 ? 1 : undefined,
                         }}
                         showsVerticalScrollIndicator={true}
+                        nestedScrollEnabled
                       >
                         {items.map((item) => {
                           const isIncorrect =

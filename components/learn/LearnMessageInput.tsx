@@ -158,10 +158,13 @@ export function LearnInputPrevButton({
 export function LearnInputExistingResponseButton({
   onPress,
   compact,
+  label = 'Zur vorherigen Antwort',
 }: {
   onPress: () => void;
   /** When true, hide the text and show only the icon (e.g. when needs/feelings button is visible) */
   compact?: boolean;
+  /** Custom label when not compact */
+  label?: string;
 }) {
   return (
     <TouchableOpacity
@@ -169,7 +172,7 @@ export function LearnInputExistingResponseButton({
       className={`flex flex-row items-center gap-2 rounded-full bg-white ${compact ? 'px-1 py-1' : 'py-1 pl-3 pr-1'}`}
       style={learnInputStyles.shadowButton}
     >
-      {!compact && <Text className="text-xs">Zur vorherigen Antwort</Text>}
+      {!compact && <Text className="text-xs">{label}</Text>}
       <View className="flex h-4 w-4 items-center justify-center rounded-full">
         <ChevronRight size={12} color="#000" />
       </View>
