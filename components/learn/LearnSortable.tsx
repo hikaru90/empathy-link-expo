@@ -1,22 +1,16 @@
 import {
-  DndProvider,
-  Draggable,
-  Droppable,
-  type DndProviderProps,
-} from '@mgcrea/react-native-dnd';
+  DragndropContextProvider,
+  DragndropDragContent,
+  DragndropEndPoint,
+  DragndropStartPoint,
+  type DragndropData,
+} from '@/lib/dragndrop';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import { runOnJS } from 'react-native-reanimated';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import LearnNavigation from './LearnNavigation';
 
 type BucketId = 'A' | 'B' | null;
-
-const DROPPABLE_IDS = {
-  unsorted: 'unsorted',
-  bucketA: 'bucket-A',
-  bucketB: 'bucket-B',
-} as const;
 
 interface LearnSortableProps {
   content: {
@@ -59,39 +53,16 @@ export default function LearnSortable({
     }
   }, [JSON.stringify(initialUserSorting)]);
 
-  const applyDrop = useCallback(
-    (itemText: string, overId: string) => {
+  const handleDrop = useCallback(
+    (data: DragndropData, bucket: BucketId) => {
       setUserSorting((prev) => {
-        let bucket: BucketId = null;
-        if (overId === DROPPABLE_IDS.bucketA) bucket = 'A';
-        else if (overId === DROPPABLE_IDS.bucketB) bucket = 'B';
-        const nextSorting = { ...prev, [itemText]: bucket };
-        onResponse?.({ userSorting: nextSorting });
+        const nextSorting = { ...prev, [data.itemText]: bucket };
+        queueMicrotask(() => onResponse?.({ userSorting: nextSorting }));
         return nextSorting;
       });
     },
     [onResponse]
   );
-
-  const runApplyDrop = useMemo(() => runOnJS(applyDrop), [applyDrop]);
-
-  const handleDragEnd = useCallback<NonNullable<DndProviderProps['onDragEnd']>>(
-    ({ active, over }) => {
-      "worklet";
-      if (over) {
-        runApplyDrop(String(active.id), String(over.id));
-      }
-    },
-    [runApplyDrop]
-  );
-
-  const cycleBucket = (itemText: string) => {
-    const current = userSorting[itemText] ?? null;
-    const next: BucketId = current === null ? 'A' : current === 'A' ? 'B' : null;
-    const nextSorting = { ...userSorting, [itemText]: next };
-    setUserSorting(nextSorting);
-    onResponse?.({ userSorting: nextSorting });
-  };
 
   const unsortedItems = useMemo(
     () => content.items.filter((item) => (userSorting[item.text] ?? null) === null),
@@ -134,113 +105,165 @@ export default function LearnSortable({
     { id: 'B' as const, name: content.bucketB },
   ];
 
-  const renderChip = (
+  const bucketStyle = (isIncorrect: boolean) => ({
+    minHeight: 100,
+    flex: 1,
+    flexShrink: 1,
+    flexDirection: 'column' as const,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderStyle: 'dashed' as const,
+    padding: 12,
+    borderColor: isIncorrect ? '#ef4444' : color,
+  });
+
+  const renderPill = (
     item: { text: string; correctBucket: 'A' | 'B' },
-    bucketId: BucketId,
-    _isInBucket: boolean
-  ) => {
-    const isIncorrect = showValidation && validation.incorrectItems.includes(item.text);
-    return (
-      <Draggable key={item.text} id={item.text} data={{ itemText: item.text }}>
-        <TouchableOpacity
-          onPress={() => cycleBucket(item.text)}
-          style={{
-            backgroundColor: isIncorrect ? '#ef4444' : color,
-          }}
-          className="rounded-xl px-2 py-1"
-          activeOpacity={0.8}
-        >
-          <Text className={`text-sm ${isIncorrect ? 'text-white' : ''}`}>{item.text}</Text>
-        </TouchableOpacity>
-      </Draggable>
-    );
-  };
+    isIncorrect: boolean,
+    pillColor: string
+  ) => (
+    <DragndropStartPoint
+      key={item.text}
+      data={{ itemText: item.text, correctBucket: item.correctBucket }}
+    >
+      <TouchableOpacity
+        style={{ backgroundColor: pillColor }}
+        className="rounded-xl px-2 py-1"
+        activeOpacity={0.8}
+      >
+        <Text className={`text-sm ${isIncorrect ? 'text-white' : 'text-gray-900'}`}>
+          {item.text}
+        </Text>
+      </TouchableOpacity>
+    </DragndropStartPoint>
+  );
 
   return (
-    <View className="flex flex-grow flex-col justify-between">
-      <View className="flex flex-grow flex-col gap-3">
-        <DndProvider onDragEnd={handleDragEnd} minDistance={8}>
-          {unsortedItems.length > 0 ? (
-            <>
-              <Text className="text-sm font-medium text-gray-700">Zu sortierende Elemente</Text>
-              <Droppable id={DROPPABLE_IDS.unsorted}>
-                <View className="flex flex-row flex-wrap gap-1">
-                  {unsortedItems.map((item) => (
-                    <Draggable key={item.text} id={item.text} data={{ itemText: item.text }}>
-                      <TouchableOpacity
-                        onPress={() => cycleBucket(item.text)}
-                        style={{ backgroundColor: color }}
-                        className="rounded-xl px-2 py-1"
-                        activeOpacity={0.8}
-                      >
-                        <Text className="text-sm text-gray-900">{item.text}</Text>
-                      </TouchableOpacity>
-                    </Draggable>
-                  ))}
-                </View>
-              </Droppable>
-            </>
-          ) : null}
+    <View className="flex flex-col justify-between mb-5" style={{ flex: 1, minHeight: 0 }}>
+      <View
+        className="flex flex-col gap-3"
+        style={{ flex: 1, flexShrink: 1, minHeight: 0 }}
+      >
+        <DragndropContextProvider>
+          <DragndropDragContent
+            renderContent={(data) => (
+              <View
+                style={{
+                  backgroundColor: color,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 12,
+                }}
+              >
+                <Text className="text-sm text-gray-900">{data.itemText}</Text>
+              </View>
+            )}
+          />
 
-          <View className="flex-row gap-4" style={{ flex: 1 }}>
+          <View style={{ position: 'relative', zIndex: 20 }}>
+            <Text className="text-sm font-medium text-gray-700">{content.items.length - unsortedItems.length} von {content.items.length} zu sortierende Elemente
+            </Text>
+            <DragndropEndPoint
+              zoneId="unsorted"
+              onDrop={(data) => handleDrop(data, null)}
+              style={{
+                borderColor: color,
+                borderStyle: 'dashed',
+                borderWidth: 2,
+                borderRadius: 8,
+                padding: 8,
+              }}
+            >
+              <View style={{ minHeight: 44 }}>
+                {unsortedItems.length > 0 ? (
+                  <View className="flex flex-row flex-wrap gap-1">
+                    {unsortedItems.map((item) => renderPill(item, false, color))}
+                  </View>
+                ) : (
+                  <View className="flex-1 items-center justify-center py-2">
+                    <Text className="text-center text-sm text-black/60">
+                      Hierher ziehen zum Zurücksetzen
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </DragndropEndPoint>
+          </View>
+
+          <View
+            className="flex-row gap-4"
+            style={{ flex: 1, flexShrink: 1, minHeight: 0, position: 'relative' }}
+          >
             {buckets.map((bucket) => {
               const items = bucket.id === 'A' ? bucketAItems : bucketBItems;
-              const isBucketIncorrect = showValidation && validation.incorrectBuckets.includes(bucket.id);
-              const droppableId = bucket.id === 'A' ? DROPPABLE_IDS.bucketA : DROPPABLE_IDS.bucketB;
+              const isBucketIncorrect =
+                showValidation && validation.incorrectBuckets.includes(bucket.id);
               return (
-                <Droppable
+                <View
                   key={bucket.id}
-                  id={droppableId}
-                  style={{
-                    minHeight: 140,
-                    flex: 1,
-                    flexDirection: 'column',
-                    borderRadius: 8,
-                    borderWidth: 2,
-                    borderStyle: 'dashed',
-                    padding: 12,
-                    borderColor: isBucketIncorrect ? '#ef4444' : color,
-                    backgroundColor: 'rgba(255,255,255,0.6)',
-                  }}
+                  style={{ flex: 1, flexShrink: 1, minHeight: 0, position: 'relative', zIndex: 10 }}
                 >
-                  <Text className="py-1 text-center text-sm font-medium">{bucket.name}</Text>
-                  <View className="mt-1 flex flex-1 flex-wrap gap-1">
-                    {items.map((item) => renderChip(item, bucket.id, true))}
-                    {items.length === 0 ? (
-                      <View className="flex-1 items-center justify-center">
-                        <Text className="text-center text-sm text-black/60">Elemente hier ablegen</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </Droppable>
+                  <DragndropEndPoint
+                    zoneId={`bucket-${bucket.id}`}
+                    onDrop={(data) => handleDrop(data, bucket.id)}
+                    style={bucketStyle(isBucketIncorrect)}
+                  >
+                    <View style={{ flex: 1, minHeight: 0 }}>
+                      <Text className="py-1 text-center text-sm font-medium">{bucket.name}</Text>
+                      <ScrollView
+                        style={{ flex: 1, minHeight: 0 }}
+                        contentContainerStyle={{
+                          flexDirection: 'row',
+                          flexWrap: 'wrap',
+                          gap: 4,
+                          paddingTop: 4,
+                          flexGrow: items.length === 0 ? 1 : undefined,
+                        }}
+                        showsVerticalScrollIndicator={true}
+                      >
+                        {items.map((item) => {
+                          const isIncorrect =
+                            showValidation && validation.incorrectItems.includes(item.text);
+                          return renderPill(
+                            item,
+                            isIncorrect,
+                            isIncorrect ? '#ef4444' : color
+                          );
+                        })}
+                        {items.length === 0 ? (
+                          <View
+                            style={{
+                              flex: 1,
+                              minHeight: 60,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}
+                          >
+                            <Text className="text-center text-sm text-black/60">
+                              Elemente hier ablegen
+                            </Text>
+                          </View>
+                        ) : null}
+                      </ScrollView>
+                    </View>
+                  </DragndropEndPoint>
+                </View>
               );
             })}
           </View>
-        </DndProvider>
+        </DragndropContextProvider>
 
-        <View className="items-center">
-          <Text className="text-xs text-black/60">
-            {content.items.length - unsortedItems.length} von {content.items.length} Elementen sortiert
-          </Text>
-          <View className="mx-4 mt-1 h-2 w-full rounded-full bg-black/5 p-0.5">
-            <View
-              className="h-full rounded-full"
-              style={{
-                width: `${((content.items.length - unsortedItems.length) / content.items.length) * 100}%`,
-                backgroundColor: color,
-              }}
-            />
-          </View>
-        </View>
       </View>
 
-      <LearnNavigation
-        onNext={onNext ?? (() => {})}
-        onPrev={onPrev}
-        nextText="Weiter"
-        showPrev={!!onPrev}
-        disabled={!isCorrect}
-      />
+      <View className="flex-shrink-0">
+        <LearnNavigation
+          onNext={onNext ?? (() => { })}
+          onPrev={onPrev}
+          nextText="Weiter"
+          showPrev={!!onPrev}
+          disabled={!isCorrect}
+        />
+      </View>
     </View>
   );
 }

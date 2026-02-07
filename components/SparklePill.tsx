@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 
 interface SparklePillProps {
   width?: number;
@@ -25,7 +25,7 @@ export default function SparklePill(props: SparklePillProps = {}) {
         toValue: 0,
         duration: 4000, // Adjust speed as needed
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start(() => {
         // Loop the animation
         animate();

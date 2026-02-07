@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 
@@ -63,6 +63,88 @@ const COMPONENT_STEP_NAMES: Record<string, string> = {
 function getStepComponentName(stepData: { component: string } | null): string {
   if (!stepData) return '';
   return COMPONENT_STEP_NAMES[stepData.component] || stepData.component;
+}
+
+const SAVE_DEBOUNCE_MS = 800;
+
+function LearnSortableWithDebouncedSave({
+  content,
+  color,
+  session,
+  currentStepData,
+  topicVersion,
+  handleNextStep,
+  handlePrevStep,
+  setSession,
+}: {
+  content: any;
+  color: string;
+  session: LearningSession | null;
+  currentStepData: any;
+  topicVersion: any;
+  handleNextStep: () => void;
+  handlePrevStep: () => void;
+  setSession: (s: LearningSession | null | ((prev: LearningSession | null) => LearningSession | null)) => void;
+}) {
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingResponseRef = useRef<any>(null);
+
+  const flushSave = useCallback(async () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+    const response = pendingResponseRef.current;
+    if (response && session && currentStepData?.blockIndex >= 0) {
+      try {
+        const updatedSession = await saveLearningSessionResponse(
+          session.id,
+          currentStepData.blockIndex,
+          'sortable',
+          response,
+          topicVersion.id,
+          content,
+          session
+        );
+        if (updatedSession) setSession(updatedSession);
+      } catch {
+        // Swallow - avoid flooding console when backend unreachable
+      }
+      pendingResponseRef.current = null;
+    }
+  }, [session, currentStepData, topicVersion, content, setSession]);
+
+  const onResponse = useCallback(
+    (response: any) => {
+      pendingResponseRef.current = response;
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(flushSave, SAVE_DEBOUNCE_MS);
+    },
+    [flushSave]
+  );
+
+  useEffect(() => () => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    flushSave();
+  }, [flushSave]);
+
+  return (
+    <LearnSortable
+      content={content}
+      color={color}
+      initialUserSorting={
+        session?.responses?.find(
+          (r) =>
+            r.blockIndex === currentStepData?.blockIndex &&
+            r.blockType === 'sortable' &&
+            JSON.stringify(r.blockContent) === JSON.stringify(content)
+        )?.response?.userSorting
+      }
+      onResponse={onResponse}
+      onNext={handleNextStep}
+      onPrev={handlePrevStep}
+    />
+  );
 }
 
 export default function LearnDetailScreen() {
@@ -333,6 +415,8 @@ export default function LearnDetailScreen() {
       : currentStep > 0 && currentStep <= totalSteps - 1; // Show navigation on summary page too
   
   const isAiQuestionStep = currentStepData?.component === 'aiQuestion';
+  const isSortableStep = currentStepData?.component === 'sortable';
+  const useFlexLayout = isAiQuestionStep || isSortableStep;
   const contentPadding = {
     paddingTop: Platform.OS === 'ios' ? 50 : Platform.OS === 'android' ? 60 : 40,
     flexGrow: 1,
@@ -547,33 +631,15 @@ export default function LearnDetailScreen() {
                     );
                   case 'sortable':
                     return (
-                      <LearnSortable
+                      <LearnSortableWithDebouncedSave
                         content={contentItem}
                         color={categoryColor}
-                        initialUserSorting={
-                          session?.responses?.find(
-                            (r) =>
-                              r.blockIndex === currentStepData?.blockIndex &&
-                              r.blockType === 'sortable' &&
-                              JSON.stringify(r.blockContent) === JSON.stringify(contentItem)
-                          )?.response?.userSorting
-                        }
-                        onResponse={async (response) => {
-                          if (session && currentStepData?.blockIndex >= 0) {
-                            const updatedSession = await saveLearningSessionResponse(
-                              session.id,
-                              currentStepData.blockIndex,
-                              'sortable',
-                              response,
-                              topicVersion.id,
-                              contentItem,
-                              session
-                            );
-                            if (updatedSession) setSession(updatedSession);
-                          }
-                        }}
-                        onNext={handleNextStep}
-                        onPrev={handlePrevStep}
+                        session={session}
+                        currentStepData={currentStepData}
+                        topicVersion={topicVersion}
+                        handleNextStep={handleNextStep}
+                        handlePrevStep={handlePrevStep}
+                        setSession={setSession}
                       />
                     );
                   case 'multipleChoice':
@@ -807,7 +873,7 @@ export default function LearnDetailScreen() {
   return (
     <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
       <Header />
-      {isAiQuestionStep ? (
+      {useFlexLayout ? (
         <View className="flex-1" style={{ ...contentPadding, flex: 1, minHeight: 0 }}>
           {contentArea}
         </View>

@@ -22,3 +22,9 @@ When testing the app through the browser MCP server, use the login credentials f
 - The `.env` file contains `TEST_USERNAME` and `TEST_PASSWORD` variables
 - After making changes, verify them through the browser MCP server
 
+## Principles
+
+**Always look for the simplest solution first—and get it right.** Before adding dependencies, abstractions, or clever patterns, ask: what is the minimal fix?
+
+**Verbose code is the worst.** It creates technical debt, hurts maintainability, and complicates everything. Prefer lean, minimal solutions over elaborate ones.
+

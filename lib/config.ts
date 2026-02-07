@@ -87,8 +87,10 @@ export function getBackendURL(): string {
       console.log('Web platform: Using Better Auth URL as API URL:', cleanUrl);
       return cleanUrl;
     }
-    // If no Better Auth URL, fall through to check EXPO_PUBLIC_API_URL (already checked above)
-    console.warn('⚠️ Web platform: No EXPO_PUBLIC_API_URL or EXPO_PUBLIC_BETTER_AUTH_URL set');
+    // Web fallback: localhost when no env vars (Chrome devtools, local dev)
+    const localUrl = `http://localhost:${BACKEND_PORT}`;
+    console.warn('⚠️ Web platform: No EXPO_PUBLIC_API_URL or EXPO_PUBLIC_BETTER_AUTH_URL set, using', localUrl);
+    return localUrl;
   }
 
   // For native devices (iOS/Android), try to auto-detect the host IP

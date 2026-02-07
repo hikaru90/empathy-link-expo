@@ -312,7 +312,12 @@ export async function saveLearningSessionResponse(
     );
     return updateResponse.session || null;
   } catch (error: any) {
-    console.error('Failed to save learning session response:', error?.message || error);
+    const msg = error?.message || String(error);
+    if (msg === 'Failed to fetch' || msg?.includes('Network')) {
+      console.warn('Backend unreachable (is it running?). Save will retry on next change.');
+    } else {
+      console.error('Failed to save learning session response:', msg);
+    }
     return null;
   }
 }
