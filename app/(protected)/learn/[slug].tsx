@@ -1,5 +1,4 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowRight } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
@@ -40,6 +39,31 @@ import {
 
 // Initialize MarkdownIt with HTML support enabled
 const markdownItInstance = MarkdownIt({ html: true });
+
+const COMPONENT_STEP_NAMES: Record<string, string> = {
+  title: 'Start',
+  summary: 'Zusammenfassung ✦',
+  text: 'Text',
+  heading: 'Überschrift',
+  list: 'Liste',
+  image: 'Bild',
+  timer: 'Timer',
+  task: 'Aufgabe',
+  sortable: 'Sortieren',
+  multipleChoice: 'Multiple Choice',
+  breathe: 'Atmen',
+  audio: 'Audio',
+  aiQuestion: 'KI-Frage ✦',
+  feelingsDetective: 'Gefühls-Detektiv ✦',
+  bodymap: 'Körperkarte',
+  needsDetective: 'Bedürfnis-Detektiv ✦',
+  needsRubiksCube: 'Bedürfnis-Rubik ✦',
+};
+
+function getStepComponentName(stepData: { component: string } | null): string {
+  if (!stepData) return '';
+  return COMPONENT_STEP_NAMES[stepData.component] || stepData.component;
+}
 
 export default function LearnDetailScreen() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuthGuard();
@@ -308,27 +332,24 @@ export default function LearnDetailScreen() {
       ? false // Don't show parent navigation for components that handle their own navigation
       : currentStep > 0 && currentStep <= totalSteps - 1; // Show navigation on summary page too
   
-  return (
-    <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
-      <Header />
-      <ScrollView 
-        className="flex-1 flex-grow" 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingTop: Platform.OS === 'ios' ? 50 : Platform.OS === 'android' ? 60 : 40,
-          flexGrow: 1,
-          paddingBottom: currentStep === totalSteps - 1 ? 200 : (showBottomNavigation ? 136 : 40), // Extra padding for TabBar and bottom nav on summary page
-        }}
-      >
-        <View className={`flex flex-grow flex-col px-4 pt-4 pb-6`}>
-          <LearnStepIndicator
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            color={categoryColor}
-            inactiveColor={baseColors.white}
-          />
+  const isAiQuestionStep = currentStepData?.component === 'aiQuestion';
+  const contentPadding = {
+    paddingTop: Platform.OS === 'ios' ? 50 : Platform.OS === 'android' ? 60 : 40,
+    flexGrow: 1,
+    paddingBottom: currentStep === totalSteps - 1 ? 200 : (showBottomNavigation ? 136 : 40),
+  };
 
-          {/* Content */}
+  const contentArea = (
+    <View className={`flex flex-1 flex-col min-h-0 px-4 pt-4 pb-6`} style={{ minHeight: 0 }}>
+      <LearnStepIndicator
+        currentStep={currentStep}
+        totalSteps={totalSteps}
+        color={categoryColor}
+        inactiveColor={baseColors.white}
+        stepName={getStepComponentName(currentStepData)}
+      />
+
+      {/* Content */}
           {currentStep === 0 ? (
             // Title Card
             <LearnTitleCard
@@ -362,7 +383,7 @@ export default function LearnDetailScreen() {
             )
           ) : (
             // Content Steps
-            <View className="flex flex-col flex-grow">
+            <View className="flex flex-1 flex-col min-h-0" style={{ minHeight: 0 }}>
               {(() => {
                 // Use currentContentItem which is correctly calculated using blockIndex
                 // This properly handles multi-step components
@@ -646,34 +667,41 @@ export default function LearnDetailScreen() {
                     );
                   case 'feelingsDetective':
                     return (
-                      <LearnFeelingsDetective
-                        content={contentItem}
-                        color={categoryColor}
-                        session={session}
-                        contentBlock={contentItem}
-                        currentStep={currentStep}
-                        totalSteps={totalStepsArray}
-                        topicVersionId={topicVersion.id}
-                        onResponse={async (response) => {
-                          if (session && currentStepData?.blockIndex >= 0) {
-                            const updatedSession = await saveLearningSessionResponse(
-                              session.id,
-                              currentStepData.blockIndex,
-                              'feelingsDetective',
-                              response,
-                              topicVersion.id,
-                              contentItem,
-                              session
-                            );
-                            if (updatedSession) {
-                              setSession(updatedSession);
-                            }
-                          }
+                      <View
+                        style={{
+                          marginHorizontal: -16,
+                          flex: 1,
                         }}
-                        gotoNextStep={handleNextStep}
-                        gotoPrevStep={handlePrevStep}
-                        onParentNavigationVisibilityChange={setChildWantsParentNavigation}
-                      />
+                      >
+                        <LearnFeelingsDetective
+                          content={contentItem}
+                          color={categoryColor}
+                          session={session}
+                          contentBlock={contentItem}
+                          currentStep={currentStep}
+                          totalSteps={totalStepsArray}
+                          topicVersionId={topicVersion.id}
+                          onResponse={async (response) => {
+                            if (session && currentStepData?.blockIndex >= 0) {
+                              const updatedSession = await saveLearningSessionResponse(
+                                session.id,
+                                currentStepData.blockIndex,
+                                'feelingsDetective',
+                                response,
+                                topicVersion.id,
+                                contentItem,
+                                session
+                              );
+                              if (updatedSession) {
+                                setSession(updatedSession);
+                              }
+                            }
+                          }}
+                          gotoNextStep={handleNextStep}
+                          gotoPrevStep={handlePrevStep}
+                          onParentNavigationVisibilityChange={setChildWantsParentNavigation}
+                        />
+                      </View>
                     );
                   case 'bodymap':
                     return (
@@ -774,8 +802,24 @@ export default function LearnDetailScreen() {
             </View>
           )}
         </View>
-      </ScrollView>
-      
+  );
+
+  return (
+    <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
+      <Header />
+      {isAiQuestionStep ? (
+        <View className="flex-1" style={{ ...contentPadding, flex: 1, minHeight: 0 }}>
+          {contentArea}
+        </View>
+      ) : (
+        <ScrollView
+          className="flex-1 flex-grow"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={contentPadding}
+        >
+          {contentArea}
+        </ScrollView>
+      )}
       {/* Fixed Bottom Navigation */}
       {showBottomNavigation && (
         <View 
@@ -788,16 +832,13 @@ export default function LearnDetailScreen() {
           }}
         >
           {currentStep === totalSteps - 1 ? (
-            // Summary page navigation - show only "Zurück zur Lernübersicht"
-            <TouchableOpacity
-              onPress={() => router.push('/learn')}
-              className="flex h-10 flex-grow flex-row items-center justify-between gap-2 rounded-full bg-black py-3 pl-6 pr-2"
-            >
-              <Text className="font-medium text-white">Zurück zur Lernübersicht</Text>
-              <View className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
-                <ArrowRight size={16} color="#fff" />
-              </View>
-            </TouchableOpacity>
+            // Summary page navigation - back button + "Zurück zur Lernübersicht"
+            <LearnNavigation
+              onNext={() => router.push('/learn')}
+              onPrev={handlePrevStep}
+              nextText="Zurück zur Lernübersicht"
+              showPrev={true}
+            />
           ) : (
             <LearnNavigation
               onNext={handleNextStep}

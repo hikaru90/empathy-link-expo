@@ -1,20 +1,26 @@
+import baseColors from '@/baseColors.config';
+import GroupedNeedsSelector from '@/components/chat/GroupedNeedsSelector';
+import LearnMessageInput, {
+  LearnInputExistingResponseButton,
+  LearnInputNeedsButton,
+  LearnInputPrevButton,
+} from '@/components/learn/LearnMessageInput';
 import { getNeeds, type Need } from '@/lib/api/chat';
 import type { LearningSession } from '@/lib/api/learn';
 import { needsDetectiveAI } from '@/lib/api/learn';
-import { ChevronLeft, ChevronRight, Send } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
+  Platform,
   ScrollView,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 
 import LearnNavigation from './LearnNavigation';
-import LearnSplashScreen from './LearnSplashScreen';
 
 const markdownItInstance = MarkdownIt({ html: true });
 
@@ -49,12 +55,59 @@ export default function LearnNeedsDetective({
   const [aiSummary, setAiSummary] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [splashDone, setSplashDone] = useState(false);
   const [needs, setNeeds] = useState<Need[]>([]);
   const [needSelectorVisible, setNeedSelectorVisible] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const needsInputRef = useRef<TextInput>(null);
 
   const internalStep = totalSteps[currentStep]?.internalStep ?? 0;
+
+  const addNeed = useCallback((text: string) => {
+    if (!needsInputRef.current) {
+      const currentText = needsInput;
+      const textToAdd =
+        currentText && currentText[currentText.length - 1] !== ' ' ? ' ' + text : text;
+      setNeedsInput(currentText + textToAdd);
+      return;
+    }
+    const currentText = needsInput;
+    const selectionStart = (needsInputRef.current as any).selectionStart ?? currentText.length;
+    const selectionEnd = (needsInputRef.current as any).selectionEnd ?? currentText.length;
+    let textToInsert = text;
+    if (selectionStart > 0 && currentText[selectionStart - 1] !== ' ') {
+      textToInsert = ' ' + text;
+    }
+    const newText =
+      currentText.substring(0, selectionStart) +
+      textToInsert +
+      currentText.substring(selectionEnd);
+    setNeedsInput(newText);
+    const newCursorPosition = selectionStart + textToInsert.length;
+    setTimeout(() => {
+      const input = needsInputRef.current;
+      if (input && typeof (input as any).setNativeProps === 'function') {
+        (input as any).setNativeProps({
+          selection: { start: newCursorPosition, end: newCursorPosition },
+        });
+      }
+    }, 0);
+  }, [needsInput]);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+      });
+      const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+        setKeyboardHeight(0);
+      });
+      return () => {
+        showSubscription.remove();
+        hideSubscription.remove();
+      };
+    }
+  }, []);
 
   const existingResponse = session?.responses?.find(
     (r) =>
@@ -143,195 +196,233 @@ export default function LearnNeedsDetective({
     }
   }, [situationInput, thoughtsInput, needsInput, aiReflection, isLoading, onResponse]);
 
-  const addNeed = (text: string) => {
-    const sep = needsInput && !needsInput.endsWith(' ') ? ' ' : '';
-    setNeedsInput((prev) => prev + sep + text);
-  };
-
-  const splashContentClass = splashDone ? 'opacity-100' : 'opacity-0';
-
   return (
     <View className="flex flex-1 flex-col rounded-lg">
-      <LearnSplashScreen
-        color={color}
-        text="Zeit zu Üben"
-        onSplashDone={() => setSplashDone(true)}
-      />
-      <View className={`flex flex-1 flex-col justify-between gap-4 rounded-lg ${splashContentClass}`}>
+      <View className="flex flex-1 flex-col justify-between rounded-lg">
         {internalStep === 0 && (
           <>
-            <View className="flex-grow items-center justify-center">
-              <Text className="max-w-xs text-center font-medium text-gray-900">
+            <View className="flex-grow items-center justify-center px-0">
+              <Text className="max-w-xs text-base font-medium text-gray-900">
                 {content.question ||
                   'Beschreibe eine Situation, die du erlebt hast und welche Strategie du verwendet hast:'}
               </Text>
             </View>
-            <View className="gap-2">
-              <View className="rounded-2xl border border-white bg-white/90 p-2 shadow-lg">
-                <TextInput
-                  value={situationInput}
-                  onChangeText={setSituationInput}
-                  placeholder="Ich war bei dem letzten Familienbesuch etwas geladen und habe dann einfach das Thema gewechselt..."
-                  placeholderTextColor="#9ca3af"
-                  multiline
-                  className="min-h-[80px] flex-grow rounded-md bg-transparent px-2 py-1 text-base text-gray-900"
-                  style={{ textAlignVertical: 'top' }}
-                  onKeyPress={(e) => {
-                    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
-                      e.preventDefault();
-                      submitCombinedInput();
-                    }
-                  }}
-                />
-                <View className="flex-row items-end justify-between">
-                  <View className="flex-row gap-2">
-                    <TouchableOpacity onPress={gotoPrevStep} className="rounded-full bg-white px-2 py-1">
-                      <ChevronLeft size={16} color="#374151" />
-                    </TouchableOpacity>
-                    {existingResponse ? (
-                      <TouchableOpacity onPress={gotoNextStep} className="rounded-full bg-white py-1 pl-3 pr-1">
-                        <Text className="text-xs text-gray-700">Zur vorherigen Antwort</Text>
-                        <ChevronRight size={14} color="#374151" />
-                      </TouchableOpacity>
-                    ) : null}
-                  </View>
-                  <TouchableOpacity
-                    onPress={submitCombinedInput}
-                    disabled={!situationInput.trim() || isLoading}
-                    className="h-10 w-10 items-center justify-center rounded-full bg-black"
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Send size={16} color="#fff" />
+            <View
+              className="px-0"
+              style={{
+                paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
+              }}
+            >
+              <LearnMessageInput
+                value={situationInput}
+                onChangeText={setSituationInput}
+                onSubmit={submitCombinedInput}
+                placeholder="Ich war bei dem letzten Familienbesuch etwas geladen und habe dann einfach das Thema gewechselt..."
+                disabled={isLoading}
+                isLoading={isLoading}
+                sendDisabled={!situationInput.trim()}
+                errorMessage={errorMessage}
+                leftActions={
+                  <>
+                    {gotoPrevStep && <LearnInputPrevButton onPress={gotoPrevStep} />}
+                    {existingResponse && (
+                      <LearnInputExistingResponseButton onPress={() => gotoNextStep?.()} />
                     )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-              {errorMessage ? (
-                <View className="rounded-lg border border-red-200 bg-red-50 p-3">
-                  <Text className="text-sm text-red-800">{errorMessage}</Text>
-                </View>
-              ) : null}
+                  </>
+                }
+                onKeyPress={(e) => {
+                  if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
+                    e.preventDefault();
+                  }
+                }}
+              />
             </View>
           </>
         )}
 
         {internalStep === 1 && aiReflection && (
           <>
-            <View className="flex-grow items-center justify-center rounded-lg p-6">
-              <Markdown markdownit={markdownItInstance} style={{ body: { fontSize: 16, color: '#374151' } }}>
-                {aiReflection} Stimmt diese Aussage?
-              </Markdown>
+            <View className="flex-grow flex-col justify-between">
+              <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
+                <View className="flex-grow items-center justify-center px-0 py-6">
+                  <View className="max-w-xs">
+                    <Markdown
+                      markdownit={markdownItInstance}
+                      style={{
+                        body: { paddingHorizontal:8,paddingVertical:16, fontSize: 16, color: '#374151', lineHeight: 22 },
+                        paragraph: { marginBottom: 12 },
+                      }}
+                    >
+                      {`${aiReflection || ''} Stimmt diese Aussage?`}
+                    </Markdown>
+                  </View>
+                </View>
+              </ScrollView>
+              <View
+                className="border-t border-black/10"
+                style={{
+                  backgroundColor: baseColors.background,
+                  paddingTop: 16,
+                  paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 23 : 23,
+                  marginLeft: -16,
+                  marginRight: -16,
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                }}
+              >
+                <LearnNavigation
+                  onNext={gotoNextStep ?? (() => {})}
+                  onPrev={gotoPrevStep}
+                  nextText="Genau"
+                  showPrev={!!gotoPrevStep}
+                />
+              </View>
             </View>
-            <LearnNavigation onNext={gotoNextStep ?? (() => {})} onPrev={gotoPrevStep} nextText="Genau" showPrev={!!gotoPrevStep} />
           </>
         )}
 
         {internalStep === 2 && (
           <>
-            <View className="flex-grow items-center justify-center">
-              <Text className="max-w-xs font-medium text-gray-900">
-                Welche Bedürfnisse hast Du Dir dadurch erfüllt?
-              </Text>
-            </View>
-            <View className="gap-2">
-              <View className="rounded-2xl border border-white bg-white/90 p-2 shadow-lg">
-                {needSelectorVisible ? (
-                  <ScrollView className="max-h-40 flex-wrap" nestedScrollEnabled>
-                    <View className="flex-row flex-wrap gap-1">
-                      {needs.map((n) => (
-                        <TouchableOpacity
-                          key={n.id}
-                          onPress={() => addNeed(n.nameDE)}
-                          className="rounded-full border border-black/5 bg-white px-2 py-1"
-                        >
-                          <Text className="text-xs text-gray-900">{n.nameDE}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </ScrollView>
-                ) : null}
-                <TextInput
+            <View className="flex-grow flex-col justify-between">
+              <View className="flex-grow items-center justify-center px-0">
+                <Text className="max-w-xs text-center text-base font-medium text-gray-900">
+                  Welche Bedürfnisse hast Du Dir dadurch erfüllt?
+                </Text>
+              </View>
+              <View
+                className="px-0"
+                style={{
+                  paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
+                }}
+              >
+                <LearnMessageInput
                   value={needsInput}
                   onChangeText={setNeedsInput}
+                  onSubmit={submitNeeds}
                   placeholder="Sicherheit, Verständnis, Autonomie..."
-                  placeholderTextColor="#9ca3af"
-                  multiline
-                  className="min-h-[60px] flex-grow rounded-md bg-transparent px-2 py-1 text-base text-gray-900"
-                  style={{ textAlignVertical: 'top' }}
+                  disabled={isLoading}
+                  isLoading={isLoading}
+                  sendDisabled={false}
+                  errorMessage={errorMessage}
+                  textInputRef={needsInputRef}
+                  selectorContent={
+                    needSelectorVisible ? (
+                      <View className="max-h-40 border-b border-black/5">
+                        <GroupedNeedsSelector
+                          needs={needs}
+                          onNeedPress={addNeed}
+                          isLoading={false}
+                        />
+                      </View>
+                    ) : undefined
+                  }
+                  leftActions={
+                    <>
+                      {gotoPrevStep && <LearnInputPrevButton onPress={gotoPrevStep} />}
+                      <LearnInputNeedsButton
+                        visible={needSelectorVisible}
+                        onPress={() => setNeedSelectorVisible((v) => !v)}
+                      />
+                    </>
+                  }
                   onKeyPress={(e) => {
-                    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
+                    if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
                       e.preventDefault();
-                      submitNeeds();
                     }
                   }}
+                  onBeforeSubmit={() => setNeedSelectorVisible(false)}
                 />
-                <View className="flex-row items-end justify-between">
-                  <View className="flex-row gap-2">
-                    <TouchableOpacity onPress={gotoPrevStep} className="rounded-full bg-white px-2 py-1">
-                      <ChevronLeft size={16} color="#374151" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setNeedSelectorVisible((v) => !v)}
-                      className={`rounded-full py-1 pl-1 pr-2 ${needSelectorVisible ? 'bg-black/10' : 'bg-white'}`}
-                    >
-                      <Text className="text-xs text-gray-700">Bedürfnisse</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <TouchableOpacity
-                    onPress={submitNeeds}
-                    disabled={isLoading}
-                    className="h-10 w-10 items-center justify-center rounded-full bg-black"
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Send size={16} color="#fff" />
-                    )}
-                  </TouchableOpacity>
-                </View>
               </View>
-              {errorMessage ? (
-                <View className="rounded-lg border border-red-200 bg-red-50 p-3">
-                  <Text className="text-sm text-red-800">{errorMessage}</Text>
-                </View>
-              ) : null}
             </View>
           </>
         )}
 
         {internalStep === 3 && !aiSummary && (
           <>
-            <View className="flex-grow items-center justify-center">
-              <Text className="font-medium text-gray-900">
-                Lass uns eine Zusammenfassung deiner Erkenntnisse erstellen.
-              </Text>
+            <View className="flex-grow flex-col justify-between">
+              <ScrollView
+                className="flex-grow"
+                contentContainerStyle={{
+                  flexGrow: 1,
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  paddingBottom: 6,
+                }}
+              >
+                <View className="flex-grow items-center justify-center px-0">
+                  <Text className="text-center text-base font-medium text-gray-900 mt-4">
+                    Lass uns eine Zusammenfassung deiner Erkenntnisse erstellen.
+                  </Text>
+                </View>
+                {isLoading ? (
+                  <View className="py-4 flex flex-row items-center justify-center">
+                    <ActivityIndicator size="small" color={baseColors.forest} />
+                    <Text className="ml-2">Erstelle Zusammenfassung...</Text>
+                  </View>
+                ) : (
+                  <View
+                    className="border-t border-black/10"
+                    style={{
+                      backgroundColor: baseColors.background,
+                      paddingTop: 16,
+                      paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 23 : 23,
+                      marginLeft: -16,
+                      marginRight: -16,
+                      paddingLeft: 16,
+                      paddingRight: 16,
+                    }}
+                  >
+                    <LearnNavigation
+                      onNext={generateSummary}
+                      onPrev={gotoPrevStep}
+                      nextText="Zusammenfassung erstellen"
+                      showPrev={!!gotoPrevStep}
+                    />
+                  </View>
+                )}
+              </ScrollView>
             </View>
-            {isLoading ? (
-              <View className="flex-row items-center justify-center">
-                <ActivityIndicator size="small" style={{ marginRight: 8 }} />
-                <Text className="text-gray-600">Erstelle Zusammenfassung...</Text>
-              </View>
-            ) : (
-              <LearnNavigation
-                onNext={generateSummary}
-                onPrev={gotoPrevStep}
-                nextText="Zusammenfassung erstellen"
-                showPrev={!!gotoPrevStep}
-              />
-            )}
           </>
         )}
 
         {internalStep === 3 && aiSummary && (
           <>
-            <ScrollView className="flex-grow rounded-lg p-6">
-              <Markdown markdownit={markdownItInstance} style={{ body: { fontSize: 16, color: '#374151' } }}>
-                {aiSummary}
-              </Markdown>
-            </ScrollView>
-            <LearnNavigation onNext={gotoNextStep ?? (() => {})} onPrev={gotoPrevStep} nextText="Weiter" showPrev={!!gotoPrevStep} />
+            <View className="flex-grow flex-col justify-between">
+              <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
+                <View className="flex-grow items-center justify-center px-0 py-6">
+                  <View className="max-w-sm max-h-80">
+                    <Markdown
+                      markdownit={markdownItInstance}
+                      style={{
+                        body: { paddingHorizontal:8, paddingVertical:16, fontSize: 16, color: '#374151', lineHeight: 22 },
+                        paragraph: { marginBottom: 12 },
+                      }}
+                    >
+                      {aiSummary || ''}
+                    </Markdown>
+                  </View>
+                </View>
+              </ScrollView>
+              <View
+                className="border-t border-black/10"
+                style={{
+                  backgroundColor: baseColors.background,
+                  paddingTop: 16,
+                  paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 23 : 23,
+                  marginLeft: -16,
+                  marginRight: -16,
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                }}
+              >
+                <LearnNavigation
+                  onNext={gotoNextStep ?? (() => {})}
+                  onPrev={gotoPrevStep}
+                  nextText="Weiter"
+                  showPrev={!!gotoPrevStep}
+                />
+              </View>
+            </View>
           </>
         )}
       </View>

@@ -3,11 +3,13 @@
  * Plays audio content with custom controls and completion tracking
  */
 
-import { useAudioPlayer, useAudioPlayerStatus, setAudioModeAsync } from 'expo-audio';
+import baseColors from '@/baseColors.config';
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Pause, Play, RotateCcw } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
+
 
 // Initialize MarkdownIt with HTML support enabled
 const markdownItInstance = MarkdownIt({ html: true });
@@ -442,8 +444,8 @@ export default function LearnAudio({
             <TouchableOpacity
               onPress={togglePlay}
               disabled={isLoading || hasError}
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-black shadow-lg"
-              style={[styles.shadowButton, (isLoading || hasError) && { opacity: 0.5 }]}
+              className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg"
+              style={[styles.shadowButton, (isLoading || hasError) && { opacity: 0.5 }, { backgroundColor: baseColors.forest }]}
             >
               {hasError ? (
                 <Text className="text-red-400 text-lg">⚠️</Text>

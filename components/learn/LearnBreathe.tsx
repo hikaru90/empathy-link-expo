@@ -3,6 +3,7 @@ import { Play } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 
+import baseColors from '@/baseColors.config';
 
 interface LearnBreatheProps {
   content: {
@@ -397,7 +398,7 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
             ]}
           />
           {/* Play Button - In Front */}
-          <View style={{ zIndex: 10, width: 64, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 32, backgroundColor: '#000' }}>
+          <View style={{ zIndex: 10, width: 64, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 32, backgroundColor: baseColors.forest }}>
             {isBreathing ? (
               <TouchableOpacity
                 onPress={stopBreathing}

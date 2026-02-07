@@ -5,6 +5,10 @@
 
 import baseColors from '@/baseColors.config';
 import GroupedFeelingsSelector from '@/components/chat/GroupedFeelingsSelector';
+import LearnMessageInput, {
+  LearnInputExistingResponseButton,
+  LearnInputPrevButton,
+} from '@/components/learn/LearnMessageInput';
 import LearnNavigation from '@/components/learn/LearnNavigation';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { useBottomDrawerSlot } from '@/hooks/use-bottom-drawer-slot';
@@ -17,7 +21,6 @@ import {
   Keyboard,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -211,8 +214,8 @@ export default function LearnFeelingsDetective({
               return (
                 <View
                   key={id}
-                  className="rounded-full bg-gray-200 px-2 py-1"
-                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                  className="rounded-full px-2 py-1"
+                  style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: baseColors.forest + '22' }}
                 >
                   <Text className="text-xs text-gray-800">{f?.nameDE ?? id}</Text>
                 </View>
@@ -414,97 +417,35 @@ export default function LearnFeelingsDetective({
 
         {/* Input Section */}
         <View
-          className=""
+          className="px-4"
           style={{
             paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
           }}
         >
-          <View className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl" style={{ backgroundColor: baseColors.background, width: '100%' }}>
-            <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite + 'ee' }}>
-              {/* Input Row */}
-              <View className="p-1 flex-row items-end gap-3 overflow-hidden">
-                <TextInput
-                  ref={situationInputRef}
-                  value={situationInput}
-                  onChangeText={setSituationInput}
-                  placeholder="Mein Chef meinte ich würde seine Erwartungen enttäuschen..."
-                  placeholderTextColor="rgba(0, 0, 0, 0.5)"
-                  className="flex-1 rounded-[18px] p-3 text-base"
-                  style={styles.textInput}
-                  multiline
-                  scrollEnabled={true}
-                  maxLength={2000}
-                  editable={!isLoading}
-                  returnKeyType="send"
-                  blurOnSubmit={false}
-                  onKeyPress={(e) => {
-                    if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
-                      e.preventDefault();
-                      submitSituation();
-                    }
-                  }}
-                  onSubmitEditing={() => {
-                    submitSituation();
-                  }}
-                />
-              </View>
-
-              {/* Action Buttons */}
-              <View className="flex-row px-3 pb-2 gap-3 justify-between w-full">
-                <View className="flex-row gap-2 items-center">
-                  {gotoPrevStep ? (
-                    <TouchableOpacity
-                      onPress={gotoPrevStep}
-                      className="flex items-center gap-2 rounded-full bg-white px-1 py-1"
-                      style={styles.shadowButton}
-                    >
-                      <View className="flex h-4 w-4 items-center justify-center rounded-full">
-                        <ChevronLeft size={12} color="#000" />
-                      </View>
-                    </TouchableOpacity>
-                  ) : null}
-
-                  {existingResponse ? (
-                    <TouchableOpacity
-                      onPress={gotoNextStep}
-                      className="flex flex-row items-center gap-2 rounded-full bg-white py-1 pl-3 pr-1"
-                      style={styles.shadowButton}
-                    >
-                      <Text className="text-xs">Zur vorherigen Antwort</Text>
-                      <View className="flex h-4 w-4 items-center justify-center rounded-full bg-black/5">
-                        <ChevronRight size={12} color="#000" />
-                      </View>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-
-                <TouchableOpacity
-                  onPress={submitSituation}
-                  disabled={!situationInput.trim() || isLoading}
-                  className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
-                  style={{
-                    backgroundColor: isLoading || !situationInput.trim()
-                      ? baseColors.forest + '33'
-                      : `${baseColors.forest}`
-                  }}
-                  activeOpacity={0.7}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Send size={16} color="#fff" />
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Error message display */}
-          {errorMessage ? (
-            <View className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
-              <Text className="text-sm text-red-800">{errorMessage}</Text>
-            </View>
-          ) : null}
+          <LearnMessageInput
+            value={situationInput}
+            onChangeText={setSituationInput}
+            onSubmit={submitSituation}
+            placeholder="Mein Chef meinte ich würde seine Erwartungen enttäuschen..."
+            disabled={isLoading}
+            isLoading={isLoading}
+            sendDisabled={!situationInput.trim()}
+            errorMessage={errorMessage}
+            textInputRef={situationInputRef}
+            leftActions={
+              <>
+                {gotoPrevStep && <LearnInputPrevButton onPress={gotoPrevStep} />}
+                {existingResponse && (
+                  <LearnInputExistingResponseButton onPress={() => gotoNextStep?.()} />
+                )}
+              </>
+            }
+            onKeyPress={(e) => {
+              if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
+                e.preventDefault();
+              }
+            }}
+          />
         </View>
       </View>
     );
@@ -539,7 +480,7 @@ export default function LearnFeelingsDetective({
 
           {/* Navigation */}
           <View
-            className="px-4 py-4 border-t border-black/10"
+            className="py-4 border-t border-black/10 px-4"
             style={{ backgroundColor: baseColors.background }}
           >
             <LearnNavigation
@@ -614,84 +555,32 @@ export default function LearnFeelingsDetective({
 
         {/* Input Section */}
         <View
-          className=""
+          className="px-4"
           style={{
             paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
           }}
         >
-          <View className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl" style={{ backgroundColor: baseColors.background, width: '100%' }}>
-            <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite + 'ee' }}>
-              {/* Input Row */}
-              <View className="p-1 flex-row items-end gap-3 overflow-hidden">
-                <TextInput
-                  ref={thoughtsInputRef}
-                  value={thoughtsInput}
-                  onChangeText={setThoughtsInput}
-                  placeholder="Ich habe gedacht ich sei nicht gut genug..."
-                  placeholderTextColor="rgba(0, 0, 0, 0.5)"
-                  className="flex-1 rounded-[18px] p-3 text-base"
-                  style={styles.textInput}
-                  multiline
-                  scrollEnabled={true}
-                  maxLength={2000}
-                  editable={!isLoading}
-                  returnKeyType="send"
-                  blurOnSubmit={false}
-                  onKeyPress={(e) => {
-                    if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
-                      e.preventDefault();
-                      submitThoughts();
-                    }
-                  }}
-                  onSubmitEditing={() => {
-                    submitThoughts();
-                  }}
-                />
-              </View>
-
-              {/* Action Buttons */}
-              <View className="flex-row px-3 pb-2 gap-3 justify-between w-full">
-                <View className="flex-row gap-2 items-center">
-                  {gotoPrevStep ? (
-                    <TouchableOpacity
-                      onPress={gotoPrevStep}
-                      className="flex items-center gap-2 rounded-full bg-white px-1 py-1"
-                      style={styles.shadowButton}
-                    >
-                      <View className="flex h-4 w-4 items-center justify-center rounded-full">
-                        <ChevronLeft size={12} color="#000" />
-                      </View>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-
-                <TouchableOpacity
-                  onPress={submitThoughts}
-                  disabled={!thoughtsInput.trim() || isLoading}
-                  className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
-                  style={{
-                    backgroundColor: isLoading || !thoughtsInput.trim()
-                      ? baseColors.forest + '33'
-                      : `${baseColors.forest}`
-                  }}
-                  activeOpacity={0.7}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Send size={16} color="#fff" />
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Error message display */}
-          {errorMessage ? (
-            <View className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
-              <Text className="text-sm text-red-800">{errorMessage}</Text>
-            </View>
-          ) : null}
+          <LearnMessageInput
+            value={thoughtsInput}
+            onChangeText={setThoughtsInput}
+            onSubmit={submitThoughts}
+            placeholder="Ich habe gedacht ich sei nicht gut genug..."
+            disabled={isLoading}
+            isLoading={isLoading}
+            sendDisabled={!thoughtsInput.trim()}
+            errorMessage={errorMessage}
+            textInputRef={thoughtsInputRef}
+            leftActions={
+              <>
+                {gotoPrevStep && <LearnInputPrevButton onPress={gotoPrevStep} />}
+              </>
+            }
+            onKeyPress={(e) => {
+              if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
+                e.preventDefault();
+              }
+            }}
+          />
         </View>
       </View>
     );
@@ -716,13 +605,13 @@ export default function LearnFeelingsDetective({
             </Text>
           </View>
 
-          {selectedFeelingItems.length > 0 ? (
-            <View className="px-4">
-              <View className="rounded-2xl border border-black/5 bg-white/80 p-3">
-                <Text className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Ausgewählte Gefühle
-                </Text>
-                <View className="flex-row flex-wrap justify-center gap-2">
+          <View className="px-4">
+            <View className="rounded-2xl border border-white bg-white/20 p-3 mb-5">
+              <Text className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Ausgewählte Gefühle
+              </Text>
+              {selectedFeelingItems.length > 0 ? (
+                <View className="flex-row flex-wrap justify-center gap-2 mb-3">
                   {selectedFeelingItems.map((feeling) => (
                     <View
                       key={feeling.id}
@@ -732,54 +621,55 @@ export default function LearnFeelingsDetective({
                     </View>
                   ))}
                 </View>
-              </View>
-            </View>
-          ) : null}
-
-          <View className="px-4">
-            {feelingsLoading ? (
-              <View className="flex items-center justify-center py-6">
-                <LoadingIndicator inline />
-                <Text className="ml-2 text-sm text-gray-600">Gefühle werden geladen...</Text>
-              </View>
-            ) : feelingsError ? (
-              <View className="rounded-lg border border-red-200 bg-red-50 p-4">
-                <Text className="mb-2 text-sm text-red-800">
-                  Fehler beim Laden der Gefühle. Bitte versuche es erneut.
-                </Text>
+              ) : null}
+              {feelingsLoading ? (
+                <View className="flex items-center justify-center py-4">
+                  <LoadingIndicator inline />
+                  <Text className="ml-2 text-sm text-gray-600">Gefühle werden geladen...</Text>
+                </View>
+              ) : feelingsError ? (
+                <View className="rounded-lg border border-red-200 bg-red-50 p-4">
+                  <Text className="mb-2 text-sm text-red-800">
+                    Fehler beim Laden der Gefühle. Bitte versuche es erneut.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      setFeelingsLoading(true);
+                      setFeelingsError(false);
+                      try {
+                        const feelingsData = await getFeelings();
+                        setFeelings(feelingsData);
+                      } catch (error) {
+                        setFeelingsError(true);
+                      } finally {
+                        setFeelingsLoading(false);
+                      }
+                    }}
+                    className="mt-2 rounded-lg bg-red-600 px-3 py-1"
+                  >
+                    <Text className="text-xs text-white">Erneut versuchen</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View className="flex items-center justify-center">
                 <TouchableOpacity
-                  onPress={async () => {
-                    setFeelingsLoading(true);
-                    setFeelingsError(false);
-                    try {
-                      const feelingsData = await getFeelings();
-                      setFeelings(feelingsData);
-                    } catch (error) {
-                      setFeelingsError(true);
-                    } finally {
-                      setFeelingsLoading(false);
-                    }
-                  }}
-                  className="mt-2 rounded-lg bg-red-600 px-3 py-1"
+                  onPress={openFeelingsSelectionDrawer}
+                  className="rounded-full border border-white bg-white/60 py-1 px-4 flex items-center justify-between flex-row gap-4"
                 >
-                  <Text className="text-xs text-white">Erneut versuchen</Text>
+                  <Text className="text-base font-medium text-gray-800">
+                    {selectedFeelingItems.length > 0 ? 'Auswahl ändern' : 'Gefühle wählen'}
+                  </Text>
+                  <SquareMousePointer size={16} color="#666" />
                 </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity
-                onPress={openFeelingsSelectionDrawer}
-                className="rounded-full border border-white bg-white/80 py-1 px-6 flex items-center justify-center"
-              >
-                <Text className="text-base font-medium text-gray-800">Gefühle wählen</Text>
-                <SquareMousePointer size={16} color="#666" />
-              </TouchableOpacity>
-            )}
+                </View>
+              )}
+            </View>
           </View>
         </View>
 
         {/* Navigation */}
         <View
-          className="px-4 py-4 border-t border-black/10"
+          className="py-4 border-t border-black/10 px-4"
           style={{ backgroundColor: baseColors.background }}
         >
           <LearnNavigation
@@ -816,12 +706,12 @@ export default function LearnFeelingsDetective({
 
             {isLoading ? (
               <View className="py-4 flex flex-row items-center justify-center">
-                <LoadingIndicator inline />
+                <ActivityIndicator size="small" color={baseColors.forest} />
                 <Text className="ml-2">Erstelle Zusammenfassung...</Text>
               </View>
             ) : (
               <View
-                className="px-4 py-4 border-t border-black/10"
+                className="py-4 border-t border-black/10 px-4"
                 style={{ backgroundColor: baseColors.background }}
               >
                 <LearnNavigation
@@ -862,7 +752,7 @@ export default function LearnFeelingsDetective({
 
           {/* Navigation */}
           <View
-            className="px-4 py-4 border-t border-black/10"
+            className="py-4 border-t border-black/10 px-4"
             style={{ backgroundColor: baseColors.background }}
           >
             <LearnNavigation
@@ -904,20 +794,4 @@ export default function LearnFeelingsDetective({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  textInput: {
-    minHeight: 44, // min-h-11 equivalent
-    maxHeight: 104, // 4 lines: (4 * 20px line height) + (12px top padding) + (12px bottom padding) = 104px
-    fontSize: 16, // text-base
-    lineHeight: 20, // Approximate line height for calculation
-  },
-  shadowButton: {
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-});
 

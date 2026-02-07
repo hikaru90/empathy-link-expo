@@ -3,24 +3,25 @@
  * Allows users to answer a question and receive AI feedback
  */
 
-import Swirl from '@/assets/icons/Swirl';
 import baseColors from '@/baseColors.config';
 import GroupedFeelingsSelector from '@/components/chat/GroupedFeelingsSelector';
 import GroupedNeedsSelector from '@/components/chat/GroupedNeedsSelector';
+import LearnMessageInput, {
+  LearnInputExistingResponseButton,
+  LearnInputFeelingsButton,
+  LearnInputNeedsButton,
+  LearnInputPrevButton,
+} from '@/components/learn/LearnMessageInput';
 import LearnNavigation from '@/components/learn/LearnNavigation';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { askAIQuestion, type LearningSession } from '@/lib/api/learn';
-import { ChevronLeft, ChevronRight, Heart, Send } from 'lucide-react-native';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Keyboard,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
@@ -153,19 +154,21 @@ export default function LearnAIQuestion({
       if (content.showFeelingsButton || content.showNeedsButton) {
         setIsLoadingData(true);
         try {
-          const promises = [];
+          const promises: Promise<Feeling[] | Need[]>[] = [];
           if (content.showFeelingsButton) {
             promises.push(getFeelings());
           }
           if (content.showNeedsButton) {
             promises.push(getNeeds());
           }
-          const [feelingsData, needsData] = await Promise.all(promises);
-          if (content.showFeelingsButton && feelingsData) {
-            setFeelings(feelingsData);
+          const results = await Promise.all(promises);
+          let idx = 0;
+          if (content.showFeelingsButton && results[idx]) {
+            setFeelings(results[idx] as Feeling[]);
+            idx++;
           }
-          if (content.showNeedsButton && needsData) {
-            setNeeds(needsData);
+          if (content.showNeedsButton && results[idx]) {
+            setNeeds(results[idx] as Need[]);
           }
         } catch (error) {
           console.error('Failed to load feelings/needs:', error);
@@ -249,11 +252,12 @@ export default function LearnAIQuestion({
       currentText.substring(selectionEnd);
     setUserAnswer(newText);
 
-    // Set cursor position after inserted text
+    // Set cursor position after inserted text (setNativeProps not available on web)
     const newCursorPosition = selectionStart + textToInsert.length;
     setTimeout(() => {
-      if (textInputRef.current) {
-        textInputRef.current.setNativeProps({
+      const input = textInputRef.current;
+      if (input && typeof (input as any).setNativeProps === 'function') {
+        (input as any).setNativeProps({
           selection: { start: newCursorPosition, end: newCursorPosition },
         });
       }
@@ -275,23 +279,23 @@ export default function LearnAIQuestion({
   console.log('internalStep === 0:', internalStep === 0);
   console.log('internalStep === 1:', internalStep === 1);
   console.log('hasResponse:', !!(aiResponse || existingResponse?.response?.aiResponse || hasSubmitted));
-  
+
   // Show response view FIRST when internalStep === 1 (ALWAYS, even if no response yet)
   if (internalStep === 1) {
     const responseText = aiResponse || existingResponse?.response?.aiResponse || '';
-    
+
     console.log('=== Checking Response View ===');
     console.log('internalStep === 1:', true);
     console.log('responseText:', responseText ? responseText.substring(0, 50) + '...' : 'empty');
     console.log('hasSubmitted:', hasSubmitted);
     console.log('✅ RENDERING RESPONSE VIEW (internalStep === 1)');
-    
+
     // ALWAYS show response view when internalStep === 1
     return (
       <View className="flex-grow flex-col justify-between">
         {responseText ? (
-          <ScrollView 
-            className="flex-grow" 
+          <ScrollView
+            className="flex-grow"
             contentContainerStyle={{ flexGrow: 1 }}
           >
             <View className="flex-grow items-center justify-center px-4">
@@ -319,9 +323,9 @@ export default function LearnAIQuestion({
         )}
 
         {/* Navigation - ALWAYS show when on response step */}
-        <View 
+        <View
           className="border-t border-black/10"
-          style={{ 
+          style={{
             backgroundColor: baseColors.background,
             paddingTop: 16,
             paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 23 : 23,
@@ -347,45 +351,53 @@ export default function LearnAIQuestion({
       </View>
     );
   }
-  
+
   // Show input form if internalStep === 0
   if (internalStep === 0) {
     // Step 1: Question and Answer Input
     console.log('✅ RENDERING INPUT FORM');
+    const selectorVisible = feelingSelectorVisible || needSelectorVisible;
     return (
-      <View className="flex-grow flex-col justify-between">
-        {/* Question */}
-        <View className="flex-grow items-center justify-center px-4">
-          <View className="max-w-[20em]">
-            <Markdown
-              markdownit={markdownItInstance}
-              style={{
-                body: {
-                  fontSize: 18,
-                  color: '#1f2937',
-                  lineHeight: 24,
-                  fontWeight: '500',
-                },
-                paragraph: {
-                  marginBottom: 12,
-                },
-              }}
-            >
-              {content.question || ''}
-            </Markdown>
-          </View>
-        </View>
-
-        {/* Input Section */}
-        <View
-          className=""
-          style={{
-            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
-          }}
+      <View className="flex flex-1 flex-col justify-between" style={{ paddingBottom: 26, minHeight: 0, overflow: 'hidden' }}>
+        {/* Question - scrollable so content stays visible when selector is expanded */}
+        <ScrollView
+          className="flex-1"
+          style={{ minHeight: 0, flexBasis: 0 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 8, paddingVertical: 16 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <View className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl" style={{ backgroundColor: baseColors.background, width: '100%' }}>
-            <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite+'ee' }}>
-              {/* Feelings Selector */}
+          <Markdown
+            markdownit={markdownItInstance}
+            style={{
+              body: {
+                fontSize: 18,
+                color: '#1f2937',
+                lineHeight: 24,
+                fontWeight: '500',
+              },
+              paragraph: {
+                marginBottom: 12,
+              },
+            }}
+          >
+            {content.question || ''}
+          </Markdown>
+        </ScrollView>
+
+        {/* Input Section - in document flow */}
+        <LearnMessageInput
+          value={userAnswer}
+          onChangeText={setUserAnswer}
+          onSubmit={submitAnswer}
+          placeholder={content.placeholder || 'Schreibe deine Antwort hier...'}
+          disabled={isLoading}
+          isLoading={isLoading}
+          sendDisabled={!userAnswer.trim()}
+          errorMessage={errorMessage}
+          textInputRef={textInputRef}
+          selectorContent={
+            <>
               {content.showFeelingsButton && feelingSelectorVisible && (
                 <View className="max-h-40 border-b border-black/5">
                   <GroupedFeelingsSelector
@@ -397,8 +409,6 @@ export default function LearnAIQuestion({
                   />
                 </View>
               )}
-
-              {/* Needs Selector */}
               {content.showNeedsButton && needSelectorVisible && (
                 <View className="max-h-40 border-b border-black/5">
                   <GroupedNeedsSelector
@@ -408,148 +418,43 @@ export default function LearnAIQuestion({
                   />
                 </View>
               )}
-
-              {/* Input Row */}
-              <View className="p-1 flex-row items-end gap-3 overflow-hidden">
-                <TextInput
-                  ref={textInputRef}
-                  value={userAnswer}
-                  onChangeText={setUserAnswer}
-                  placeholder={content.placeholder || 'Schreibe deine Antwort hier...'}
-                  placeholderTextColor="rgba(0, 0, 0, 0.5)"
-                  className="flex-1 rounded-[18px] p-3 text-base"
-                  style={styles.textInput}
-                  multiline
-                  scrollEnabled={true}
-                  maxLength={2000}
-                  editable={!isLoading}
-                  returnKeyType="send"
-                  blurOnSubmit={false}
-                  onKeyPress={(e) => {
-                    if (e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
-                      e.preventDefault();
-                      setFeelingSelectorVisible(false);
-                      setNeedSelectorVisible(false);
-                      submitAnswer();
-                    }
-                  }}
-                  onSubmitEditing={() => {
-                    setFeelingSelectorVisible(false);
-                    setNeedSelectorVisible(false);
-                    submitAnswer();
-                  }}
+            </>
+          }
+          leftActions={
+            <>
+              {gotoPrevStep && <LearnInputPrevButton onPress={gotoPrevStep} />}
+              {existingResponse && (
+                <LearnInputExistingResponseButton
+                  onPress={() => gotoNextStep?.()}
+                  compact={content.showFeelingsButton || content.showNeedsButton}
                 />
-              </View>
-
-              {/* Action Buttons */}
-              <View className="flex-row px-3 pb-2 gap-3 justify-between w-full">
-                <View className="flex-row gap-2 items-center">
-                  {/* Previous Button */}
-                  {gotoPrevStep && (
-                    <TouchableOpacity
-                      onPress={gotoPrevStep}
-                      className="flex items-center gap-2 rounded-full bg-white px-1 py-1"
-                      style={styles.shadowButton}
-                    >
-                      <View className="flex h-4 w-4 items-center justify-center rounded-full">
-                        <ChevronLeft size={12} color="#000" />
-                      </View>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Show existing response button */}
-                  {existingResponse && (
-                    <TouchableOpacity
-                      onPress={gotoNextStep}
-                      className="flex flex-row items-center gap-2 rounded-full bg-white py-1 pl-3 pr-1"
-                      style={styles.shadowButton}
-                    >
-                      <Text className="text-xs">Zur vorherigen Antwort</Text>
-                      <View className="flex h-4 w-4 items-center justify-center rounded-full bg-black/5">
-                        <ChevronRight size={12} color="#000" />
-                      </View>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Feelings button */}
-                  {content.showFeelingsButton && !isPreview && (
-                    <TouchableOpacity
-                      onPress={toggleFeelingSelector}
-                      className={`flex-row items-center gap-1.5 rounded-full pl-1 pr-3 py-1 border border-black/5 ${
-                        feelingSelectorVisible
-                          ? 'bg-black/5 shadow-inner'
-                          : 'bg-white shadow-sm shadow-black/20'
-                      }`}
-                      disabled={isLoadingData}
-                    >
-                      <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: feelingSelectorVisible ? baseColors.white : baseColors.forest+'33' }}>
-                        <Heart
-                          size={14}
-                          color='transparent'
-                          fill={feelingSelectorVisible ? baseColors.lilac : baseColors.forest+'33'}
-                        />
-                      </View>
-                      <Text className={`text-sm font-medium`}>
-                        Gefühle
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Needs button */}
-                  {content.showNeedsButton && !isPreview && (
-                    <TouchableOpacity
-                      onPress={toggleNeedSelector}
-                      className={`flex-row items-center gap-1.5 rounded-full pl-1 pr-3 py-1 border border-black/5 ${
-                        needSelectorVisible
-                          ? 'bg-black/5 shadow-inner'
-                          : 'bg-white shadow-sm shadow-black/20'
-                      }`}
-                      disabled={isLoadingData}
-                    >
-                      <View className="rounded-full justify-center items-center size-5" style={{ backgroundColor: needSelectorVisible ? baseColors.white : baseColors.forest+'33' }}>
-                        <Swirl
-                          size={12}
-                          color={needSelectorVisible ? baseColors.forest : baseColors.forest+'55'}
-                        />
-                      </View>
-                      <Text className={`text-sm font-medium`}>
-                        Bedürfnisse
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    setFeelingSelectorVisible(false);
-                    setNeedSelectorVisible(false);
-                    submitAnswer();
-                  }}
-                  disabled={!userAnswer.trim() || isLoading}
-                  className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"
-                  style={{
-                    backgroundColor: isLoading || !userAnswer.trim()
-                      ? baseColors.forest+'33'
-                      : `${baseColors.forest}`
-                  }}
-                  activeOpacity={0.7}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Send size={16} color="#fff" />
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-
-          {/* Error message display */}
-          {errorMessage && (
-            <View className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
-              <Text className="text-sm text-red-800">{errorMessage}</Text>
-            </View>
-          )}
-        </View>
+              )}
+              {content.showFeelingsButton && !isPreview && (
+                <LearnInputFeelingsButton
+                  visible={feelingSelectorVisible}
+                  onPress={toggleFeelingSelector}
+                  disabled={isLoadingData}
+                />
+              )}
+              {content.showNeedsButton && !isPreview && (
+                <LearnInputNeedsButton
+                  visible={needSelectorVisible}
+                  onPress={toggleNeedSelector}
+                  disabled={isLoadingData}
+                />
+              )}
+            </>
+          }
+          onKeyPress={(e) => {
+            if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
+              e.preventDefault();
+            }
+          }}
+          onBeforeSubmit={() => {
+            setFeelingSelectorVisible(false);
+            setNeedSelectorVisible(false);
+          }}
+        />
       </View>
     );
   }
@@ -558,20 +463,4 @@ export default function LearnAIQuestion({
   console.log('⚠️ FALLBACK: Rendering null (should not happen)');
   return null;
 }
-
-const styles = StyleSheet.create({
-  textInput: {
-    minHeight: 44, // min-h-11 equivalent
-    maxHeight: 104, // 4 lines: (4 * 20px line height) + (12px top padding) + (12px bottom padding) = 104px
-    fontSize: 16, // text-base
-    lineHeight: 20, // Approximate line height for calculation
-  },
-  shadowButton: {
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-});
 

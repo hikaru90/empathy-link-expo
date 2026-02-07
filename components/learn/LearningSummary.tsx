@@ -219,9 +219,9 @@ export default function LearningSummary({
   const summaryText = (topicVersion as any)?.summary || '';
 
   return (
-    <View className="h-auto">
+    <View className="h-auto mt-4 flex flex-col gap-4">
         {/* Completion Header */}
-        <View className="mb-6 rounded-xl bg-white px-4 py-5 shadow-lg">
+        <View className="rounded-xl bg-white/60 border border-white px-4 py-5 shadow-lg shadow-black/10">
           <View className="flex-row items-center gap-3">
             {donutData.length > 0 ? (
               <View style={{ width: 64, height: 64 }}>
@@ -250,7 +250,7 @@ export default function LearningSummary({
 
         {/* Topic Summary */}
         {summaryText && (
-          <View className="mb-6 rounded-lg bg-white p-6 shadow-lg">
+          <View className="mb-6 rounded-lg bg-white/60 border border-white p-6 shadow-lg shadow-black/10">
             <Text className="text-md mb-4 font-bold">Deine Lernzusammenfassung</Text>
             <Markdown
               markdownit={markdownItInstance}
