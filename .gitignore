@@ -44,3 +44,8 @@ app-example
 
 docs
 .env
+
+# Playwright
+playwright/.auth/
+test-results/
+playwright-report/

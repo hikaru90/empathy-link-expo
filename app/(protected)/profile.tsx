@@ -1,13 +1,15 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
+import { Bell } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import StatsSuperCommunicator, { type SuperCommunicatorData } from '@/components/stats/StatsSuperCommunicator';
 import { useAuthGuard } from '@/hooks/use-auth';
+import { useNotifications } from '@/hooks/use-notifications';
 import { getAllAnalyses } from '@/lib/api/analysis';
 import { getSuperCommunicatorData } from '@/lib/api/stats';
 import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-calculator';
@@ -15,6 +17,7 @@ import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-c
 export default function ProfileScreen() {
   const router = useRouter();
   const { isAuthenticated, isLoading, user } = useAuthGuard();
+  const { enabled, isSupported, isLoading: notificationsLoading, setEnabled } = useNotifications();
   const [superCommunicatorData, setSuperCommunicatorData] = useState<SuperCommunicatorData | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
@@ -110,6 +113,22 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.sectionsContainer}>
+          {isSupported && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Benachrichtigungen</Text>
+              <View style={styles.notificationRow}>
+                <Bell size={20} color="#666" />
+                <Text style={styles.notificationLabel}>Push-Benachrichtigungen</Text>
+                <Switch
+                  value={enabled}
+                  onValueChange={setEnabled}
+                  disabled={notificationsLoading}
+                  trackColor={{ false: '#ddd', true: baseColors.primary ?? '#7C3AED' }}
+                  thumbColor="#fff"
+                />
+              </View>
+            </View>
+          )}
           <View style={styles.section}>
             <StatsSuperCommunicator data={superCommunicatorData} />
           </View>
@@ -189,6 +208,16 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: '500',
     marginBottom: 8,
+  },
+  notificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  notificationLabel: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
   },
 });
 

@@ -899,7 +899,10 @@ export default function LearnDetailScreen() {
           {currentStep === totalSteps - 1 ? (
             // Summary page navigation - back button + "Zurück zur Lernübersicht"
             <LearnNavigation
-              onNext={() => router.push('/learn')}
+              onNext={async () => {
+                await handleNextStep();
+                router.push('/learn');
+              }}
               onPrev={handlePrevStep}
               nextText="Zurück zur Lernübersicht"
               showPrev={true}

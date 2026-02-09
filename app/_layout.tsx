@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PostHogProvider, usePostHog } from 'posthog-react-native';
 
 import baseColors from '@/baseColors.config';
+import { NotificationProvider } from '@/components/NotificationProvider';
 import { AuthContext, useAuthProvider } from '@/hooks/use-auth';
 import { initializeI18n } from '@/lib/i18n';
 import { posthog } from '@/lib/posthog';
@@ -33,21 +34,23 @@ function RootLayoutContent() {
 
   return (
     <AuthContext.Provider value={authProvider}>
-      <View style={{ flex: 1, backgroundColor: baseColors.background }}>
-        <ThemeProvider value={DefaultTheme}>
-          <Stack
-            screenOptions={{
-              contentStyle: { backgroundColor: baseColors.background },
-              animation: 'fade',
-              animationDuration: 400,
-            }}
-          >
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="(protected)" options={{ headerShown: false }} />
-          </Stack>
-          <StatusBar style="light" />
-        </ThemeProvider>
-      </View>
+      <NotificationProvider>
+        <View style={{ flex: 1, backgroundColor: baseColors.background }}>
+          <ThemeProvider value={DefaultTheme}>
+            <Stack
+              screenOptions={{
+                contentStyle: { backgroundColor: baseColors.background },
+                animation: 'fade',
+                animationDuration: 400,
+              }}
+            >
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(protected)" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style="light" />
+          </ThemeProvider>
+        </View>
+      </NotificationProvider>
     </AuthContext.Provider>
   );
 }
@@ -56,21 +59,23 @@ function RootLayoutContentNoPostHog() {
   const authProvider = useAuthProvider();
   return (
     <AuthContext.Provider value={authProvider}>
-      <View style={{ flex: 1, backgroundColor: baseColors.background }}>
-        <ThemeProvider value={DefaultTheme}>
-          <Stack
-            screenOptions={{
-              contentStyle: { backgroundColor: baseColors.background },
-              animation: 'fade',
-              animationDuration: 400,
-            }}
-          >
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="(protected)" options={{ headerShown: false }} />
-          </Stack>
-          <StatusBar style="light" />
-        </ThemeProvider>
-      </View>
+      <NotificationProvider>
+        <View style={{ flex: 1, backgroundColor: baseColors.background }}>
+          <ThemeProvider value={DefaultTheme}>
+            <Stack
+              screenOptions={{
+                contentStyle: { backgroundColor: baseColors.background },
+                animation: 'fade',
+                animationDuration: 400,
+              }}
+            >
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(protected)" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style="light" />
+          </ThemeProvider>
+        </View>
+      </NotificationProvider>
     </AuthContext.Provider>
   );
 }
