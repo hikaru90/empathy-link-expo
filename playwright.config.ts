@@ -27,10 +27,12 @@ export default defineConfig({
       testIgnore: /.*\.setup\.ts/,
     },
   ],
-  webServer: {
-    command: 'npx expo start --web',
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
+    ? undefined
+    : {
+        command: 'npx expo start --web',
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      },
 });
