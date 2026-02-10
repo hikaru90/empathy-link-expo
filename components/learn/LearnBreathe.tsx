@@ -65,6 +65,7 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
   const phaseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isBreathingRef = useRef(false);
+  const shouldCompleteAfterExhaleRef = useRef(false);
 
   // Native: expo-audio players (only used when not web)
   const inhalePlayer = useAudioPlayer(
@@ -93,12 +94,27 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
         const inhaleAudio = new BrowserAudio('/audio/breathe-in.mp3');
         inhaleAudio.volume = 1;
         inhaleAudio.preload = 'auto';
+        inhaleAudio.setAttribute?.('data-testid', 'breathe-audio-in');
         inhaleAudioWebRef.current = inhaleAudio;
 
         const exhaleAudio = new BrowserAudio('/audio/breathe-out.mp3');
         exhaleAudio.volume = 1;
         exhaleAudio.preload = 'auto';
+        exhaleAudio.setAttribute?.('data-testid', 'breathe-audio-out');
         exhaleAudioWebRef.current = exhaleAudio;
+
+        // Append to DOM so Playwright can verify playback
+        const container =
+          document.getElementById('breathe-audio-container') ||
+          (() => {
+            const div = document.createElement('div');
+            div.id = 'breathe-audio-container';
+            div.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none;';
+            document.body.appendChild(div);
+            return div;
+          })();
+        container.appendChild(inhaleAudio);
+        container.appendChild(exhaleAudio);
       } catch (error) {
         console.error('Error loading audio:', error);
       }
@@ -107,12 +123,16 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
   };
   const unloadAudio = async () => {
     if (Platform.OS === 'web') {
-      if (inhaleAudioWebRef.current) {
-        inhaleAudioWebRef.current.pause();
+      const inhale = inhaleAudioWebRef.current;
+      if (inhale) {
+        inhale.pause();
+        inhale.remove();
         inhaleAudioWebRef.current = null;
       }
-      if (exhaleAudioWebRef.current) {
-        exhaleAudioWebRef.current.pause();
+      const exhale = exhaleAudioWebRef.current;
+      if (exhale) {
+        exhale.pause();
+        exhale.remove();
         exhaleAudioWebRef.current = null;
       }
     }
@@ -166,6 +186,7 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
     if (isBreathingRef.current) return;
 
     isBreathingRef.current = true;
+    shouldCompleteAfterExhaleRef.current = false;
     setIsBreathing(true);
     setIsComplete(false);
     setRemainingTime(selectedDuration);
@@ -224,7 +245,7 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
     phaseTimeoutRef.current = setTimeout(() => {
       if (!isBreathingRef.current) return;
 
-      if (shouldCompleteAfterExhale) {
+      if (shouldCompleteAfterExhaleRef.current) {
         completeBreathing();
         return;
       }
@@ -235,7 +256,7 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
         setBreathingText('Halten');
         phaseTimeoutRef.current = setTimeout(() => {
           if (!isBreathingRef.current) return;
-          if (shouldCompleteAfterExhale) {
+          if (shouldCompleteAfterExhaleRef.current) {
             completeBreathing();
             return;
           }
@@ -243,7 +264,7 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
         }, pattern.hold);
       } else {
         // Go directly to next inhale (no pause)
-        if (shouldCompleteAfterExhale) {
+        if (shouldCompleteAfterExhaleRef.current) {
           completeBreathing();
           return;
         }
@@ -286,6 +307,7 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
   const stopBreathing = () => {
     isBreathingRef.current = false;
     setIsBreathing(false);
+    shouldCompleteAfterExhaleRef.current = false;
     setShouldCompleteAfterExhale(false);
 
     if (phaseTimeoutRef.current) {
@@ -315,6 +337,7 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
     countdownIntervalRef.current = setInterval(() => {
       setRemainingTime((prev) => {
         if (prev <= 1) {
+          shouldCompleteAfterExhaleRef.current = true;
           setShouldCompleteAfterExhale(true);
           if (countdownIntervalRef.current) {
             clearInterval(countdownIntervalRef.current);
@@ -333,6 +356,7 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
     setBreathingPhase('pause');
     setBreathingText('Atemübung abgeschlossen!');
     setRemainingTime(0);
+    shouldCompleteAfterExhaleRef.current = false;
     setShouldCompleteAfterExhale(false);
 
     if (phaseTimeoutRef.current) {
@@ -398,9 +422,10 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
             ]}
           />
           {/* Play Button - In Front */}
-          <View style={{ zIndex: 10, width: 64, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 32, backgroundColor: baseColors.forest }}>
+          <View testID="breathe-container" style={{ zIndex: 10, width: 64, height: 64, alignItems: 'center', justifyContent: 'center', borderRadius: 32, backgroundColor: baseColors.forest }}>
             {isBreathing ? (
               <TouchableOpacity
+                testID="breathe-stop"
                 onPress={stopBreathing}
                 style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 }}
               >
@@ -408,6 +433,7 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
+                testID="breathe-play"
                 onPress={startBreathing}
                 style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20 }}
               >

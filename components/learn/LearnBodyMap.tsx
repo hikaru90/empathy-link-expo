@@ -343,6 +343,7 @@ export default function LearnBodyMap({
         >
           <View pointerEvents="none" style={{ width: MAP_WIDTH, height: mapHeight }}>
             <Image
+              testID="bodymap-character"
               source={characterImage}
               style={{ width: MAP_WIDTH, height: mapHeight }}
               resizeMode="contain"

@@ -237,6 +237,17 @@ export default function LearnAudio({
           setHasError(true);
         });
 
+        audio.setAttribute?.('data-testid', 'audio-player');
+        const container =
+          document.getElementById('learn-audio-container') ||
+          (() => {
+            const div = document.createElement('div');
+            div.id = 'learn-audio-container';
+            div.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none;';
+            document.body.appendChild(div);
+            return div;
+          })();
+        container.appendChild(audio);
         audioWebRef.current = audio;
 
         // Set loading timeout
@@ -267,8 +278,10 @@ export default function LearnAudio({
   const unloadAudio = async () => {
     stopProgressTracking();
     if (Platform.OS === 'web') {
-      if (audioWebRef.current) {
-        audioWebRef.current.pause();
+      const el = audioWebRef.current;
+      if (el) {
+        el.pause();
+        el.remove();
         audioWebRef.current = null;
       }
     }
@@ -442,6 +455,7 @@ export default function LearnAudio({
               </>
             )}
             <TouchableOpacity
+              testID="audio-play"
               onPress={togglePlay}
               disabled={isLoading || hasError}
               className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg"

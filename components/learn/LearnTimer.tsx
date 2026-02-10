@@ -81,6 +81,7 @@ export default function LearnTimer({
         style={{ backgroundColor: color }}
       >
         <TouchableOpacity
+          testID="timer-play"
           onPress={toggleTimer}
           style={{
             borderWidth: 2,
@@ -100,6 +101,7 @@ export default function LearnTimer({
           )}
         </TouchableOpacity>
         <View
+          testID="timer-display"
           className={`min-w-[5rem] items-center justify-center rounded-full bg-white/10 p-2 ${isRunning ? 'opacity-90' : ''}`}
         >
           <Text className="text-base font-medium text-white">{time}</Text>

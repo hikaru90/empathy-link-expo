@@ -233,6 +233,7 @@ export default function GroupedFeelingsSelector({
               return (
                 <TouchableOpacity
                   key={feeling.id}
+                  testID={isHeader ? 'feeling-category-header' : 'feeling-chip'}
                   onPress={() => {
                     if (isHeader) {
                       toggleCategory(category.category);

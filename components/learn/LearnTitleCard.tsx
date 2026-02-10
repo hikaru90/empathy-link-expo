@@ -88,6 +88,7 @@ export default function LearnTitleCard({
 
         {/* Start Button */}
         <TouchableOpacity
+          testID="learn-step-next"
           onPress={onStart}
           className="flex h-10 w-full flex-row items-center justify-between gap-2 rounded-full bg-black py-3 pl-6 pr-2 relative z-10"
         >

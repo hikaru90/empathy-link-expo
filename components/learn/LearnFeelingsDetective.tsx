@@ -407,7 +407,7 @@ export default function LearnFeelingsDetective({
   // Step 0: Situation Input
   if (internalStep === 0) {
     return (
-      <View className="flex-grow flex-col justify-between">
+      <View nativeID="learn-feelings-detective-step-0" className="flex-grow flex-col justify-between">
         {/* Question */}
         <View className="flex-grow items-center justify-center px-4">
           <Text className="max-w-xs text-base font-medium text-gray-900">
@@ -455,7 +455,7 @@ export default function LearnFeelingsDetective({
   if (internalStep === 1) {
     if (aiReflection) {
       return (
-        <View className="flex-grow flex-col justify-between">
+        <View nativeID="learn-feelings-detective-step-1" className="flex-grow flex-col justify-between">
           <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
             <View className="flex-grow items-center justify-center px-4 py-6">
               <View className="max-w-xs">
@@ -499,7 +499,7 @@ export default function LearnFeelingsDetective({
     } else {
       // AI Reflection is missing - show error/retry UI
       return (
-        <View className="flex-grow flex-col items-center justify-center p-8" style={{ gap: 16 }}>
+        <View nativeID="learn-feelings-detective-step-1" className="flex-grow flex-col items-center justify-center p-8" style={{ gap: 16 }}>
           <View className="rounded-lg border border-yellow-200 bg-yellow-50 p-6">
             <Text className="mb-2 text-center text-lg font-semibold text-yellow-900">
               Reflexion fehlt
@@ -545,7 +545,7 @@ export default function LearnFeelingsDetective({
   // Step 2: Thoughts Input
   if (internalStep === 2) {
     return (
-      <View className="flex-grow flex-col justify-between">
+      <View nativeID="learn-feelings-detective-step-2" className="flex-grow flex-col justify-between">
         {/* Question */}
         <View className="flex-grow items-center justify-center px-4">
           <Text className="max-w-xs text-center text-base font-medium text-gray-900">
@@ -597,7 +597,7 @@ export default function LearnFeelingsDetective({
     }
 
     return (
-      <View className="flex-grow flex-col justify-between">
+      <View nativeID="learn-feelings-detective-step-3" className="flex-grow flex-col justify-between">
         <View className="flex-grow flex-col justify-center space-y-4">
           <View className="flex-grow items-center justify-center px-4">
             <Text className="max-w-xs text-center text-base font-medium text-gray-900">
@@ -653,6 +653,7 @@ export default function LearnFeelingsDetective({
               ) : (
                 <View className="flex items-center justify-center">
                 <TouchableOpacity
+                  testID="feelings-choose-btn"
                   onPress={openFeelingsSelectionDrawer}
                   className="rounded-full border border-white bg-white/60 py-1 px-4 flex items-center justify-between flex-row gap-4"
                 >
@@ -687,7 +688,7 @@ export default function LearnFeelingsDetective({
   if (internalStep === 4) {
     if (!aiSummary) {
       return (
-        <View className="flex-grow flex-col justify-between">
+        <View nativeID="learn-feelings-detective-step-4" className="flex-grow flex-col justify-between">
           <ScrollView
             className="flex-grow"
             contentContainerStyle={{
@@ -727,7 +728,7 @@ export default function LearnFeelingsDetective({
       );
     } else {
       return (
-        <View className="flex-grow flex-col justify-between">
+        <View nativeID="learn-feelings-detective-step-4" className="flex-grow flex-col justify-between">
           <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
             <View className="flex-grow items-center justify-center px-4 py-6">
               <View className="max-w-sm max-h-80">
@@ -771,7 +772,7 @@ export default function LearnFeelingsDetective({
 
   // Fallback: Unknown step
   return (
-    <View className="flex-grow flex-col items-center justify-center p-8" style={{ gap: 16 }}>
+    <View nativeID="learn-feelings-detective-step-unknown" className="flex-grow flex-col items-center justify-center p-8" style={{ gap: 16 }}>
       <View className="rounded-lg border border-yellow-200 bg-yellow-50 p-6">
         <Text className="mb-2 text-center text-lg font-semibold text-yellow-900">
           Unerwarteter Schritt

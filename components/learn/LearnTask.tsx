@@ -47,6 +47,7 @@ export default function LearnTask({ content, color, onComplete }: LearnTaskProps
       </Markdown>
       {!isCompleted ? (
         <TouchableOpacity
+          testID="learn-step-next"
           onPress={markCompleted}
           className="mt-4 w-full rounded-lg bg-white/20 py-2 px-4"
           activeOpacity={0.8}

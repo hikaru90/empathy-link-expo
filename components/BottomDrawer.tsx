@@ -195,6 +195,7 @@ export default function BottomDrawer({
     >
       <View style={styles.modalOverlay}>
         <TouchableOpacity
+          testID="drawer-overlay"
           style={StyleSheet.absoluteFill}
           activeOpacity={1}
           onPress={onClose}

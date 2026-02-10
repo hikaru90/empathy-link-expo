@@ -421,7 +421,7 @@ export default function LearnDetailScreen() {
   };
 
   const contentArea = (
-    <View className={`flex flex-1 flex-col min-h-0 px-4 pt-4 pb-6`} style={{ minHeight: 0 }}>
+    <View testID="learn-detail-content" className={`flex flex-1 flex-col min-h-0 px-4 pt-4 pb-6`} style={{ minHeight: 0 }}>
       <LearnStepIndicator
         currentStep={currentStep}
         totalSteps={totalSteps}

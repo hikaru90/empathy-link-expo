@@ -20,5 +20,13 @@ setup('authenticate', async ({ page }) => {
   await page.waitForURL((url) => !url.pathname.includes('login'), {
     timeout: 15000,
   });
+
+  // Skip onboarding if visible (so app tests can run)
+  const skipBtn = page.getByText('Überspringen');
+  if (await skipBtn.isVisible().catch(() => false)) {
+    await skipBtn.click();
+    await page.waitForTimeout(500);
+  }
+
   await page.context().storageState({ path: authFile });
 });

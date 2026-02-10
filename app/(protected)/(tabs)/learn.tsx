@@ -273,7 +273,7 @@ export default function LearnScreen() {
         }}
       >
 
-        <View className="px-4 pt-4 pb-6">
+        <View testID="learn-list" className="px-4 pt-4 pb-6">
           <View
             className="intro rounded-2xl p-5 justify-center overflow-hidden shadow-xl shadow-black/10 mb-6"
             style={{ position: 'relative', backgroundColor: baseColors.forest }}
@@ -389,6 +389,7 @@ export default function LearnScreen() {
                       return (
                         <TouchableOpacity
                           key={topic.id}
+                          testID="learn-topic-card"
                           onPress={() => handleTopicPress(topic)}
                           disabled={topicActionInProgress === topic.id}
                           className="mr-4"

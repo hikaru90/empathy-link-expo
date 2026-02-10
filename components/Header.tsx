@@ -413,6 +413,7 @@ function Header({ className }: HeaderProps) {
         </Text>
         <View style={{ gap: 12, marginTop: 16 }}>
           <TouchableOpacity
+            testID="restart-drawer-view-results"
             onPress={handleViewResults}
             style={styles.menuItem}
           >
@@ -420,6 +421,7 @@ function Header({ className }: HeaderProps) {
             <FileText size={16} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity
+            testID="restart-drawer-restart"
             onPress={handleRestartTopic}
             disabled={isRestartingTopic}
             style={{ opacity: isRestartingTopic ? 0.5 : 1 }}

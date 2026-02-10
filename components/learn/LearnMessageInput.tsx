@@ -84,6 +84,7 @@ export default function LearnMessageInput({
 
           <View className="p-1 flex-row items-end gap-3 overflow-hidden">
             <TextInput
+              testID="learn-text-input"
               ref={textInputRef}
               value={value}
               onChangeText={onChangeText}
@@ -105,6 +106,7 @@ export default function LearnMessageInput({
           <View className="flex-row px-3 pb-2 gap-3 justify-between w-full">
             <View className="flex-row gap-2 items-center">{leftActions}</View>
             <TouchableOpacity
+              testID="learn-send"
               onPress={handleSubmit}
               disabled={sendDisabled || isLoading}
               className="rounded-3xl size-10 justify-center items-center shadow-md shadow-black/10"

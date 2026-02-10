@@ -250,6 +250,7 @@ export default function LearnMultipleChoice({
           return (
             <TouchableOpacity
               key={index}
+              testID={`multiple-choice-option-${index}`}
               onPress={() => handleOptionSelect(index)}
               disabled={showResult}
               className="w-full rounded-lg border-2 p-4"
@@ -277,6 +278,7 @@ export default function LearnMultipleChoice({
 
       {!showResult && selectedOptions.length > 0 ? (
         <TouchableOpacity
+          testID="multiple-choice-submit"
           onPress={submitAnswer}
           className="w-full rounded-lg py-3"
           style={{ backgroundColor: color }}

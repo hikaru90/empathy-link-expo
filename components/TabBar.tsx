@@ -10,10 +10,10 @@ import baseColors from '@/baseColors.config';
 const ICON_SIZE = 18;
 
 const tabs = [
-  { name: 'index', path: '/(protected)/(tabs)/', label: 'Chat', icon: BotMessageSquare, highlight: false },
-  { name: 'stats', path: '/(protected)/(tabs)/stats', label: 'Statistik', icon: BarChart3, highlight: false },
-  { name: 'learn', path: '/(protected)/(tabs)/learn', label: 'Lernen', icon: Book, highlight: false },
-  { name: 'feedback', path: '/(protected)/(tabs)/feedback', label: 'Feedback', icon: MessageCirclePlus, highlight: true },
+  { name: 'index', path: '/(protected)/(tabs)/', label: 'Chat', icon: BotMessageSquare, highlight: false, testID: 'tab-chat' },
+  { name: 'stats', path: '/(protected)/(tabs)/stats', label: 'Statistik', icon: BarChart3, highlight: false, testID: 'tab-stats' },
+  { name: 'learn', path: '/(protected)/(tabs)/learn', label: 'Lernen', icon: Book, highlight: false, testID: 'tab-learn' },
+  { name: 'feedback', path: '/(protected)/(tabs)/feedback', label: 'Feedback', icon: MessageCirclePlus, highlight: true, testID: 'tab-feedback' },
 ];
 
 export default function TabBar() {
@@ -63,6 +63,7 @@ export default function TabBar() {
           return (
             <TouchableOpacity
               key={tab.name}
+              testID={tab.testID}
               style={[styles.tab, isHighlight && styles.tabHighlight]}
               onPress={() => handleTabPress(tab.path)}
             >

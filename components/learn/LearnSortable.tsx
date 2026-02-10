@@ -128,6 +128,7 @@ export default function LearnSortable({
       data={{ itemText: item.text, correctBucket: item.correctBucket }}
     >
       <TouchableOpacity
+        testID={`sortable-item-${item.text}--${item.correctBucket}`}
         style={{ backgroundColor: pillColor }}
         className="rounded-xl px-2 py-1"
         activeOpacity={0.8}
@@ -140,7 +141,7 @@ export default function LearnSortable({
   );
 
   return (
-    <View className="flex flex-col justify-between mb-5 gap-3" style={{ flex: 1, minHeight: 0 }}>
+    <View testID="sortable-container" className="flex flex-col justify-between mb-5 gap-3" style={{ flex: 1, minHeight: 0 }}>
       <View
         className="flex flex-col gap-3"
         style={{ flex: 1, flexShrink: 1, minHeight: 0 }}
@@ -202,6 +203,7 @@ export default function LearnSortable({
               return (
                 <View
                   key={bucket.id}
+                  testID={`sortable-bucket-${bucket.id}`}
                   style={{ flex: 1, flexShrink: 1, minHeight: 0, position: 'relative', zIndex: 10 }}
                 >
                   <DragndropEndPoint
