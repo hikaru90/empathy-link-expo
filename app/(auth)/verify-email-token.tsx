@@ -1,14 +1,13 @@
 import baseColors from '@/baseColors.config';
 import LoadingIndicator from '@/components/LoadingIndicator';
+import { useAuth } from '@/hooks/use-auth';
 import { authClient } from '@/lib/auth';
-import { BETTER_AUTH_URL } from '@/lib/config';
 import { Link, Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
-import { useAuth } from '@/hooks/use-auth';
 
 export default function VerifyEmailTokenScreen() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, refresh } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ token?: string; callbackURL?: string }>();
   const [isVerifying, setIsVerifying] = useState(false);
@@ -34,128 +33,64 @@ export default function VerifyEmailTokenScreen() {
     setErrorMessage(null);
 
     try {
-      console.log('Verifying email with token:', params.token?.substring(0, 20) + '...');
-      console.log('Better Auth URL:', BETTER_AUTH_URL);
+      console.log('[Verify Debug] Starting verification with token:', params.token?.substring(0, 10) + '...');
       
-      // Better Auth's verify-email endpoint typically uses GET with token as query parameter
-      const verifyUrl = `${BETTER_AUTH_URL}/api/auth/verify-email?token=${encodeURIComponent(params.token)}`;
-      console.log('Verification URL:', verifyUrl);
-      
-      let response = await fetch(verifyUrl, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
+      if (!params.token) {
+        throw new Error('No token provided');
+      }
+
+      // According to Better Auth docs:
+      // await authClient.verifyEmail({ query: { token: "..." } })
+      console.log('[Verify Debug] Calling authClient.verifyEmail');
+      const verifyResult = await authClient.verifyEmail({
+        query: {
+          token: params.token,
         },
       });
 
-      // If GET returns 405 (Method Not Allowed), try POST
-      if (response.status === 405) {
-        console.log('GET returned 405, trying POST instead...');
-        response = await fetch(`${BETTER_AUTH_URL}/api/auth/verify-email`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({ token: params.token }),
-        });
+      if (verifyResult.error) {
+        console.error('[Verify Debug] Verification result error:', verifyResult.error);
+        throw verifyResult.error;
       }
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
-      // Handle response - might be JSON or empty (redirect)
-      // Read response as text first, then try to parse as JSON
-      const responseText = await response.text();
-      console.log('Response text:', responseText);
-      console.log('Response status:', response.status);
-      
-      let data: any = {};
-      const contentType = response.headers.get('content-type');
-      
-      if (contentType && contentType.includes('application/json')) {
-        // Try to parse as JSON
-        try {
-          data = JSON.parse(responseText);
-          console.log('Response data (JSON):', data);
-        } catch {
-          // If parsing fails, treat as error
-          data = { error: responseText || 'Invalid JSON response' };
-        }
-      } else {
-        // Not JSON content type
-        if (response.ok) {
-          // Success - might be empty response or HTML redirect
-          // If empty, assume success
-          if (responseText.trim() === '') {
-            data = { success: true };
-          } else {
-            // Try to parse as JSON even if content-type says otherwise
-            try {
-              data = JSON.parse(responseText);
-            } catch {
-              // If it's not JSON and response is OK, assume success
-              data = { success: true };
-            }
-          }
-        } else {
-          // Error response - try to parse as JSON, otherwise use text
-          try {
-            data = JSON.parse(responseText);
-          } catch {
-            data = { error: responseText || 'Verification failed' };
-          }
-        }
-      }
-
-      if (!response.ok || data.error) {
-        let errorMessage = 'E-Mail-Verifizierung fehlgeschlagen';
-        
-        // Extract error message from various possible formats
-        if (data.error?.message) {
-          errorMessage = data.error.message;
-        } else if (data.error?.error?.message) {
-          errorMessage = data.error.error.message;
-        } else if (data.message) {
-          errorMessage = data.message;
-        } else if (typeof data.error === 'string') {
-          errorMessage = data.error;
-        } else if (data.error) {
-          errorMessage = JSON.stringify(data.error);
-        }
-        
-        console.error('Verification error:', {
-          status: response.status,
-          statusText: response.statusText,
-          data,
-          errorMessage,
-        });
-        
-        setErrorMessage(errorMessage);
-        setVerificationStatus('error');
-        Alert.alert('Fehler', errorMessage);
-        return;
-      }
-
-      console.log('Verification successful!');
+      console.log('[Verify Debug] Verification API call finished successfully:', verifyResult);
 
       // Success - reload session to get updated user data
       setVerificationStatus('success');
-      const session = await authClient.getSession();
       
-      if (session?.data?.user?.emailVerified) {
-        // Redirect to protected area after a short delay to show success message
-        setTimeout(() => {
-          router.replace('/(protected)/(tabs)');
-        }, 2000);
-      }
+      console.log('[Verify Debug] Triggering auth refresh...');
+      // Refresh the auth context to update the user state across the app
+      refresh();
+      
+      // Also check session manually just in case
+      console.log('[Verify Debug] Manual session check...');
+      const session = await authClient.getSession();
+      console.log('[Verify Debug] Session after verification:', {
+        exists: !!session?.data?.user,
+        email: session?.data?.user?.email,
+        verified: session?.data?.user?.emailVerified
+      });
+      
+      // Redirect to protected area after a short delay to show success message
+      setTimeout(() => {
+        console.log('[Verify Debug] Redirecting to protected area...');
+        router.replace('/(protected)/(tabs)');
+      }, 5000);
     } catch (error: any) {
-      const msg = error?.message || 'Fehler bei der E-Mail-Verifizierung';
-      setErrorMessage(msg);
+      console.error('[Verify Debug] Final catch error:', error);
+      
+      let errorMessage = 'E-Mail-Verifizierung fehlgeschlagen';
+      
+      // Handle better-auth error format
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.error?.message) {
+        errorMessage = error.error.message;
+      }
+      
+      setErrorMessage(errorMessage);
       setVerificationStatus('error');
-      Alert.alert('Fehler', msg);
+      Alert.alert('Fehler', errorMessage);
     } finally {
       setIsVerifying(false);
     }
@@ -171,7 +106,7 @@ export default function VerifyEmailTokenScreen() {
   }
 
   // If user is already verified, redirect to protected area
-  if (!authLoading && user?.emailVerified) {
+  if (!authLoading && user?.emailVerified && verificationStatus !== 'success') {
     return <Redirect href="/(protected)/(tabs)" />;
   }
 

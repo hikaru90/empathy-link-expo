@@ -19,6 +19,7 @@ interface AuthContextType {
   signInWithSocial: (provider: 'google' | 'apple') => Promise<void>;
   signOut: () => Promise<void>;
   resendVerificationEmail: (email: string) => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,7 +42,7 @@ export function useAuthProvider(): AuthContextType {
 
   const loadUser = async () => {
     try {
-      console.log('=== Loading user session ===');
+      console.log('[Auth Debug] loadUser started');
       console.log('Platform:', Platform.OS);
       console.log('Better Auth URL:', BETTER_AUTH_URL);
       
@@ -52,61 +53,28 @@ export function useAuthProvider(): AuthContextType {
           const sessionKey = 'empathy-link.session';
           const tokenKey = 'empathy-link.token';
           
-          console.log('[Auth Debug] Checking SecureStore keys...');
           const storedSession = await SecureStore.getItemAsync(sessionKey);
           const storedToken = await SecureStore.getItemAsync(tokenKey);
           
-          console.log('[Auth Debug] Stored session exists:', !!storedSession);
-          console.log('[Auth Debug] Stored token exists:', !!storedToken);
-          if (storedSession) {
-            console.log('[Auth Debug] Session data length:', storedSession.length);
-          }
-          if (storedToken) {
-            console.log('[Auth Debug] Token data length:', storedToken.length);
-          }
+          console.log('[Auth Debug] SecureStore - Session exists:', !!storedSession, 'Token exists:', !!storedToken);
         } catch (secureStoreError) {
-          console.error('[Auth Debug] Error checking SecureStore:', secureStoreError);
+          console.error('[Auth Debug] SecureStore check error:', secureStoreError);
         }
       }
 
-      // First, test if backend is reachable with a simple fetch
-      console.log('Testing backend connectivity...');
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-        const testResponse = await fetch(`${BETTER_AUTH_URL}/api/auth/get-session`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-        console.log('✅ Backend test response status:', testResponse.status);
-        const testData = await testResponse.text();
-        console.log('Backend response:', testData);
-      } catch (testError: any) {
-        console.error('❌ Backend not reachable:', testError?.message);
-        console.error('Error name:', testError?.name);
-        throw new Error(`Cannot connect to backend server: ${testError?.message}`);
-      }
-
-      console.log('Calling authClient.getSession()...');
+      console.log('[Auth Debug] Calling authClient.getSession()...');
       const session = await authClient.getSession();
-      console.log('[Auth Debug] Session result:', {
-        hasData: !!session?.data,
-        hasUser: !!session?.data?.user,
-        sessionKeys: session ? Object.keys(session) : [],
-        dataKeys: session?.data ? Object.keys(session.data) : [],
+      console.log('[Auth Debug] getSession result:', {
+        success: !!session?.data,
+        user: session?.data?.user?.email,
+        verified: session?.data?.user?.emailVerified,
       });
-      console.log('Session loaded:', session);
+
       if (session?.data?.user) {
         setUser(session.data.user as User);
-        console.log('[Auth Debug] ✅ User loaded successfully');
+        console.log('[Auth Debug] User state updated in context');
       } else {
-        console.log('[Auth Debug] ❌ No user in session');
+        console.log('[Auth Debug] No user found in session, clearing state');
         setUser(null);
       }
     } catch (error: any) {
@@ -450,6 +418,7 @@ export function useAuthProvider(): AuthContextType {
     signInWithSocial,
     signOut,
     resendVerificationEmail,
+    refresh: loadUser,
   };
 }
 

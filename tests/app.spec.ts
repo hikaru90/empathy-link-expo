@@ -73,14 +73,37 @@ test.describe('authenticated app', () => {
       // }
 
       await page.waitForLoadState('networkidle');
-
+      
+      // await page.getByRole('dialog').getByTestId('drawer-overlay').click();
+      // await page.getByText('Wie fühlst du dich eigentlich?Gefühle erkennenWiederholen').nth(1).click();
+      // await page.getByTestId('tab-learn').nth(3).click();
+      // await page.getByText('Was brauchst du wirklich?Bedürfnisse erkennenWiederholen').nth(2).click();
+      // await page.locator('div:nth-child(25) > .r-bottom-1p0dtai.r-left-1d2f490.r-position-1xcajam.r-right-zchlnj.r-top-ipm5af.r-zIndex-sfbmgh > div:nth-child(2) > .css-view-g5y9jx.r-bottom-1p0dtai.r-left-1d2f490.r-position-1xcajam > .css-view-g5y9jx.r-flex-13awgt0.r-top-ipm5af > .css-view-g5y9jx.r-backgroundColor-13w96dm > .css-view-g5y9jx.r-alignSelf-1kihuf0.r-backgroundColor-ianrra > .css-view-g5y9jx.r-gap-1cmwbt1 > div:nth-child(2) > div:nth-child(2) > div > .css-view-g5y9jx > div > img').click();
+      // await page.getByTestId('tab-learn').nth(5).click();
+      // await page.getByText('Wie gehst du mit dir um?Selbstempathie stärkenWiederholen').nth(3).click();
+      // await page.locator('div:nth-child(33) > .r-bottom-1p0dtai.r-left-1d2f490.r-position-1xcajam.r-right-zchlnj.r-top-ipm5af.r-zIndex-sfbmgh > div:nth-child(2) > .css-view-g5y9jx.r-bottom-1p0dtai.r-left-1d2f490.r-position-1xcajam > .css-view-g5y9jx.r-flex-13awgt0.r-top-ipm5af > .css-view-g5y9jx.r-backgroundColor-13w96dm > .css-view-g5y9jx.r-alignSelf-1kihuf0.r-backgroundColor-ianrra > .css-view-g5y9jx.r-gap-1cmwbt1 > div:nth-child(2) > div:nth-child(2) > div > .css-view-g5y9jx > div > img').click();
+      // await page.locator('div:nth-child(8) > div > div > div > .css-view-g5y9jx.r-bottom-1p0dtai.r-left-1d2f490.r-position-u8s1d.r-right-zchlnj.r-zIndex-1sg8ghl > .css-view-g5y9jx.r-backgroundColor-14lw9ot > div:nth-child(3)').click();
+      
+      // Wait for either navigation to detail page OR restart drawer to appear
       const restartCourseBtn = page.getByTestId('restart-drawer-restart');
-      console.log('restartCourseBtn',restartCourseBtn);
-      if (await restartCourseBtn.isVisible().catch(() => false)) {
-        console.log('restartCourseBtn',restartCourseBtn);
-        await restartCourseBtn.click();
-      }
+      const viewResultsBtn = page.getByTestId('restart-drawer-view-results');
 
+      await Promise.race([
+        page.waitForURL(/\/learn\/.+/, { timeout: 5000 }),
+        restartCourseBtn.waitFor({ state: 'visible', timeout: 5000 }),
+        viewResultsBtn.waitFor({ state: 'visible', timeout: 5000 }),
+      ]).catch(() => {});
+
+      if (await restartCourseBtn.isVisible()) {
+        await page.waitForTimeout(1000);
+        await restartCourseBtn.getByText('Neu starten').click({ force: true });
+        await page.waitForLoadState('networkidle');
+      } else if (await viewResultsBtn.isVisible()) {
+        await page.waitForTimeout(1000);
+        await viewResultsBtn.click();
+        await page.waitForLoadState('networkidle');
+      }
+      
       await expect(page).toHaveURL(/\/learn\/.+/);
       await expect(page.getByTestId('learn-detail-content')).toBeVisible({
         timeout: 15000,

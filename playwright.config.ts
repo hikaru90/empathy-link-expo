@@ -1,5 +1,5 @@
-import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
+import 'dotenv/config';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:8081';
 
@@ -23,8 +23,16 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/user.json',
       },
-      dependencies: ['setup'],
+      // dependencies: ['setup'],
       testIgnore: /.*\.setup\.ts/,
+    },
+    {
+      name: 'signup-flow',
+      testMatch: /signup-flow\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: { cookies: [], origins: [] },
+      },
     },
   ],
   webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
