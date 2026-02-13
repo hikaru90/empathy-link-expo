@@ -2,7 +2,9 @@ import { getPocketBaseFileUrl } from '@/lib/api/learn';
 import React, { useState } from 'react';
 import { Image, Text, View } from 'react-native';
 
-interface LearnImageProps {
+import LearnNavigation from '@/components/learn/LearnNavigation';
+
+export interface LearnImageProps {
   content: {
     src: string;
     alt?: string;
@@ -10,12 +12,16 @@ interface LearnImageProps {
   };
   collectionId?: string;
   recordId?: string;
+  onPrev?: () => void;
+  onNext: () => void;
 }
 
 export default function LearnImage({
   content,
   collectionId,
   recordId,
+  onPrev,
+  onNext,
 }: LearnImageProps) {
   const [error, setError] = useState(false);
 
@@ -32,7 +38,7 @@ export default function LearnImage({
   const uri = getImageUri();
 
   return (
-    <View className="flex flex-col justify-between items-center w-full flex-grow">
+    <View className="flex flex-1 flex-col justify-between items-center w-full">
       <View className="flex flex-col flex-grow justify-center items-center w-full">
         {!error && uri ? (
           <Image
@@ -48,6 +54,7 @@ export default function LearnImage({
           <Text className="mt-2 text-sm text-gray-600 italic">{content.caption}</Text>
         ) : null}
       </View>
+      <LearnNavigation onPrev={onPrev} onNext={onNext} showPrev={!!onPrev} />
     </View>
   );
 }

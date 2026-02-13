@@ -212,7 +212,6 @@ export default function SigninScreen() {
     <View className="flex-1 justify-center px-6" style={{ backgroundColor: baseColors.background }}>
       <View className="mb-8">
         <View className="items-center mb-4 flex-row gap-2 justify-center">
-          <SparklePill />
           <Text
             style={{
               fontWeight: 'bold',
@@ -221,11 +220,22 @@ export default function SigninScreen() {
               letterSpacing: 1,
             }}
           >
-            Empathy Link
+            Empathy
+          </Text>
+          <View style={{ marginBottom: -2 }}>
+            <SparklePill />
+          </View>
+          <Text style={{
+            fontWeight: 'bold',
+            fontSize: 22,
+            color: baseColors.forest,
+            letterSpacing: 1,
+          }}>
+            Link
           </Text>
         </View>
-        <Text className="text-center" style={{ color: baseColors.forest+'99' }}>
-          Melde dich in deinem Empathy Link Konto an
+        <Text className="text-center" style={{ color: baseColors.forest + '99' }}>
+          Melde dich in deinem Empathy-Link Konto an
         </Text>
       </View>
 
@@ -413,7 +423,7 @@ export default function SigninScreen() {
       </View>
 
       <View className="mt-6 flex-row justify-center">
-        <Text className="" style={{ color: baseColors.forest+'99' }}>Noch kein Konto? </Text>
+        <Text className="" style={{ color: baseColors.forest + '99' }}>Noch kein Konto? </Text>
         <Link href="/(auth)/signup" asChild>
           <TouchableOpacity>
             <Text className="font-semibold" style={{ color: baseColors.forest }}>

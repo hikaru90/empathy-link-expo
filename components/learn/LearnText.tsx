@@ -2,16 +2,20 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 
+import LearnNavigation from '@/components/learn/LearnNavigation';
+
 // Initialize MarkdownIt with HTML support enabled
 const markdownItInstance = MarkdownIt({ html: true });
 
-interface LearnTextProps {
+export interface LearnTextProps {
   content: string;
+  onPrev?: () => void;
+  onNext: () => void;
 }
 
-export default function LearnText({ content }: LearnTextProps) {
+export default function LearnText({ content, onPrev, onNext }: LearnTextProps) {
   return (
-    <View className="flex-grow flex-col">
+    <View className="flex-1 flex-col justify-between">
       <View className="flex flex-grow flex-col items-center justify-center gap-2 text-left">
         <View className="relative max-w-[20em]">
           <Markdown
@@ -73,6 +77,7 @@ export default function LearnText({ content }: LearnTextProps) {
           </Markdown>
         </View>
       </View>
+      <LearnNavigation onPrev={onPrev} onNext={onNext} showPrev={!!onPrev} />
     </View>
   );
 }

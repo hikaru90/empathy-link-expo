@@ -208,6 +208,7 @@ export default function LearnSortable({
                 >
                   <DragndropEndPoint
                     zoneId={`bucket-${bucket.id}`}
+                    testID={`sortable-dropzone-${bucket.id}`}
                     onDrop={(data) => handleDrop(data, bucket.id)}
                     style={bucketStyle(isBucketIncorrect)}
                   >

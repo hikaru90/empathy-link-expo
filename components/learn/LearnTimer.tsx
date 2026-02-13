@@ -1,4 +1,5 @@
 import type { LearningSession } from '@/lib/api/learn';
+import LearnNavigation from '@/components/learn/LearnNavigation';
 import { Check, Pause, Play } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
@@ -17,6 +18,8 @@ export default function LearnTimer({
   color,
   session,
   onResponse,
+  onPrev,
+  onNext,
 }: LearnTimerProps) {
   const [time, setTime] = useState(duration);
   const [isRunning, setIsRunning] = useState(false);
@@ -75,7 +78,7 @@ export default function LearnTimer({
   }, []);
 
   return (
-    <View className="flex flex-grow flex-col justify-between">
+    <View className="flex flex-1 flex-col justify-between">
       <View
         className="mb-6 inline-flex flex-row items-center justify-between gap-2 rounded-full p-2"
         style={{ backgroundColor: color }}
@@ -113,6 +116,9 @@ export default function LearnTimer({
           </View>
         ) : null}
       </View>
+      {onNext && (
+        <LearnNavigation onPrev={onPrev} onNext={onNext} showPrev={!!onPrev} />
+      )}
     </View>
   );
 }

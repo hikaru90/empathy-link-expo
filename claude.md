@@ -1,4 +1,4 @@
-# Claude Instructions for Empathy Link Expo
+# Claude Instructions for Empathy-Link Expo
 
 ## Working with the user
 

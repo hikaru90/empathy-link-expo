@@ -36,34 +36,13 @@ import {
   type LearningSession,
   type Topic
 } from '@/lib/api/learn';
+import {
+  buildTotalStepsArray,
+  getStepComponentName,
+} from '@/lib/learn/learnBlocks';
 
 // Initialize MarkdownIt with HTML support enabled
 const markdownItInstance = MarkdownIt({ html: true });
-
-const COMPONENT_STEP_NAMES: Record<string, string> = {
-  title: 'Start',
-  summary: 'Zusammenfassung ✦',
-  text: 'Text',
-  heading: 'Überschrift',
-  list: 'Liste',
-  image: 'Bild',
-  timer: 'Timer',
-  task: 'Aufgabe',
-  sortable: 'Sortieren',
-  multipleChoice: 'Multiple Choice',
-  breathe: 'Atmen',
-  audio: 'Audio',
-  aiQuestion: 'KI-Frage ✦',
-  feelingsDetective: 'Gefühls-Detektiv ✦',
-  bodymap: 'Körperkarte',
-  needsDetective: 'Bedürfnis-Detektiv ✦',
-  needsRubiksCube: 'Bedürfnis-Rubik ✦',
-};
-
-function getStepComponentName(stepData: { component: string } | null): string {
-  if (!stepData) return '';
-  return COMPONENT_STEP_NAMES[stepData.component] || stepData.component;
-}
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -157,19 +136,12 @@ export default function LearnDetailScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [childWantsParentNavigation, setChildWantsParentNavigation] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (isAuthenticated && user && slug) {
       loadTopic();
     }
   }, [isAuthenticated, user, slug]);
-
-  // Reset child navigation preference when step changes
-  // This allows components with internal steps to set their navigation preference
-  useEffect(() => {
-    setChildWantsParentNavigation(null);
-  }, [currentStep]);
 
   const loadTopic = async () => {
     if (!slug || !user) return;
@@ -189,16 +161,7 @@ export default function LearnDetailScreen() {
         let sessionData = await getLatestLearningSession(user.id, topicData.id);
 
         const content = topicData.expand?.currentVersion?.content || [];
-        const getComponentStepCount = (component: any) => {
-          if (component.type === 'aiQuestion') return 2;
-          if (component.type === 'feelingsDetective') return 5;
-          if (component.type === 'bodymap') return 2;
-          if (component.type === 'needsDetective') return 4;
-          if (component.type === 'needsRubiksCube') return 2;
-          return 1;
-        };
-        const totalSteps =
-          1 + content.reduce((sum, item) => sum + getComponentStepCount(item), 0) + 1;
+        const totalSteps = buildTotalStepsArray(content).length;
 
         if (!sessionData || sessionData.topicVersionId !== topicData.expand.currentVersion.id) {
           sessionData = await createLearningSession(
@@ -240,21 +203,7 @@ export default function LearnDetailScreen() {
     if (!topic?.expand?.currentVersion) return;
 
     const content = topic.expand.currentVersion.content || [];
-    
-    // Must match getComponentStepCount used for totalStepsArray
-    const getComponentStepCount = (component: any) => {
-      if (component.type === 'aiQuestion') return 2;
-      if (component.type === 'feelingsDetective') return 5;
-      if (component.type === 'bodymap') return 2;
-      if (component.type === 'needsDetective') return 4;
-      if (component.type === 'needsRubiksCube') return 2;
-      return 1;
-    };
-    
-    // Calculate total steps
-    const totalSteps = 1 + // title
-      content.reduce((sum, item) => sum + getComponentStepCount(item), 0) +
-      1; // summary
+    const totalSteps = buildTotalStepsArray(content).length;
 
     if (currentStep < totalSteps - 1) {
       const newStep = currentStep + 1;
@@ -339,77 +288,15 @@ export default function LearnDetailScreen() {
 
   const topicVersion = topic.expand.currentVersion;
   const content = topicVersion.content || [];
-  
-  // Calculate step count: each aiQuestion takes 2 steps, feelingsDetective takes 5 steps, bodymap takes 2, needsDetective 4, needsRubiksCube 2, others take 1
-  const getComponentStepCount = (component: any) => {
-    if (component.type === 'aiQuestion') {
-      return 2;
-    }
-    if (component.type === 'feelingsDetective') {
-      return 5;
-    }
-    if (component.type === 'bodymap') {
-      return 2;
-    }
-    if (component.type === 'needsDetective') {
-      return 4;
-    }
-    if (component.type === 'needsRubiksCube') {
-      return 2;
-    }
-    return 1;
-  };
-
-  // Build totalSteps array mapping step indices to component info
-  // This matches the Svelte implementation structure
-  const totalStepsArray: Array<{ component: string; internalStep: number; blockIndex: number }> = [];
-  
-  // Step 0: title (blockIndex: -1)
-  totalStepsArray.push({ component: 'title', internalStep: 0, blockIndex: -1 });
-  
-  // Add content items with their blockIndex
-  content.forEach((item: any, index: number) => {
-    const stepCount = getComponentStepCount(item);
-    for (let i = 0; i < stepCount; i++) {
-      totalStepsArray.push({ 
-        component: item.type || 'unknown', 
-        internalStep: i,
-        blockIndex: index // Store the index in the content array
-      });
-    }
-  });
-  
-  // Final step: summary (blockIndex: -1)
-  totalStepsArray.push({ component: 'summary', internalStep: 0, blockIndex: -1 });
-  
+  const totalStepsArray = buildTotalStepsArray(content);
   const totalSteps = totalStepsArray.length;
   const categoryColor = topicVersion.expand?.category?.color || baseColors.primary;
 
-  // Get current content item using blockIndex from totalStepsArray (matches Svelte implementation)
   const currentStepData = totalStepsArray[currentStep];
-  const currentContentItem = currentStepData?.blockIndex >= 0 
-    ? content[currentStepData.blockIndex] 
+  const currentContentItem = currentStepData?.blockIndex >= 0
+    ? content[currentStepData.blockIndex]
     : null;
-  
-  // Determine if parent navigation should be shown
-  // If child component has explicitly set visibility preference (via childWantsParentNavigation), use that
-  // Otherwise, use default logic (show for steps that aren't first or last)
-  // For components like aiQuestion and feelingsDetective, childWantsParentNavigation will be set to false
-  // Also check component type - components with internal steps should not show parent navigation by default
-  const componentHandlesOwnNavigation = currentStepData?.component === 'aiQuestion' ||
-                                        currentStepData?.component === 'feelingsDetective' ||
-                                        currentStepData?.component === 'bodymap' ||
-                                        currentStepData?.component === 'needsDetective' ||
-                                        currentStepData?.component === 'needsRubiksCube' ||
-                                        currentStepData?.component === 'sortable' ||
-                                        currentStepData?.component === 'multipleChoice';
-  
-  const showBottomNavigation = childWantsParentNavigation !== null
-    ? childWantsParentNavigation
-    : componentHandlesOwnNavigation 
-      ? false // Don't show parent navigation for components that handle their own navigation
-      : currentStep > 0 && currentStep <= totalSteps - 1; // Show navigation on summary page too
-  
+
   const isAiQuestionStep = currentStepData?.component === 'aiQuestion';
   const isSortableStep = currentStepData?.component === 'sortable';
   const isNeedsRubiksCubeStep = currentStepData?.component === 'needsRubiksCube';
@@ -417,11 +304,11 @@ export default function LearnDetailScreen() {
   const contentPadding = {
     paddingTop: Platform.OS === 'ios' ? 50 : Platform.OS === 'android' ? 60 : 40,
     flexGrow: 1,
-    paddingBottom: currentStep === totalSteps - 1 ? 200 : (showBottomNavigation ? 136 : 40),
+    paddingBottom: currentStep === totalSteps - 1 ? 200 : 40,
   };
 
   const contentArea = (
-    <View testID="learn-detail-content" className={`flex flex-1 flex-col min-h-0 px-4 pt-4 pb-6`} style={{ minHeight: 0 }}>
+    <View testID="learn-detail-content" className={`flex flex-1 flex-col min-h-0 px-4 pt-4 pb-12`} style={{ minHeight: 0 }}>
       <LearnStepIndicator
         currentStep={currentStep}
         totalSteps={totalSteps}
@@ -463,11 +350,13 @@ export default function LearnDetailScreen() {
               </View>
             )
           ) : (
-            // Content Steps
-            <View className="flex flex-1 flex-col min-h-0" style={{ minHeight: 0 }}>
+            // Content Steps – each block renders its own LearnNavigation
+            <View
+              className="flex flex-1 flex-col min-h-0"
+              style={{ minHeight: 0 }}
+              testID={currentContentItem ? `learn-block-${currentContentItem.type}` : undefined}
+            >
               {(() => {
-                // Use currentContentItem which is correctly calculated using blockIndex
-                // This properly handles multi-step components
                 const contentItem = currentContentItem;
 
                 if (!contentItem) {
@@ -478,13 +367,16 @@ export default function LearnDetailScreen() {
                   );
                 }
 
-                // Render different content types
                 switch (contentItem.type) {
                   case 'text':
                     return (
-                      <LearnText content={contentItem.text || contentItem.content || ''} />
+                      <LearnText
+                        content={contentItem.text || contentItem.content || ''}
+                        onPrev={handlePrevStep}
+                        onNext={handleNextStep}
+                      />
                     );
-                  case 'heading':
+                  case 'heading': {
                     const hierarchy = contentItem.hierarchy || 1;
                     const headingStyles: Record<number, { size: string; marginTop: number; marginBottom: number }> = {
                       1: { size: 'text-xl', marginTop: 10, marginBottom: 6 },
@@ -496,17 +388,21 @@ export default function LearnDetailScreen() {
                     };
                     const style = headingStyles[hierarchy] || headingStyles[1];
                     return (
-                      <View className="mb-6" style={{ marginTop: style.marginTop, marginBottom: style.marginBottom }}>
-                        <Text className={`${style.size} font-bold text-gray-900`}>
-                          {contentItem.content || contentItem.text || contentItem.heading}
-                        </Text>
-                        {contentItem.subheading && (
-                          <Text className={`mt-2 ${style.size === 'text-xl' ? 'text-lg' : style.size === 'text-lg' ? 'text-base' : 'text-sm'} text-gray-600`}>
-                            {contentItem.subheading}
+                      <View className="flex-1 flex-col justify-between">
+                        <View className="mb-6" style={{ marginTop: style.marginTop, marginBottom: style.marginBottom }}>
+                          <Text className={`${style.size} font-bold text-gray-900`}>
+                            {contentItem.content || contentItem.text || contentItem.heading}
                           </Text>
-                        )}
+                          {contentItem.subheading && (
+                            <Text className={`mt-2 ${style.size === 'text-xl' ? 'text-lg' : style.size === 'text-lg' ? 'text-base' : 'text-sm'} text-gray-600`}>
+                              {contentItem.subheading}
+                            </Text>
+                          )}
+                        </View>
+                        <LearnNavigation onPrev={handlePrevStep} onNext={handleNextStep} showPrev={true} />
                       </View>
                     );
+                  }
                   case 'list':
                     return (
                       <View className="flex flex-1 flex-col justify-between gap-2 mb-6 relative z-0">
@@ -586,6 +482,7 @@ export default function LearnDetailScreen() {
                             </View>
                           ))}
                         </View>
+                        <LearnNavigation onPrev={handlePrevStep} onNext={handleNextStep} showPrev={true} />
                       </View>
                     );
                   case 'image':
@@ -594,6 +491,8 @@ export default function LearnDetailScreen() {
                         content={contentItem}
                         collectionId={topicVersion.collectionId}
                         recordId={topicVersion.id}
+                        onPrev={handlePrevStep}
+                        onNext={handleNextStep}
                       />
                     );
                   case 'timer':
@@ -616,6 +515,8 @@ export default function LearnDetailScreen() {
                             if (updatedSession) setSession(updatedSession);
                           }
                         }}
+                        onPrev={handlePrevStep}
+                        onNext={handleNextStep}
                       />
                     );
                   case 'task':
@@ -624,6 +525,8 @@ export default function LearnDetailScreen() {
                         content={contentItem}
                         color={categoryColor}
                         onComplete={handleNextStep}
+                        onPrev={handlePrevStep}
+                        onNext={handleNextStep}
                       />
                     );
                   case 'sortable':
@@ -695,6 +598,8 @@ export default function LearnDetailScreen() {
                             }
                           }
                         }}
+                        onPrev={handlePrevStep}
+                        onNext={handleNextStep}
                       />
                     );
                   case 'aiQuestion':
@@ -725,7 +630,6 @@ export default function LearnDetailScreen() {
                         }}
                         gotoNextStep={handleNextStep}
                         gotoPrevStep={handlePrevStep}
-                        onParentNavigationVisibilityChange={setChildWantsParentNavigation}
                       />
                     );
                   case 'feelingsDetective':
@@ -762,7 +666,6 @@ export default function LearnDetailScreen() {
                           }}
                           gotoNextStep={handleNextStep}
                           gotoPrevStep={handlePrevStep}
-                          onParentNavigationVisibilityChange={setChildWantsParentNavigation}
                         />
                       </View>
                     );
@@ -793,7 +696,6 @@ export default function LearnDetailScreen() {
                         }}
                         gotoNextStep={handleNextStep}
                         gotoPrevStep={handlePrevStep}
-                        onParentNavigationVisibilityChange={setChildWantsParentNavigation}
                       />
                     );
                   case 'needsDetective':
@@ -883,12 +785,12 @@ export default function LearnDetailScreen() {
           {contentArea}
         </ScrollView>
       )}
-      {/* Fixed Bottom Navigation */}
-      {showBottomNavigation && (
-        <View 
+      {/* Bottom navigation only for summary – content blocks render their own */}
+      {currentStep === totalSteps - 1 && (
+        <View
           className="absolute left-0 right-0 px-4 py-4"
-          style={{ 
-            bottom: 70, // Position above TabBar
+          style={{
+            bottom: 70,
             backgroundColor: baseColors.background,
             borderTopWidth: 1,
             borderTopColor: 'rgba(0,0,0,0.1)',
@@ -896,26 +798,15 @@ export default function LearnDetailScreen() {
             elevation: 100,
           }}
         >
-          {currentStep === totalSteps - 1 ? (
-            // Summary page navigation - back button + "Zurück zur Lernübersicht"
-            <LearnNavigation
-              onNext={async () => {
-                await handleNextStep();
-                router.push('/learn');
-              }}
-              onPrev={handlePrevStep}
-              nextText="Zurück zur Lernübersicht"
-              showPrev={true}
-            />
-          ) : (
-            <LearnNavigation
-              onNext={handleNextStep}
-              onPrev={currentStep > 0 ? handlePrevStep : undefined}
-              nextText={currentContentItem?.type === 'breathe' ? 'Überspringen' : (currentContentItem?.ctaText || (currentStep === totalSteps - 2 ? 'Abschließen' : 'Weiter'))}
-              showPrev={currentStep > 0}
-              variant={currentContentItem?.type === 'breathe' ? 'light' : 'default'}
-            />
-          )}
+          <LearnNavigation
+            onNext={async () => {
+              await handleNextStep();
+              router.push('/learn');
+            }}
+            onPrev={handlePrevStep}
+            nextText="Zurück zur Lernübersicht"
+            showPrev={true}
+          />
         </View>
       )}
       

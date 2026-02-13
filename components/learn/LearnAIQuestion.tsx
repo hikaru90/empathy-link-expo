@@ -15,7 +15,7 @@ import LearnMessageInput, {
 import LearnNavigation from '@/components/learn/LearnNavigation';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { askAIQuestion, type LearningSession } from '@/lib/api/learn';
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Keyboard,
   Platform,
@@ -47,7 +47,6 @@ interface LearnAIQuestionProps {
   onResponse: (response: any) => void;
   gotoNextStep?: () => void;
   gotoPrevStep?: () => void;
-  onParentNavigationVisibilityChange?: (visible: boolean) => void;
   isPreview?: boolean;
 }
 
@@ -62,7 +61,6 @@ export default function LearnAIQuestion({
   onResponse,
   gotoNextStep,
   gotoPrevStep,
-  onParentNavigationVisibilityChange,
   isPreview = false,
 }: LearnAIQuestionProps) {
   const [userAnswer, setUserAnswer] = useState('');
@@ -80,13 +78,6 @@ export default function LearnAIQuestion({
   const textInputRef = useRef<TextInput>(null);
 
   const internalStep = totalSteps[currentStep]?.internalStep ?? 0;
-
-  // Notify parent about navigation visibility immediately and when internalStep changes
-  // Always hide parent navigation - component handles its own navigation
-  // Use useLayoutEffect to run synchronously before paint to avoid flicker
-  useLayoutEffect(() => {
-    onParentNavigationVisibilityChange?.(false);
-  }, [internalStep, onParentNavigationVisibilityChange]);
 
   // Check for existing response in session
   const existingResponse = session?.responses?.find(
@@ -328,7 +319,6 @@ export default function LearnAIQuestion({
           style={{
             backgroundColor: baseColors.background,
             paddingTop: 16,
-            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 23 : 23,
             marginLeft: -16,
             marginRight: -16,
             paddingLeft: 16,
@@ -358,12 +348,12 @@ export default function LearnAIQuestion({
     console.log('✅ RENDERING INPUT FORM');
     const selectorVisible = feelingSelectorVisible || needSelectorVisible;
     return (
-      <View className="flex flex-1 flex-col justify-between" style={{ paddingBottom: 26, minHeight: 0, overflow: 'hidden' }}>
+      <View className="flex flex-1 flex-col justify-between" style={{ minHeight: 0, overflow: 'hidden' }}>
         {/* Question - scrollable so content stays visible when selector is expanded */}
         <ScrollView
           className="flex-1"
           style={{ minHeight: 0, flexBasis: 0 }}
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 8, paddingVertical: 16 }}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 16 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >

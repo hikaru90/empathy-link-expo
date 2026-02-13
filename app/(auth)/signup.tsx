@@ -1,9 +1,10 @@
+import jungleImage from '@/assets/images/Jungle.jpg';
 import baseColors from '@/baseColors.config';
-import LoadingIndicator from '@/components/LoadingIndicator';
+import SparklePill from '@/components/SparklePill';
 import { useAuth } from '@/hooks/use-auth';
 import { Link, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -13,7 +14,7 @@ export default function SignupScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { signUp } = useAuth();
   const router = useRouter();
-  
+
   const nameInputRef = useRef<TextInput>(null);
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
@@ -21,7 +22,7 @@ export default function SignupScreen() {
   const handleSignup = async () => {
     // Clear any previous error
     setErrorMessage(null);
-    
+
     if (!email || !password || !name) {
       const msg = 'Bitte fülle alle Felder aus';
       setErrorMessage(msg);
@@ -39,7 +40,7 @@ export default function SignupScreen() {
 
     // Trim password to remove any accidental whitespace
     const trimmedPassword = password.trim();
-    
+
     // Double-check password length after trimming
     if (trimmedPassword.length < 8) {
       const msg = 'Das Passwort muss mindestens 8 Zeichen lang sein (nach Entfernen von Leerzeichen)';
@@ -50,12 +51,12 @@ export default function SignupScreen() {
 
     setIsLoading(true);
     setErrorMessage(null);
-    
+
     // Blur all inputs to prevent focus issues during navigation
     nameInputRef.current?.blur();
     emailInputRef.current?.blur();
     passwordInputRef.current?.blur();
-    
+
     try {
       // Use trimmed password to avoid whitespace issues
       const result = await signUp(email, trimmedPassword, name);
@@ -71,7 +72,7 @@ export default function SignupScreen() {
     } catch (error: any) {
       // Extract error message from various possible formats
       let msg = 'Registrierung fehlgeschlagen';
-      
+
       if (error instanceof Error) {
         msg = error.message;
       } else if (error?.message) {
@@ -79,7 +80,7 @@ export default function SignupScreen() {
       } else if (error?.error?.message) {
         msg = error.error.message;
       }
-      
+
       // Display error in UI and Alert
       setErrorMessage(msg);
       Alert.alert('Fehler', msg);
@@ -90,11 +91,31 @@ export default function SignupScreen() {
   return (
     <View className="flex-1 justify-center px-6" style={{ backgroundColor: baseColors.background }}>
       <View className="mb-8">
-        <Text className="text-3xl font-bold text-gray-800 mb-2">
-          Konto erstellen
-        </Text>
-        <Text className="text-gray-600">
-          Registriere dich, um mit Empathy Link zu beginnen
+        <View className="items-center mb-4 flex-row gap-2 justify-center">
+          <Text
+            style={{
+              fontWeight: 'bold',
+              fontSize: 22,
+              color: baseColors.forest,
+              letterSpacing: 1,
+            }}
+          >
+            Empathy
+          </Text>
+          <View style={{ marginBottom: -2 }}>
+            <SparklePill />
+          </View>
+          <Text style={{
+            fontWeight: 'bold',
+            fontSize: 22,
+            color: baseColors.forest,
+            letterSpacing: 1,
+          }}>
+            Link
+          </Text>
+        </View>
+        <Text className="text-center" style={{ color: baseColors.forest + '99' }}>
+          Registriere dich.
         </Text>
       </View>
 
@@ -106,7 +127,7 @@ export default function SignupScreen() {
         </View>
       )}
 
-      <View className="mb-6">
+      <View className="mb-4">
         <Text className="text-gray-700 mb-2 font-medium">Name</Text>
         <TextInput
           ref={nameInputRef}
@@ -121,7 +142,7 @@ export default function SignupScreen() {
         />
       </View>
 
-      <View className="mb-6">
+      <View className="mb-4">
         <Text className="text-gray-700 mb-2 font-medium">E-Mail</Text>
         <TextInput
           ref={emailInputRef}
@@ -152,30 +173,56 @@ export default function SignupScreen() {
         />
       </View>
 
-      <TouchableOpacity
-        className={`rounded-lg py-4 ${isLoading ? 'opacity-50' : ''}`}
-        style={{ backgroundColor: baseColors.primary }}
-        onPress={handleSignup}
-        disabled={isLoading}
-        accessibilityRole="button"
-        accessibilityLabel="Konto erstellen"
-        accessibilityState={{ disabled: isLoading }}
-        testID="signup-button"
-      >
-        {isLoading ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text className="text-white text-center font-semibold text-lg">
-            Konto erstellen
-          </Text>
-        )}
-      </TouchableOpacity>
+      <View className="flex-row justify-center">
+        <TouchableOpacity
+          onPress={handleSignup}
+          disabled={isLoading}
+          accessibilityRole="button"
+          accessibilityLabel="Konto erstellen"
+          accessibilityState={{ disabled: isLoading }}
+          testID="signup-button"
+          style={{
+            width: '100%',
+            maxWidth: 300,
+            height: 48,
+            opacity: isLoading ? 0.5 : 1,
+          }}
+        >
+          <ImageBackground source={jungleImage} resizeMode="cover" style={{
+            flex: 1,
+            height: '100%',
+            width: '100%',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            paddingVertical: 12,
+            paddingHorizontal: 24,
+            borderRadius: 999,
+            overflow: 'hidden',
+            borderWidth: 1,
+            borderColor: 'rgba(0, 0, 0, 0.1)',
+          }}>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Text style={{
+                  fontSize: 16,
+                  color: baseColors.offwhite,
+                  fontWeight: '600',
+                }}>Konto erstellen</Text>
+              </>
+            )}
+          </ImageBackground>
+        </TouchableOpacity>
+      </View>
 
       <View className="mt-6 flex-row justify-center">
-        <Text className="text-gray-600">Bereits ein Konto? </Text>
+        <Text className="" style={{ color: baseColors.forest + '99' }}>Bereits ein Konto? </Text>
         <Link href="/(auth)/login" asChild>
           <TouchableOpacity>
-            <Text className="font-semibold" style={{ color: baseColors.primary }}>
+            <Text className="font-semibold" style={{ color: baseColors.forest }}>
               Anmelden
             </Text>
           </TouchableOpacity>
@@ -184,3 +231,20 @@ export default function SignupScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  finishButtonContainer: {
+    width: '100%',
+    maxWidth: 300,
+    height: 48,
+  },
+  finishButtonText: {
+    fontSize: 14,
+    color: baseColors.offwhite,
+  },
+  checkIcon: {
+    backgroundColor: 'rgba(255, 255, 255, 0.27)',
+    padding: 3,
+    borderRadius: 999,
+  },
+});

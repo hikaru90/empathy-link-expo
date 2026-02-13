@@ -36,7 +36,7 @@ export default function LearnTitleCard({
   };
 
   return (
-    <View className="mb-6 flex flex-1 flex-col justify-between p-2">
+    <View className="flex flex-1 flex-col justify-between p-2">
       <View
         className="relative flex flex-1 w-full flex-col items-start justify-between overflow-hidden rounded-xl p-6"
         style={{ backgroundColor: categoryColor }}

@@ -1,7 +1,7 @@
 import baseColors from '@/baseColors.config';
+import { ChevronDown, ChevronRight } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ChevronDown, ChevronRight } from 'lucide-react-native';
 
 interface BrandData {
   mission?: string;
@@ -218,7 +218,7 @@ const brandData: BrandData = {
       {
         category: 'Brand Promise & Positioning',
         items: [
-          'Was verspricht Empathy Link konkret?',
+          'Was verspricht Empathy-Link konkret?',
           'Wo steht die Marke im Markt? (Competitive Landscape)',
           'Unique Selling Proposition (USP)',
         ],
@@ -278,7 +278,7 @@ const brandData: BrandData = {
       {
         priority: 'Hoch',
         item: 'Brand Promise formulieren',
-        description: 'Was verspricht Empathy Link konkret? Messbar, nachvollziehbar, einzigartig',
+        description: 'Was verspricht Empathy-Link konkret? Messbar, nachvollziehbar, einzigartig',
       },
     ],
   },

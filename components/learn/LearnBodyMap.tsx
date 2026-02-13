@@ -10,7 +10,7 @@ import { useBottomDrawerSlot } from '@/hooks/use-bottom-drawer-slot';
 import { getFeelings, type Feeling } from '@/lib/api/chat';
 import type { LearningSession } from '@/lib/api/learn';
 import { Trash2 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   LayoutChangeEvent,
@@ -48,7 +48,6 @@ interface LearnBodyMapProps {
   onResponse: (response: { points: Array<{ x: number; y: number; feelings: string[] }> }) => void;
   gotoNextStep?: () => void;
   gotoPrevStep?: () => void;
-  onParentNavigationVisibilityChange?: (visible: boolean) => void;
 }
 
 export default function LearnBodyMap({
@@ -61,13 +60,8 @@ export default function LearnBodyMap({
   onResponse,
   gotoNextStep,
   gotoPrevStep,
-  onParentNavigationVisibilityChange,
 }: LearnBodyMapProps) {
   const internalStep = totalSteps[currentStep]?.internalStep ?? 0;
-
-  useLayoutEffect(() => {
-    onParentNavigationVisibilityChange?.(false);
-  }, [internalStep, onParentNavigationVisibilityChange]);
 
   const { openDrawer, closeDrawer } = useBottomDrawerSlot();
   const [drawerContentHeight, setDrawerContentHeight] = useState(0);
@@ -314,7 +308,7 @@ export default function LearnBodyMap({
   // Internal step 0: splash "Zeit zu Fühlen" and Weiter to enter the map
   if (internalStep === 0) {
     return (
-      <View className="mb-6 flex flex-1 flex-col justify-between">
+      <View className="flex flex-1 flex-col justify-between">
         <View className="flex-1 items-center justify-center px-4">
           <Text className="text-center text-xl font-medium text-gray-800">Zeit zu Fühlen</Text>
         </View>
@@ -332,7 +326,7 @@ export default function LearnBodyMap({
 
   // Internal step 1: bodymap
   return (
-    <View className="mb-6 flex flex-1 flex-col">
+    <View className="flex flex-1 flex-col">
       <Text className="mb-2 text-center text-lg font-medium text-gray-800">Zeit zu Fühlen</Text>
 
       <View className="items-center">

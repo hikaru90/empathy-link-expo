@@ -14,7 +14,7 @@ import LoadingIndicator from '@/components/LoadingIndicator';
 import { useBottomDrawerSlot } from '@/hooks/use-bottom-drawer-slot';
 import { getFeelings, type Feeling } from '@/lib/api/chat';
 import { feelingsDetectiveAI, type LearningSession } from '@/lib/api/learn';
-import { ChevronLeft, ChevronRight, Send, SquareMousePointer } from 'lucide-react-native';
+import { SquareMousePointer } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -45,7 +45,6 @@ interface LearnFeelingsDetectiveProps {
   onResponse: (response: any) => void;
   gotoNextStep?: () => void;
   gotoPrevStep?: () => void;
-  onParentNavigationVisibilityChange?: (visible: boolean) => void;
   isPreview?: boolean;
 }
 
@@ -60,7 +59,6 @@ export default function LearnFeelingsDetective({
   onResponse,
   gotoNextStep,
   gotoPrevStep,
-  onParentNavigationVisibilityChange,
   isPreview = false,
 }: LearnFeelingsDetectiveProps) {
   // Component state
@@ -92,12 +90,6 @@ export default function LearnFeelingsDetective({
   }, [situationInput, thoughtsInput, selectedFeelings]);
 
   const internalStep = totalSteps[currentStep]?.internalStep ?? 0;
-
-  // Notify parent about navigation visibility
-  // feelingsDetective handles its own navigation, so hide parent navigation
-  useEffect(() => {
-    onParentNavigationVisibilityChange?.(false);
-  }, [internalStep, onParentNavigationVisibilityChange]);
 
   // Check for existing response in session
   const existingResponse = session?.responses?.find(
@@ -418,9 +410,6 @@ export default function LearnFeelingsDetective({
         {/* Input Section */}
         <View
           className="px-4"
-          style={{
-            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
-          }}
         >
           <LearnMessageInput
             value={situationInput}
@@ -443,6 +432,7 @@ export default function LearnFeelingsDetective({
             onKeyPress={(e) => {
               if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
                 e.preventDefault();
+                submitSituation();
               }
             }}
           />
@@ -480,7 +470,7 @@ export default function LearnFeelingsDetective({
 
           {/* Navigation */}
           <View
-            className="py-4 border-t border-black/10 px-4"
+            className="pt-4 border-t border-black/10 px-4"
             style={{ backgroundColor: baseColors.background }}
           >
             <LearnNavigation
@@ -548,7 +538,7 @@ export default function LearnFeelingsDetective({
       <View nativeID="learn-feelings-detective-step-2" className="flex-grow flex-col justify-between">
         {/* Question */}
         <View className="flex-grow items-center justify-center px-4">
-          <Text className="max-w-xs text-center text-base font-medium text-gray-900">
+          <Text className="max-w-xs text-start text-base font-medium text-gray-900">
             Welche Urteile und Bewertungen hattest Du spontan im Kopf?
           </Text>
         </View>
@@ -556,9 +546,6 @@ export default function LearnFeelingsDetective({
         {/* Input Section */}
         <View
           className="px-4"
-          style={{
-            paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
-          }}
         >
           <LearnMessageInput
             value={thoughtsInput}
@@ -578,6 +565,7 @@ export default function LearnFeelingsDetective({
             onKeyPress={(e) => {
               if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
                 e.preventDefault();
+                submitThoughts();
               }
             }}
           />
@@ -670,7 +658,7 @@ export default function LearnFeelingsDetective({
 
         {/* Navigation */}
         <View
-          className="py-4 border-t border-black/10 px-4"
+          className="pt-4 border-t border-black/10 px-4"
           style={{ backgroundColor: baseColors.background }}
         >
           <LearnNavigation
@@ -695,7 +683,6 @@ export default function LearnFeelingsDetective({
               flexGrow: 1,
               flexDirection: 'column',
               justifyContent: 'space-between',
-              paddingBottom: 6,
             }}
           >
             <View className="flex-grow items-center justify-center px-4">
@@ -712,7 +699,7 @@ export default function LearnFeelingsDetective({
               </View>
             ) : (
               <View
-                className="py-4 border-t border-black/10 px-4"
+                className="pt-4 border-t border-black/10 px-4"
                 style={{ backgroundColor: baseColors.background }}
               >
                 <LearnNavigation
@@ -753,7 +740,7 @@ export default function LearnFeelingsDetective({
 
           {/* Navigation */}
           <View
-            className="py-4 border-t border-black/10 px-4"
+            className="pt-4 border-t border-black/10 px-4"
             style={{ backgroundColor: baseColors.background }}
           >
             <LearnNavigation

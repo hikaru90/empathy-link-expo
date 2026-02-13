@@ -1,3 +1,4 @@
+import LearnNavigation from '@/components/learn/LearnNavigation';
 import { useAudioPlayer } from 'expo-audio';
 import { Play } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
@@ -388,7 +389,8 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
   const pattern = breathingPatterns[selectedPattern];
 
   return (
-    <View className="flex-grow flex-col">
+    <View className="flex-1 flex-col justify-between">
+      <View className="flex-grow">
       {/* Top Section */}
       <View className="items-center mt-4">
         <Text className="mb-2 text-xl font-bold text-black">{breathingText}</Text>
@@ -564,7 +566,15 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
           </View>
         )}
       </View>
+      </View>
 
+      <LearnNavigation
+        onPrev={onPrev}
+        onNext={onNext ?? (() => {})}
+        showPrev={!!onPrev}
+        nextText="Überspringen"
+        variant="light"
+      />
     </View>
   );
 }

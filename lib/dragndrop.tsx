@@ -138,11 +138,13 @@ export const DragndropEndPoint = ({
   onDrop,
   style,
   zoneId: providedZoneId,
+  testID,
 }: {
   children: ReactNode;
   onDrop?: (data: DragndropData) => void;
   style?: any;
   zoneId?: string;
+  testID?: string;
 }) => {
   const { registerDropZone, unregisterDropZone } = useDragndrop();
   const ref = useRef<any>(null);
@@ -173,7 +175,7 @@ export const DragndropEndPoint = ({
   }, [updateRect]);
 
   return (
-    <View ref={ref} onLayout={updateRect} collapsable={false} style={style}>
+    <View ref={ref} onLayout={updateRect} collapsable={false} style={style} testID={testID}>
       {children}
     </View>
   );

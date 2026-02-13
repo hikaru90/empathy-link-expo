@@ -117,15 +117,20 @@ export default function LearnNeedsDetective({
   )?.response;
 
   useEffect(() => {
-    if (!session || initialized) return;
-    if (existingResponse) {
+    if (!session) return;
+    if (existingResponse && !initialized) {
       setSituationInput(existingResponse.situationInput || existingResponse.thoughtsInput || '');
       setThoughtsInput(existingResponse.thoughtsInput || existingResponse.situationInput || '');
       setNeedsInput(existingResponse.needsInput ?? '');
       setAiReflection(existingResponse.aiReflection ?? '');
       setAiSummary(existingResponse.aiSummary ?? '');
+      setInitialized(true);
+    } else if (session && !initialized) {
+      // Still mark as initialized even if no existing response yet
+      // but we wait a bit for the session to potentially load responses
+      const timer = setTimeout(() => setInitialized(true), 500);
+      return () => clearTimeout(timer);
     }
-    setInitialized(true);
   }, [session, existingResponse, initialized]);
 
   useEffect(() => {
@@ -138,12 +143,15 @@ export default function LearnNeedsDetective({
     if (!situationInput.trim() || isLoading) return;
     setIsLoading(true);
     setErrorMessage('');
+    const trimmedInput = situationInput.trim();
     try {
-      const response = await needsDetectiveAI('reflection', situationInput.trim(), situationInput.trim());
+      const response = await needsDetectiveAI('reflection', trimmedInput, trimmedInput);
       setAiReflection(response);
+      setSituationInput(trimmedInput);
+      setThoughtsInput(trimmedInput);
       onResponse({
-        situationInput: situationInput.trim(),
-        thoughtsInput: situationInput.trim(),
+        situationInput: trimmedInput,
+        thoughtsInput: trimmedInput,
         aiReflection: response,
         needsInput,
         aiSummary,
@@ -159,11 +167,13 @@ export default function LearnNeedsDetective({
   }, [situationInput, needsInput, aiSummary, isLoading, onResponse, gotoNextStep]);
 
   const submitNeeds = useCallback(() => {
+    const trimmedNeeds = needsInput.trim();
+    setNeedsInput(trimmedNeeds);
     onResponse({
       situationInput,
       thoughtsInput,
       aiReflection,
-      needsInput,
+      needsInput: trimmedNeeds,
       aiSummary,
       timestamp: new Date().toISOString(),
     });
@@ -200,7 +210,7 @@ export default function LearnNeedsDetective({
     <View className="flex flex-1 flex-col rounded-lg">
       <View className="flex flex-1 flex-col justify-between rounded-lg">
         {internalStep === 0 && (
-          <>
+          <View nativeID="learn-needs-detective-step-0" className="flex-1">
             <Text className="flex flex-grow items-center justify-center px-0 max-w-xs text-base font-medium text-gray-900">
               {content.question ||
                 'Beschreibe eine Situation, die du erlebt hast und welche Strategie du verwendet hast:'}
@@ -235,11 +245,11 @@ export default function LearnNeedsDetective({
                 }}
               />
             </View>
-          </>
+          </View>
         )}
 
         {internalStep === 1 && aiReflection && (
-          <>
+          <View nativeID="learn-needs-detective-step-1" className="flex-1">
             <View className="flex-grow flex-col justify-between">
               <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
                 <View className="flex-grow items-center justify-center px-0 py-6">
@@ -276,11 +286,11 @@ export default function LearnNeedsDetective({
                 />
               </View>
             </View>
-          </>
+          </View>
         )}
 
         {internalStep === 2 && (
-          <>
+          <View nativeID="learn-needs-detective-step-2" className="flex-1">
             <View className="flex-grow flex-col justify-between">
               <View className="flex-grow items-center justify-center px-0">
                 <Text className="max-w-xs text-center text-base font-medium text-gray-900">
@@ -332,11 +342,11 @@ export default function LearnNeedsDetective({
                 />
               </View>
             </View>
-          </>
+          </View>
         )}
 
         {internalStep === 3 && !aiSummary && (
-          <>
+          <View nativeID="learn-needs-detective-step-3" className="flex-1">
             <View className="flex-grow flex-col justify-between">
               <ScrollView
                 className="flex-grow"
@@ -378,11 +388,11 @@ export default function LearnNeedsDetective({
                 )}
               </ScrollView>
             </View>
-          </>
+          </View>
         )}
 
         {internalStep === 3 && aiSummary && (
-          <>
+          <View nativeID="learn-needs-detective-step-3-summary" className="flex-1">
             <View className="flex-grow flex-col justify-between">
               <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
                 <View className="flex-grow items-center justify-center px-0 py-6">
@@ -428,7 +438,7 @@ export default function LearnNeedsDetective({
                 />
               </View>
             </View>
-          </>
+          </View>
         )}
       </View>
     </View>

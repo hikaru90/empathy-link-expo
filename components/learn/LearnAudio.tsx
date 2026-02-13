@@ -4,17 +4,17 @@
  */
 
 import baseColors from '@/baseColors.config';
+import LearnNavigation from '@/components/learn/LearnNavigation';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { Pause, Play, RotateCcw } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 
-
 // Initialize MarkdownIt with HTML support enabled
 const markdownItInstance = MarkdownIt({ html: true });
 
-interface LearnAudioProps {
+export interface LearnAudioProps {
   content: {
     type: 'audio';
     src: string;
@@ -28,6 +28,8 @@ interface LearnAudioProps {
   color?: string;
   session?: any;
   onResponse?: (response: any) => void;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
 export default function LearnAudio({
@@ -35,6 +37,8 @@ export default function LearnAudio({
   color,
   session,
   onResponse,
+  onPrev,
+  onNext,
 }: LearnAudioProps) {
   // Audio player state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -376,31 +380,31 @@ export default function LearnAudio({
   };
 
   return (
-    <View className="flex-grow flex-col justify-between">
-      {/* Title */}
-      <View className="items-center pb-2">
-        <Text className="text-xl font-bold text-black">Zeit zu Meditieren</Text>
-        {content.content && (
-        <View className="pb-4 text-center flex flex-rwo items-center justify-center">
-          <Markdown
-            markdownit={markdownItInstance}
-            style={{
-              body: {
-                fontSize: 14,
-                color: 'rgba(0, 0, 0, 0.4)',
-                textAlign: 'center',
-              },
-            }}
-          >
-            {content.content}
-          </Markdown>
+    <View className="flex-1 flex-col justify-between">
+      <View className="flex-grow flex items-center justify-center">
+        {/* Title */}
+        <View className="items-center pb-2">
+          <Text className="text-xl font-bold text-black">Zeit zu Meditieren</Text>
+          {content.content && (
+          <View className="pb-4 text-center flex flex-rwo items-center justify-center">
+            <Markdown
+              markdownit={markdownItInstance}
+              style={{
+                body: {
+                  fontSize: 14,
+                  color: 'rgba(0, 0, 0, 0.4)',
+                  textAlign: 'center',
+                },
+              }}
+            >
+              {content.content}
+            </Markdown>
+          </View>
+        )}
         </View>
-      )}
-      </View>
-      
 
-      {/* Custom Audio Player */}
-      {content.controls !== false && (
+        {/* Custom Audio Player */}
+        {content.controls !== false && (
         <View className="flex flex-col items-center justify-between gap-4">
           {/* Play/Pause Button */}
           <View className="relative z-10">
@@ -478,9 +482,16 @@ export default function LearnAudio({
             <Text className="text-sm">{formatTime(Math.max(0, duration - currentTime))}</Text>
           </View>
         </View>
-      )}
+        )}
+      </View>
 
-      <View className=""></View>
+      <LearnNavigation
+        onPrev={onPrev}
+        onNext={onNext ?? (() => {})}
+        showPrev={!!onPrev}
+        nextText="Überspringen"
+        variant="light"
+      />
     </View>
   );
 }

@@ -1,4 +1,4 @@
-# Empathy Link - Project Architecture
+# Empathy-Link - Project Architecture
 
 This document provides an overview of where to find different parts of the codebase across the three main projects.
 

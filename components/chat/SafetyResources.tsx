@@ -70,11 +70,11 @@ export default function SafetyResources({
           </Text>
           <Text style={styles.subheading}>
             {suspended
-              ? 'Empathy Link ist kein Krisendienst und kann professionelle Hilfe nicht ersetzen. Bitte wende dich an eine der folgenden Anlaufstellen.'
+              ? 'Empathy-Link ist kein Krisendienst und kann professionelle Hilfe nicht ersetzen. Bitte wende dich an eine der folgenden Anlaufstellen.'
               : 'Diese Ressourcen können dir in schwierigen Momenten helfen.'}
           </Text>
           <Text style={styles.disclaimer}>
-            Empathy Link ist kein Krisendienst und kein Ersatz für professionelle psychologische oder medizinische Betreuung.
+            Empathy-Link ist kein Krisendienst und kein Ersatz für professionelle psychologische oder medizinische Betreuung.
           </Text>
 
           {resources.length > 0 ? (

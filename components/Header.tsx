@@ -155,7 +155,7 @@ function Header({ className }: HeaderProps) {
   }
 
   async function handleInviteFriend() {
-    const inviteText = `Empathy Link – Mach Empathie  zu deiner Superpower. ${EXPO_APP_URL}`;
+    const inviteText = `Empathy-Link – Mach Empathie  zu deiner Superpower. ${EXPO_APP_URL}`;
     await Clipboard.setStringAsync(inviteText);
     setInviteCopyFeedback(true);
 

@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react-native';
 import React from 'react';
-import { ImageBackground, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { ImageBackground, Text, TouchableOpacity, View } from 'react-native';
 
 const jungleImage = require('@/assets/images/Jungle.jpg');
 const whiteImage = require('@/assets/images/background-white-highres.png');
@@ -45,18 +45,8 @@ export default function LearnNavigation({
       )}
       <TouchableOpacity
         testID="learn-step-next"
-        nativeID="learn-step-next"
-        onPress={Platform.OS === 'web' ? undefined : (disabled ? undefined : onNext)}
-        onClick={
-          Platform.OS === 'web'
-            ? (e: any) => {
-                if (!disabled) {
-                  e?.stopPropagation?.();
-                  onNext();
-                }
-              }
-            : undefined
-        }
+        data-testid="learn-step-next"
+        onPress={disabled ? undefined : onNext}
         disabled={disabled}
         className="flex-grow"
         style={disabled ? { opacity: 0.5 } : undefined}

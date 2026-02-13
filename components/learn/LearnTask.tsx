@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import Markdown, { MarkdownIt } from 'react-native-markdown-display';
 
+import LearnNavigation from '@/components/learn/LearnNavigation';
+
 const markdownItInstance = MarkdownIt({ html: true });
 
-interface LearnTaskProps {
+export interface LearnTaskProps {
   content: {
     type?: 'task';
     content?: string;
@@ -12,9 +14,11 @@ interface LearnTaskProps {
   };
   color: string;
   onComplete?: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
-export default function LearnTask({ content, color, onComplete }: LearnTaskProps) {
+export default function LearnTask({ content, color, onComplete, onPrev, onNext }: LearnTaskProps) {
   const [isCompleted, setIsCompleted] = useState(false);
 
   const duration = content.duration;
@@ -61,6 +65,9 @@ export default function LearnTask({ content, color, onComplete }: LearnTaskProps
           </View>
           <Text className="font-medium text-green-300">Erledigt!</Text>
         </View>
+      )}
+      {onNext && (
+        <LearnNavigation onPrev={onPrev} onNext={onNext} showPrev={!!onPrev} />
       )}
     </View>
   );
