@@ -3,8 +3,9 @@ import SparklePill from '@/components/SparklePill';
 import { useAuth } from '@/hooks/use-auth';
 import { ImageBackground } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { Check, TriangleAlert } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const jungleImage = require('@/assets/images/Jungle.jpg');
 
@@ -209,7 +210,11 @@ export default function SigninScreen() {
   };
 
   return (
-    <View className="flex-1 justify-center px-6" style={{ backgroundColor: baseColors.background }}>
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 40 }}
+      style={{ flex: 1, backgroundColor: baseColors.background }}
+      keyboardShouldPersistTaps="handled"
+    >
       <View className="mb-8">
         <View className="items-center mb-4 flex-row gap-2 justify-center">
           <Text
@@ -240,16 +245,25 @@ export default function SigninScreen() {
       </View>
 
       {isFromSignup && (
-        <View className="mb-4 p-4 rounded-lg" style={{ backgroundColor: '#dbeafe', borderWidth: 1, borderColor: '#60a5fa' }}>
-          <Text className="text-blue-800 font-semibold text-center mb-2">
-            ✓ Registrierung erfolgreich!
-          </Text>
-          <Text className="text-blue-700 text-center text-sm">
+        <View className="mb-4 p-4 rounded-lg" style={{ backgroundColor: baseColors.white + '99', borderWidth: 1, borderColor: 'white' }}>
+          <View className="flex-row items-center justify-start mb-6 gap-2">
+            <Check size={24} color={baseColors.white} style={{ backgroundColor: baseColors.emerald, borderRadius: 999, padding: 6 }} />
+            <Text className="font-semibold" style={{ color: baseColors.forest }}>
+              Registrierung erfolgreich!
+            </Text>
+          </View>
+          <Text className="mb-4">
             Wir haben eine Bestätigungs-E-Mail an deine E-Mail-Adresse gesendet. Bitte überprüfe dein Postfach und klicke auf den Link, um dein Konto zu aktivieren.
           </Text>
-          <Text className="text-blue-600 text-center text-xs mt-2">
-            Tipp: Überprüfe auch deinen Spam-Ordner, falls die E-Mail nicht angekommen ist.
-          </Text>
+
+          <View className="-m-2 mt-2 rounded-md flex gap-2 flex-row" style={{ backgroundColor: baseColors.lemonade + '88', borderWidth: 1, borderColor: baseColors.zest, padding: 6 }}>
+            <View className="flex-row items-center justify-center gap-2 rounded-md mb-2" style={{ width: 24, height: 24, backgroundColor: baseColors.zest, padding: 6 }}>
+              <TriangleAlert size={12} color={baseColors.forest} style={{ flexShrink: 0 }} />
+            </View>
+            <Text className="">
+              Überprüfe auch deinen Spam-Ordner, falls die E-Mail nicht angekommen ist.
+            </Text>
+          </View>
         </View>
       )}
 
@@ -432,6 +446,6 @@ export default function SigninScreen() {
           </TouchableOpacity>
         </Link>
       </View>
-    </View>
+    </ScrollView>
   );
 }
