@@ -17,7 +17,7 @@ const BACKEND_PORT = process.env.EXPO_PUBLIC_BACKEND_PORT
 // Set this to your computer's IP address if you're using Expo tunnel mode
 // To find your IP: ipconfig getifaddr en0 (macOS) or ipconfig (Windows)
 // const MANUAL_IP_OVERRIDE = '192.168.2.52'; // Your current work IP
-const MANUAL_IP_OVERRIDE = '192.168.2.30'; // Your current home IP
+const MANUAL_IP_OVERRIDE = '192.168.178.57'; // Your current home IP
 
 /**
  * Dynamically detect the host machine's IP address from Expo's debugger connection
@@ -125,6 +125,12 @@ export const API_BASE_URL = getBackendURL();
  * Uses EXPO_PUBLIC_BETTER_AUTH_URL from .env if set, otherwise falls back to EXPO_PUBLIC_API_URL
  */
 export function getBetterAuthURL(): string {
+  // For native platforms (iOS/Android), we MUST use the detected IP address (API_BASE_URL)
+  // because 'localhost' from env vars will fail on the device (it refers to the phone itself).
+  if (Platform.OS !== 'web') {
+    return API_BASE_URL;
+  }
+
   // Check for Better Auth URL from .env
   const betterAuthUrl = process.env.EXPO_PUBLIC_BETTER_AUTH_URL;
   if (betterAuthUrl) {
@@ -141,7 +147,7 @@ export function getBetterAuthURL(): string {
     return cleanUrl;
   }
 
-  // Final fallback to API_BASE_URL (for native devices with IP detection)
+  // Final fallback to API_BASE_URL
   return API_BASE_URL;
 }
 

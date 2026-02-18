@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Animated } from 'react-native';
-import { SquareCheck, AlertCircle, Quote } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
 import LoadingIndicator from '@/components/LoadingIndicator';
+import { useRouter } from 'expo-router';
+import { AlertCircle, Quote, SquareCheck } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ChatAnalysisModalProps {
   visible: boolean;
@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+    marginTop: 16,
   },
   quoteIcon: {
     marginBottom: 12,

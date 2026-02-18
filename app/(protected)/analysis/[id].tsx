@@ -1,15 +1,21 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronDown, ChevronLeft, MessageSquare, Play, RefreshCw, Square } from 'lucide-react-native';
+import { ChevronLeft, MessageSquare } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ImageBackground, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
-import LoadingIndicator from '@/components/LoadingIndicator';
+import MessageBubble from '@/components/chat/MessageBubble';
 import Header from '@/components/Header';
+import LoadingIndicator from '@/components/LoadingIndicator';
 import TabBar from '@/components/TabBar';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { useChat } from '@/hooks/use-chat';
 import { getAnalysisById } from '@/lib/api/analysis';
+import type { HistoryEntry } from '@/lib/api/chat';
+
+import { Image } from 'expo-image';
+
+const jungleImage = require('@/assets/images/Jungle.jpg');
 
 interface Analysis {
   id: string;
@@ -27,7 +33,7 @@ interface Analysis {
   empathyAttempt?: boolean;
   feelingVocabulary?: number;
   created: string;
-  chatHistory?: any[];
+  chatHistory?: HistoryEntry[];
 }
 
 export default function AnalysisDetailScreen() {
@@ -43,7 +49,7 @@ export default function AnalysisDetailScreen() {
 
   const handleReopenChat = async () => {
     if (!analysis?.chatId) return;
-    
+
     try {
       await reopenChat(analysis.chatId);
       // Navigate to the chat tab index route
@@ -129,7 +135,7 @@ export default function AnalysisDetailScreen() {
           <Text style={styles.backButtonInlineText}>zurück</Text>
         </TouchableOpacity>
 
-        <View style={styles.contentContainer}>
+        <View style={{ paddingHorizontal: 20, flex: 1, gap: 22 }}>
           <View style={styles.headerRow}>
             <View style={styles.titleContainer}>
               <Text style={styles.title}>{analysis.title}</Text>
@@ -154,33 +160,63 @@ export default function AnalysisDetailScreen() {
             </View>
           )}
 
+
+
           {/* Daily Win */}
           {analysis.dailyWin && (
-            <View style={styles.card}>
+            <View
+              className="rounded-2xl p-5 justify-center overflow-hidden shadow-xl shadow-black/10"
+              style={{ position: 'relative' }}
+            >
+              <Image
+                source={require('@/assets/images/background-lilac-highres.png')}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  zIndex: -1
+                }}
+              />
               <Text style={styles.cardTitle}>Erkenntnis</Text>
               <Text style={styles.cardText}>{analysis.dailyWin}</Text>
             </View>
           )}
 
           {/* Session Insights */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Deine Session Auswertung</Text>
+          <View style={{
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: baseColors.white,
+            padding: 16,
+          }}>
+            <Text style={styles.cardTitle}>Deine Chat Auswertung</Text>
             <View style={styles.insightsContainer}>
               {analysis.emotionalShift && (
-                <View style={styles.insightRow}>
-                  <Text style={styles.insightEmoji}>🌡️</Text>
+                <View style={styles.card}>
+                  <View style={styles.insightRowHeader}>
+                    <View style={{ backgroundColor: baseColors.emerald, ...styles.insightEmojiContainer }}>
+                      <Image source={require('@/assets/images/DNA.png')} style={{ width: 40, height: 40, marginTop: 2 }} />
+                    </View>
+                    <Text style={styles.insightLabel}>Emotionale Entwicklung</Text>
+                  </View>
+                  {/* <Text style={styles.insightEmoji}>🌡️</Text> */}
                   <View style={styles.insightTextContainer}>
-                    <Text style={styles.insightLabel}>Emotionale Entwicklung: </Text>
                     <Text style={styles.insightValue}>{analysis.emotionalShift}.</Text>
                   </View>
                 </View>
               )}
 
               {analysis.iStatementMuscle !== undefined && (
-                <View style={styles.insightRow}>
-                  <Text style={styles.insightEmoji}>💪</Text>
+                <View style={styles.card}>
+                  <View style={styles.insightRowHeader}>
+                    <View style={{ backgroundColor: baseColors.lilac, ...styles.insightEmojiContainer }}>
+                      <Image source={require('@/assets/images/Mirror2.png')} style={{ width: 50, height: 50, marginTop: 10, marginLeft: -2 }} />
+                    </View>
+                    <Text style={styles.insightLabel}>Ich-Aussagen Anteil</Text>
+                  </View>
                   <View style={styles.insightTextContainer}>
-                    <Text style={styles.insightLabel}>Ich-Aussagen Muskel: </Text>
                     <Text style={styles.insightValue}>
                       {analysis.iStatementMuscle}% deiner Sprache fokussierte sich auf deine eigene Erfahrung.
                     </Text>
@@ -189,20 +225,28 @@ export default function AnalysisDetailScreen() {
               )}
 
               {analysis.clarityOfAsk && (
-                <View style={styles.insightRow}>
-                  <Text style={styles.insightEmoji}>🎯</Text>
+                <View style={styles.card}>
+                  <View style={styles.insightRowHeader}>
+                    <View style={{ backgroundColor: baseColors.zest, ...styles.insightEmojiContainer }}>
+                      <Image source={require('@/assets/images/Mouth.png')} style={{ width: 30, height: 30, marginTop: 0, marginLeft: -2 }} />
+                    </View>
+                    <Text style={styles.insightLabel}>Klarheit der Bitte</Text>
+                  </View>
                   <View style={styles.insightTextContainer}>
-                    <Text style={styles.insightLabel}>Klarheit der Bitte: </Text>
                     <Text style={styles.insightValue}>Deine finale Bitte war {analysis.clarityOfAsk}.</Text>
                   </View>
                 </View>
               )}
 
               {analysis.empathyAttempt !== undefined && (
-                <View style={styles.insightRow}>
-                  <Text style={styles.insightEmoji}>❤️</Text>
+                <View style={styles.card}>
+                  <View style={styles.insightRowHeader}>
+                    <View style={{ backgroundColor: baseColors.purple, ...styles.insightEmojiContainer }}>
+                      <Image source={require('@/assets/images/illustration-heartlilac.png')} style={{ width: 28, height: 28, marginTop: 2 }} />
+                    </View>
+                    <Text style={styles.insightLabel}>Empathie Versuch</Text>
+                  </View>
                   <View style={styles.insightTextContainer}>
-                    <Text style={styles.insightLabel}>Empathie Versuch: </Text>
                     <Text style={styles.insightValue}>
                       {analysis.empathyAttempt
                         ? 'Du hast versucht, die Perspektive der anderen Person zu verstehen.'
@@ -213,10 +257,14 @@ export default function AnalysisDetailScreen() {
               )}
 
               {analysis.feelingVocabulary !== undefined && (
-                <View style={styles.insightRow}>
-                  <Text style={styles.insightEmoji}>🧠</Text>
+                <View style={styles.card}>
+                  <View style={styles.insightRowHeader}>
+                    <View style={{ backgroundColor: baseColors.lilac, ...styles.insightEmojiContainer }}>
+                      <Image source={require('@/assets/images/Quote3.png')} style={{ width: 20, height: 20, marginTop: 2 }} />
+                    </View>
+                    <Text style={styles.insightLabel}>Gefühls-Wortschatz</Text>
+                  </View>
                   <View style={styles.insightTextContainer}>
-                    <Text style={styles.insightLabel}>Gefühls-Wortschatz: </Text>
                     <Text style={styles.insightValue}>
                       Du hast {analysis.feelingVocabulary} unterschiedliche Gefühlswörter verwendet.
                     </Text>
@@ -227,71 +275,66 @@ export default function AnalysisDetailScreen() {
           </View>
 
           {/* NVC Components */}
-          <View style={styles.nvcCard}>
-            <Text style={styles.nvcTitle}>Beobachtung</Text>
-            {analysis.observation ? (
-              <Text style={styles.nvcText}>{analysis.observation}</Text>
-            ) : (
-              <Text style={styles.nvcEmptyText}>Keine Beobachtung erfasst</Text>
-            )}
-          </View>
+          <View style={{
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: baseColors.white,
+            padding: 8,
+            gap: 10,
+            flexDirection: 'column',
+            flex: 1,
+          }}>
 
-          <View style={styles.nvcCard}>
-            <Text style={styles.nvcTitle}>Gefühle</Text>
-            {analysis.feelings && analysis.feelings.length > 0 ? (
-              <View style={styles.tagsContainer}>
-                {analysis.feelings.map((feeling, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{feeling}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.nvcEmptyText}>Keine Gefühle erfasst</Text>
-            )}
-          </View>
-
-          <View style={styles.nvcCard}>
-            <Text style={styles.nvcTitle}>Bedürfnisse</Text>
-            {analysis.needs && analysis.needs.length > 0 ? (
-              <View style={styles.tagsContainer}>
-                {analysis.needs.map((need, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{need}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.nvcEmptyText}>Keine Bedürfnisse erfasst</Text>
-            )}
-          </View>
-
-          <View style={styles.nvcCard}>
-            <Text style={styles.nvcTitle}>Bitte</Text>
-            {analysis.request ? (
-              <Text style={styles.nvcText}>{analysis.request}</Text>
-            ) : (
-              <Text style={styles.nvcEmptyText}>Keine Bitte erfasst</Text>
-            )}
-          </View>
-
-          {/* Reopen Chat Button */}
-          {analysis.chatId && (
-            <TouchableOpacity
-              style={styles.reopenButton}
-              onPress={handleReopenChat}
-              disabled={isReopeningChat}
-            >
-              {isReopeningChat ? (
-                <ActivityIndicator size="small" color="#fff" />
+            <View style={styles.nvcCard}>
+              <Text style={styles.nvcTitle}>Beobachtung</Text>
+              {analysis.observation ? (
+                <Text style={styles.nvcText}>{analysis.observation}</Text>
               ) : (
-                <>
-                  <MessageSquare size={16} color="#fff" />
-                  <Text style={styles.reopenButtonText}>Chat fortsetzen</Text>
-                </>
+                <Text style={styles.nvcEmptyText}>Keine Beobachtung erfasst</Text>
               )}
-            </TouchableOpacity>
-          )}
+            </View>
+
+            <View style={styles.nvcCard}>
+              <Text style={styles.nvcTitle}>Gefühle</Text>
+              {analysis.feelings && analysis.feelings.length > 0 ? (
+                <View style={styles.tagsContainer}>
+                  {analysis.feelings.map((feeling, index) => (
+                    <View key={index} style={styles.tag}>
+                      <Text style={styles.tagText}>{feeling}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.nvcEmptyText}>Keine Gefühle erfasst</Text>
+              )}
+            </View>
+
+            <View style={styles.nvcCard}>
+              <Text style={styles.nvcTitle}>Bedürfnisse</Text>
+              {analysis.needs && analysis.needs.length > 0 ? (
+                <View style={styles.tagsContainer}>
+                  {analysis.needs.map((need, index) => (
+                    <View key={index} style={styles.tag}>
+                      <Text style={styles.tagText}>{need}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.nvcEmptyText}>Keine Bedürfnisse erfasst</Text>
+              )}
+            </View>
+
+            <View style={styles.nvcCard}>
+              <Text style={styles.nvcTitle}>Bitte</Text>
+              {analysis.request ? (
+                <Text style={styles.nvcText}>{analysis.request}</Text>
+              ) : (
+                <Text style={styles.nvcEmptyText}>Keine Bitte erfasst</Text>
+              )}
+            </View>
+          </View>
+
+          
 
           {/* Chat History */}
           {analysis.chatHistory && analysis.chatHistory.length > 0 && (
@@ -304,73 +347,11 @@ export default function AnalysisDetailScreen() {
               >
                 {analysis.chatHistory
                   .filter((msg) => !msg.hidden)
-                  .map((message, index) => {
-                    const translatePathName = (path: string): string => {
-                      const translations: Record<string, string> = {
-                        'idle': 'Gesprächsführung',
-                        'self_empathy': 'Selbst-Empathie',
-                        'other_empathy': 'Fremd-Empathie',
-                        'action_planning': 'Handlungsplanung',
-                        'conflict_resolution': 'Konfliktlösung',
-                        'feedback': 'Gespräch beenden',
-                        'memory': 'Erinnerungen',
-                      };
-                      return translations[path] || path;
-                    };
-
-                    const getPathMarkerIcon = () => {
-                      if (!message.pathMarker) return null;
-
-                      switch (message.pathMarker.type) {
-                        case 'path_start': return <Play size={10} color="white" strokeWidth={2} />;
-                        case 'path_switch': return <RefreshCw size={10} color="white" strokeWidth={2} />;
-                        case 'path_end': return <Square size={10} color="white" strokeWidth={2} />;
-                        default: return null;
-                      }
-                    };
-
-                    const getPathMarkerText = () => {
-                      if (!message.pathMarker) return '';
-                      const pathName = translatePathName(message.pathMarker.path);
-
-                      switch (message.pathMarker.type) {
-                        case 'path_start': return `Gestartet: ${pathName}`;
-                        case 'path_switch': return `Gewechselt zu: ${pathName}`;
-                        case 'path_end': return `Abgeschlossen: ${pathName}`;
-                        default: return pathName;
-                      }
-                    };
-
-                    return (
-                      <View key={index}>
-                        {message.pathMarker ? (
-                          <View style={styles.pathMarkerContainer}>
-                            <View style={styles.pathMarker}>
-                              <View style={{ backgroundColor: baseColors.lilac, borderRadius: 12, padding: 2 }}>
-                                {getPathMarkerIcon()}
-                              </View>
-                              <Text style={styles.pathMarkerText}>
-                                {getPathMarkerText()}
-                              </Text>
-                            </View>
-                          </View>
-                        ) : (
-                          <View
-                            style={[
-                              styles.messageBubble,
-                              message.role === 'user' ? styles.userMessage : styles.modelMessage,
-                            ]}
-                          >
-                            <Text style={styles.messageText}>
-                              {message.parts[0]?.text || ''}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    );
-                  })}
+                  .map((message, index) => (
+                    <MessageBubble key={index} message={message} />
+                  ))}
               </ScrollView>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={styles.expandButton}
                 onPress={() => setChatExpanded(!chatExpanded)}
               >
@@ -379,8 +360,48 @@ export default function AnalysisDetailScreen() {
                   color="#fff"
                   style={[styles.expandIcon, chatExpanded && styles.expandIconRotated]}
                 />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               {!chatExpanded && <View style={styles.chatGradient} />}
+            </View>
+          )}
+
+          {/* Reopen Chat Button */}
+          {analysis.chatId && (
+            <View style={{ alignItems: 'center', marginBottom: 24 }}>
+              <TouchableOpacity
+                onPress={handleReopenChat}
+                disabled={isReopeningChat}
+              >
+                <ImageBackground
+                  source={jungleImage}
+                  resizeMode="cover"
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    width: '100%',
+                    height: '100%',
+                    gap: 16,
+                    paddingVertical: 8,
+                    paddingLeft: 16,
+                    paddingRight: 8,
+                    borderRadius: 999,
+                    overflow: 'hidden',
+                    borderWidth: 1,
+                    borderColor: 'rgba(0, 0, 0, 0.1)',
+                  }}
+                >
+                  {isReopeningChat ? (
+                    <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                  ) : (
+                    <>
+                      <Text style={{ fontSize: 14, color: baseColors.offwhite }}>
+                        Chat fortsetzen
+                      </Text>
+                      <MessageSquare size={16} color="#fff" style={{ backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
+                    </>
+                  )}
+                </ImageBackground>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -454,14 +475,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000',
   },
-  contentContainer: {
-    paddingHorizontal: 20,
-  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 24,
     gap: 12,
   },
   titleContainer: {
@@ -477,21 +494,6 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 14,
     color: '#666',
-  },
-  reopenButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: baseColors.pink,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginTop: 32,
-  },
-  reopenButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
   },
   goalCard: {
     flexDirection: 'row',
@@ -520,12 +522,19 @@ const styles = StyleSheet.create({
     color: '#1e40af',
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    marginHorizontal: -8,
+    gap: 12,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    backgroundColor: baseColors.offwhite + '90',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    position: 'relative',
+    zIndex: 10,
     borderWidth: 1,
-    borderColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderColor: 'white',
   },
   cardTitle: {
     fontSize: 16,
@@ -538,14 +547,28 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   insightsContainer: {
-    gap: 16,
+    gap: 10,
+    marginBottom: -6,
   },
   insightRow: {
-    flexDirection: 'row',
-    gap: 12,
+    flexDirection: 'column',
+    gap: 8,
   },
-  insightEmoji: {
-    fontSize: 24,
+  insightRowHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+    marginLeft: -1,
+    marginTop: -1,
+  },
+  insightEmojiContainer: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 9,
+    overflow: 'hidden',
   },
   insightTextContainer: {
     flex: 1,
@@ -553,8 +576,8 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   insightLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#000',
   },
   insightValue: {
@@ -562,10 +585,17 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   nvcCard: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    backgroundColor: baseColors.offwhite + '90',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    position: 'relative',
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: 'white',
   },
   nvcTitle: {
     fontSize: 16,
@@ -621,63 +651,6 @@ const styles = StyleSheet.create({
   chatMessages: {
     gap: 16,
     paddingBottom: 40,
-  },
-  pathMarkerContainer: {
-    alignItems: 'center',
-    marginVertical: 4,
-    marginHorizontal: 16,
-  },
-  pathMarker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingLeft: 8,
-    paddingRight: 12,
-    paddingVertical: 6,
-    backgroundColor: baseColors.black,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  pathMarkerText: {
-    fontSize: 12,
-    color: baseColors.black,
-    fontWeight: '600',
-  },
-  messageBubble: {
-    borderRadius: 12,
-    padding: 12,
-    maxWidth: '80%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  userMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#f5f5f5',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 0,
-    marginLeft: 40,
-  },
-  modelMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderWidth: 1,
-    borderColor: '#fff',
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 12,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-    marginRight: 40,
-  },
-  messageText: {
-    fontSize: 14,
-    color: '#000',
   },
   expandButton: {
     position: 'absolute',

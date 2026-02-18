@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: Platform.OS === 'web' ? 80 : 120, // Account for floating header
-    paddingBottom: 64,
+    paddingBottom: 99,
   },
   contentContainer: {
     paddingHorizontal: 20,
