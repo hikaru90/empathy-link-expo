@@ -47,6 +47,7 @@ export interface LearnMessageInputProps {
   /** Left side buttons (prev, existing response, feelings, needs) */
   leftActions: React.ReactNode;
   onKeyPress?: (e: any) => void;
+  onSelectionChange?: (event: { nativeEvent: { selection: { start: number; end: number } } }) => void;
   onBeforeSubmit?: () => void;
 }
 
@@ -63,6 +64,7 @@ export default function LearnMessageInput({
   selectorContent,
   leftActions,
   onKeyPress,
+  onSelectionChange,
   onBeforeSubmit,
 }: LearnMessageInputProps) {
   const handleSubmit = () => {
@@ -99,6 +101,7 @@ export default function LearnMessageInput({
               returnKeyType="send"
               blurOnSubmit={false}
               onKeyPress={onKeyPress}
+              onSelectionChange={onSelectionChange}
               onSubmitEditing={handleSubmit}
             />
           </View>

@@ -860,7 +860,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: baseColors.black,
     lineHeight: 26,
-    whiteSpace: 'pre-line',
   },
   causeBox: {
     marginTop: 16,

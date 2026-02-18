@@ -53,7 +53,7 @@ export default function AnalysisDetailScreen() {
     try {
       await reopenChat(analysis.chatId);
       // Navigate to the chat tab index route
-      router.replace('/(protected)/(tabs)/');
+      router.replace('/(protected)/(tabs)');
     } catch (err) {
       console.error('Failed to reopen chat:', err);
       setError('Chat konnte nicht wiedereröffnet werden');

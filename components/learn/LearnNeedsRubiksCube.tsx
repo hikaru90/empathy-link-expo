@@ -187,7 +187,7 @@ export default function LearnNeedsRubiksCube({
                 {content.resultsTitle || 'Diese Bedürfnisse stecken dahinter:'}
               </Text>
               <View className="flex-row flex-wrap justify-center gap-2">
-                {displayNeeds.map((need, i) => (
+                {displayNeeds.map((need: string, i: number) => (
                   <View
                     key={i}
                     className="rounded-full border border-white bg-white/80 px-3 py-1.5"

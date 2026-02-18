@@ -191,19 +191,20 @@ export function useAuthProvider(): AuthContextType {
         let errorMessage = 'Anmeldung fehlgeschlagen';
         let statusCode: number | undefined;
         
-        if (typeof result.error === 'string') {
-          errorMessage = result.error;
-        } else if (result.error.message) {
+        const errorObj = result.error as any;
+        if (typeof errorObj === 'string') {
+          errorMessage = errorObj;
+        } else if (errorObj.message) {
           // Standard better-auth error format
-          errorMessage = result.error.message;
-          statusCode = result.error.status;
-        } else if (result.error.error) {
+          errorMessage = errorObj.message;
+          statusCode = errorObj.status;
+        } else if (errorObj.error) {
           // Backend transformed error format nested in better-auth error
-          if (typeof result.error.error === 'string') {
-            errorMessage = result.error.error;
+          if (typeof errorObj.error === 'string') {
+            errorMessage = errorObj.error;
           } else {
-            errorMessage = result.error.error.message || errorMessage;
-            statusCode = result.error.error.status || result.error.status;
+            errorMessage = errorObj.error.message || errorMessage;
+            statusCode = errorObj.error.status || errorObj.status;
           }
         }
         
@@ -303,22 +304,24 @@ export function useAuthProvider(): AuthContextType {
         
         let errorMessage = 'Registrierung fehlgeschlagen';
         
+        const errorObj = result.error as any;
+        
         // Check nested error structure first (backend transformed format)
         // Error structure: { error: { error: { message: "..." } } }
-        if (result.error.error) {
-          if (typeof result.error.error === 'string') {
-            errorMessage = result.error.error;
-          } else if (result.error.error.message) {
+        if (errorObj.error) {
+          if (typeof errorObj.error === 'string') {
+            errorMessage = errorObj.error;
+          } else if (errorObj.error.message) {
             // Nested error object: { error: { error: { message: "..." } } }
-            errorMessage = result.error.error.message;
+            errorMessage = errorObj.error.message;
           }
         } 
         // Check direct message property
-        else if (typeof result.error === 'string') {
-          errorMessage = result.error;
-        } else if (result.error.message) {
+        else if (typeof errorObj === 'string') {
+          errorMessage = errorObj;
+        } else if (errorObj.message) {
           // Standard better-auth error format
-          errorMessage = result.error.message;
+          errorMessage = errorObj.message;
         }
         
         if (__DEV__) {

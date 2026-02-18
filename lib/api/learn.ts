@@ -77,15 +77,17 @@ async function authenticatedFetch<T = any>(url: string, options: RequestInit = {
     if (result.error) {
       // Handle different error formats
       let errorMessage: string;
-      if (typeof result.error === 'string') {
-        errorMessage = result.error;
-      } else if (result.error.message) {
-        errorMessage = result.error.message;
-      } else if (result.error.status && result.error.statusText) {
+      const error = result.error as any;
+
+      if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else if (error.status && error.statusText) {
         // HTTP error with status code
-        errorMessage = `${result.error.statusText} (${result.error.status})`;
+        errorMessage = `${error.statusText} (${error.status})`;
       } else {
-        errorMessage = JSON.stringify(result.error);
+        errorMessage = JSON.stringify(error);
       }
       throw new Error(errorMessage);
     }

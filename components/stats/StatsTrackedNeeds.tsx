@@ -324,8 +324,9 @@ export default function StatsTrackedNeeds() {
             timestamps[tn.id] = lastUpdated[tn.id] || null;
             
             // Also check if the preserved fill level was updated today
-            if (lastUpdated[tn.id] && fillLevels[tn.id] !== null && fillLevels[tn.id] > 0) {
-              const lastUpdatedDate = new Date(lastUpdated[tn.id]);
+            const lastUpdatedTime = lastUpdated[tn.id];
+            if (lastUpdatedTime && fillLevels[tn.id] !== null && fillLevels[tn.id] !== undefined && (fillLevels[tn.id] as number) > 0) {
+              const lastUpdatedDate = new Date(lastUpdatedTime);
               lastUpdatedDate.setHours(0, 0, 0, 0);
               if (lastUpdatedDate.getTime() === today.getTime()) {
                 hasTodayData = true;
@@ -1566,8 +1567,8 @@ export default function StatsTrackedNeeds() {
                     const isDone = strategyDone[strategyKey] || false;
                     const isDeleted = strategyDeleted[strategyKey] || false;
 
-                    // Skip deleted strategies in 'alle' and 'erledigt' filters (they're shown in 'entfernt')
-                    if (isDeleted && strategyFilter !== 'entfernt') return;
+                    // Skip deleted strategies (they're shown in 'entfernt' tab, which is handled above)
+                    if (isDeleted) return;
 
                     // Filter strategies based on selected tab
                     if (strategyFilter === 'alle') {

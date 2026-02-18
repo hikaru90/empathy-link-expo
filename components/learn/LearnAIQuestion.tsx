@@ -75,7 +75,13 @@ export default function LearnAIQuestion({
   const [needSelectorVisible, setNeedSelectorVisible] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const textInputRef = useRef<TextInput>(null);
+    const [selection, setSelection] = useState({ start: 0, end: 0 });
+    const textInputRef = useRef<TextInput>(null);
+
+    // Track selection changes
+    const onSelectionChange = (event: { nativeEvent: { selection: { start: number; end: number } } }) => {
+      setSelection(event.nativeEvent.selection);
+    };
 
   const internalStep = totalSteps[currentStep]?.internalStep ?? 0;
 
@@ -227,8 +233,8 @@ export default function LearnAIQuestion({
 
     // Get the current selection/cursor position
     const currentText = userAnswer;
-    const selectionStart = textInputRef.current.selectionStart || currentText.length;
-    const selectionEnd = textInputRef.current.selectionEnd || currentText.length;
+    const selectionStart = selection.start || currentText.length;
+    const selectionEnd = selection.end || currentText.length;
 
     // Determine what text to insert
     let textToInsert = text;
@@ -379,6 +385,7 @@ export default function LearnAIQuestion({
         <LearnMessageInput
           value={userAnswer}
           onChangeText={setUserAnswer}
+          onSelectionChange={onSelectionChange}
           onSubmit={submitAnswer}
           placeholder={content.placeholder || 'Schreibe deine Antwort hier...'}
           disabled={isLoading}

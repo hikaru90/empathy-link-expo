@@ -15,9 +15,10 @@ async function authenticatedFetch<T = any>(url: string, options: RequestInit = {
 
   if (result.error) {
     // Handle different error formats
+    const error = result.error as any;
     const errorMessage =
-      result.error.message ||
-      (typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
+      error.message ||
+      (typeof error === 'string' ? error : JSON.stringify(error));
     throw new Error(errorMessage);
   }
 
