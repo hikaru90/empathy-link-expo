@@ -20,6 +20,13 @@ export function getBackendURLOverride(): string | null {
 /** Resolved backend URL after resolveBackendURL(); set by setResolvedBackendURL(). */
 let _resolvedUrl: string | null = null;
 
+// When EXPO_PUBLIC_BACKEND is set, resolve at module load so root layout never needs setState (setState in root triggers Android rebundle).
+const _overrideAtLoad = getBackendURLOverride();
+if (_overrideAtLoad) {
+  _resolvedUrl = _overrideAtLoad;
+  if (__DEV__) console.log('[Config] setResolvedBackendURL at module load, url:', _resolvedUrl);
+}
+
 export function setResolvedBackendURL(url: string): void {
   if (__DEV__) console.log('[Config] setResolvedBackendURL called, url:', url);
   _resolvedUrl = url;

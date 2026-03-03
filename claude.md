@@ -39,3 +39,12 @@ When testing the app through the browser MCP server, use the login credentials f
 
 **Verbose code is the worst.** It creates technical debt, hurts maintainability, and complicates everything. Prefer lean, minimal solutions over elaborate ones.
 
+## Endless Metro rebundle (Android dev)
+
+If the app unmounts and Metro keeps rebundling after the first paint (e.g. after Index → Redirect to login):
+
+- **Auth is not in root layout** — it lives in `app/(app)/_layout.tsx` to avoid Expo #24248-style loops.
+- **Root layout** only does backend resolution and renders `<Stack><Stack.Screen name="(app)" /></Stack>` (no auth, no dynamic `require()`).
+- **Watchman** is disabled in `metro.config.js` (`resolver.useWatchman = false`). Watchman is an optional file watcher; Metro works without it (may re-crawl on server start).
+- If the loop persists, check Expo / React Native dev client options for anything that triggers a full reload when the first route is a redirect (e.g. "reload on launch").
+

@@ -39,6 +39,7 @@ export default function IndexScreen() {
   }
 
   if (!user) {
+    // If endless Metro rebundle follows, check: Expo/RN dev client "reload on launch", or native requesting full reload on first route.
     if (__DEV__) console.log('[Index] returning Redirect to /(auth)/login');
     return <Redirect href="/(auth)/login" />;
   }
