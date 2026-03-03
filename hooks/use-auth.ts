@@ -1,89 +1,73 @@
+import { AuthContext, type AuthContextType } from '@/lib/auth-context';
 import { authClient } from '@/lib/auth';
-import { BETTER_AUTH_URL, EXPO_APP_URL } from '@/lib/config';
+import { EXPO_APP_URL, getBetterAuthURL } from '@/lib/config';
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { createContext, useContext, useEffect, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import { useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  emailVerified?: boolean;
-}
+export { AuthContext, useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/lib/auth-context';
 
-interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ needsVerification: boolean }>;
-  signUp: (email: string, password: string, name?: string) => Promise<{ needsVerification: boolean }>;
-  signInWithSocial: (provider: 'google' | 'apple') => Promise<void>;
-  signOut: () => Promise<void>;
-  resendVerificationEmail: (email: string) => Promise<void>;
-  refresh: () => Promise<void>;
-}
+type User = NonNullable<AuthContextType['user']>;
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const isAndroidDev = __DEV__ && Platform.OS === 'android';
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
-}
-
-export function useAuthProvider(): AuthContextType {
+/**
+ * Auth provider state and handlers with NO useEffect. Used on Android dev so no effect runs
+ * (running any effect on first paint triggers endless rebundle). Session is not restored on load.
+ */
+export function useAuthProviderStateOnly(initialLoading: boolean = false): AuthContextType {
+  if (__DEV__) console.log('[Auth] useAuthProviderStateOnly render (no effect), initialLoading=', initialLoading);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadUser();
-  }, []);
+  const [isLoading, setIsLoading] = useState(initialLoading);
 
   const loadUser = async () => {
+    if (__DEV__) console.log('[Auth] loadUser started (backend may be unreachable - we will not reload)');
     try {
-      console.log('[Auth Debug] loadUser started');
-      console.log('Platform:', Platform.OS);
-      console.log('Better Auth URL:', BETTER_AUTH_URL);
-      
-      // Debug: Check SecureStore directly for Better Auth session keys
+      if (__DEV__) console.log('[Auth] step 1 - Platform:', Platform.OS, 'Better Auth URL:', getBetterAuthURL());
+
+      // Debug: Check SecureStore for Better Auth session keys (static import - no dynamic import to avoid rebundle)
       if (Platform.OS !== 'web') {
         try {
-          const SecureStore = await import('expo-secure-store');
           const sessionKey = 'empathy-link.session';
           const tokenKey = 'empathy-link.token';
-          
           const storedSession = await SecureStore.getItemAsync(sessionKey);
           const storedToken = await SecureStore.getItemAsync(tokenKey);
-          
-          console.log('[Auth Debug] SecureStore - Session exists:', !!storedSession, 'Token exists:', !!storedToken);
+          if (__DEV__) console.log('[Auth] step 2 - SecureStore session:', !!storedSession, 'token:', !!storedToken);
         } catch (secureStoreError) {
-          console.error('[Auth Debug] SecureStore check error:', secureStoreError);
+          if (__DEV__) console.warn('[Auth] step 2 - SecureStore check failed:', (secureStoreError as Error)?.message);
         }
+      } else {
+        if (__DEV__) console.log('[Auth] step 2 - skip SecureStore (web)');
       }
 
-      console.log('[Auth Debug] Calling authClient.getSession()...');
-      const session = await authClient.getSession();
-      console.log('[Auth Debug] getSession result:', {
-        success: !!session?.data,
-        user: session?.data?.user?.email,
-        verified: session?.data?.user?.emailVerified,
-      });
+      if (__DEV__) console.log('[Auth] step 3 - calling authClient.getSession()...');
+      let session: Awaited<ReturnType<typeof authClient.getSession>>;
+      try {
+        session = await authClient.getSession();
+      } catch (getSessionError: unknown) {
+        if (__DEV__) console.warn('[Auth] step 3 - getSession() threw (backend unreachable?):', (getSessionError as Error)?.message);
+        setUser(null);
+        return;
+      }
+
+      if (__DEV__) console.log('[Auth] step 4 - getSession result:', { hasData: !!session?.data, email: session?.data?.user?.email });
 
       if (session?.data?.user) {
         setUser(session.data.user as User);
-        console.log('[Auth Debug] User state updated in context');
+        if (__DEV__) console.log('[Auth] step 5 - user set in context');
       } else {
-        console.log('[Auth Debug] No user found in session, clearing state');
         setUser(null);
+        if (__DEV__) console.log('[Auth] step 5 - no user, cleared state');
       }
-    } catch (error: any) {
-      console.error('Error loading user:', error);
-      console.error('Error message:', error?.message);
-      // Don't throw - just log and continue
-      // This allows the app to work even if the backend is unreachable
+    } catch (error: unknown) {
+      if (__DEV__) console.error('[Auth] loadUser caught (handling, no reload):', (error as Error)?.message ?? error);
+      setUser(null);
     } finally {
       setIsLoading(false);
+      if (__DEV__) console.log('[Auth] loadUser finished, isLoading=false');
     }
   };
 
@@ -376,7 +360,11 @@ export function useAuthProvider(): AuthContextType {
   };
 
   const signInWithSocial = async (provider: 'google' | 'apple') => {
-    const callbackURL = `${EXPO_APP_URL}/`;
+    // On native, use Linking.createURL so Expo Go gets exp://... and dev builds get empathy-link://
+    const callbackURL =
+      Platform.OS === 'web'
+        ? `${EXPO_APP_URL}/`
+        : Linking.createURL('/');
     const result = await authClient.signIn.social({
       provider,
       callbackURL,
@@ -393,8 +381,10 @@ export function useAuthProvider(): AuthContextType {
   };
 
   const resendVerificationEmail = async (email: string) => {
-    // Use Expo app URL for the callback so users are redirected to the app, not the backend
-    const callbackURL = `${EXPO_APP_URL}/verify-email-token`;
+    const callbackURL =
+      Platform.OS === 'web'
+        ? `${EXPO_APP_URL}/verify-email-token`
+        : Linking.createURL('/verify-email-token');
     const { data, error } = await authClient.sendVerificationEmail({
       email,
       callbackURL,
@@ -423,6 +413,18 @@ export function useAuthProvider(): AuthContextType {
     resendVerificationEmail,
     refresh: loadUser,
   };
+}
+
+/** Full auth provider with loadUser effect. Do not use on Android dev (use useAuthProviderStateOnly in layout instead). */
+export function useAuthProvider(): AuthContextType {
+  const auth = useAuthProviderStateOnly(!isAndroidDev);
+  useEffect(() => {
+    if (__DEV__) console.log('[Auth] useAuthProvider effect RUN (isAndroidDev=%s)', isAndroidDev);
+    if (isAndroidDev) return;
+    if (__DEV__) console.log('[Auth] useAuthProvider effect calling refresh()');
+    auth.refresh();
+  }, []);
+  return auth;
 }
 
 export function useAuthGuard(redirectTo: string = '/(auth)/login') {

@@ -88,6 +88,7 @@ export default function SigninScreen() {
     initialParam === '1';
 
   useEffect(() => {
+    if (__DEV__ && Platform.OS === 'android') return; // No-op on Android dev to avoid rebundle trigger
     if (__DEV__) {
       console.log('=== Login Page Debug ===');
       console.log('Full URL:', Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.href : 'N/A');
@@ -105,8 +106,9 @@ export default function SigninScreen() {
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
 
-  // Debug: Log when component renders
+  // Debug: Log when component renders (no-op on Android dev to avoid rebundle trigger)
   React.useEffect(() => {
+    if (__DEV__ && Platform.OS === 'android') return;
     if (__DEV__) {
       console.log('SigninScreen rendered');
       console.log('useLocalSearchParams:', params);
@@ -118,7 +120,7 @@ export default function SigninScreen() {
     }
   }, [params, queryParams, initialParam, fromSignupParam, isFromSignup]);
 
-  // Set email from query params if available (from signup redirect)
+  // Set email from query params if available (from signup redirect). Still run on Android dev (no side effect that triggers reload).
   React.useEffect(() => {
     const emailFromParams = queryParams.email || (Array.isArray(params.email) ? params.email[0] : params.email);
     if (emailFromParams && !email) {
@@ -347,7 +349,7 @@ export default function SigninScreen() {
         >
           <ImageBackground
             source={jungleImage}
-            resizeMode="cover"
+            contentFit="cover"
             style={{
               flex: 1,
               height: '100%',

@@ -6,6 +6,7 @@ import baseColors from '@/baseColors.config';
 import ChatAnalysisModal from '@/components/chat/ChatAnalysisModal';
 import MessageBubble from '@/components/chat/MessageBubble';
 import MessageInput from '@/components/chat/MessageInput';
+import TokenLimitModal from '@/components/TokenLimitModal';
 import SafetyResources from '@/components/chat/SafetyResources';
 import TypingIndicator from '@/components/chat/TypingIndicator';
 import LoadingIndicator from '@/components/LoadingIndicator';
@@ -14,6 +15,7 @@ import { useAuthGuard } from '@/hooks/use-auth';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import type { HistoryEntry } from '@/lib/api/chat';
 import { ChatProvider, useChat } from '@/hooks/use-chat';
+import { getTokenLimitMessage } from '@/lib/tokenLimit';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check } from 'lucide-react-native';
 import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
@@ -32,6 +34,7 @@ function ChatContent() {
     crisisResources,
     loadCrisisResources,
     requestAppeal,
+    clearError,
   } = useChat();
   const flatListRef = useRef<FlatList>(null);
   const [feelingSelectorVisible, setFeelingSelectorVisible] = useState(false);
@@ -193,17 +196,22 @@ function ChatContent() {
   }
 
   if (error) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Fehler: {error}</Text>
-        <Text style={styles.errorHint}>Bitte stelle sicher, dass der Backend-Server läuft.</Text>
-      </View>
-    );
+    const isTokenLimit = error === getTokenLimitMessage();
+    if (!isTokenLimit) {
+      return (
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>Fehler: {error}</Text>
+          <Text style={styles.errorHint}>Bitte stelle sicher, dass der Backend-Server läuft.</Text>
+        </View>
+      );
+    }
   }
 
   const gradientSize = 500;
 
   return (
+    <>
+      <TokenLimitModal visible={error === getTokenLimitMessage()} onClose={clearError} />
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -331,6 +339,7 @@ function ChatContent() {
         onClose={handleCloseModal}
       />
     </KeyboardAvoidingView>
+    </>
   );
 }
 

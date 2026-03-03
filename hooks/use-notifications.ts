@@ -1,21 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { registerAndSyncPushToken } from '@/lib/notifications';
 import { unregisterPushToken } from '@/lib/api/notifications';
+import { NotificationContext, type NotificationContextType } from '@/lib/notification-context';
+import { registerAndSyncPushToken } from '@/lib/notifications';
 
 const NOTIFICATIONS_ENABLED_KEY = 'notifications_enabled';
 const NOTIFICATIONS_TOKEN_KEY = 'notifications_token';
 
-interface NotificationContextType {
-  enabled: boolean;
-  isSupported: boolean;
-  isLoading: boolean;
-  setEnabled: (value: boolean) => Promise<void>;
-}
-
-export const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+export { NotificationContext };
+export type { NotificationContextType };
 
 export function useNotifications() {
   const ctx = useContext(NotificationContext);

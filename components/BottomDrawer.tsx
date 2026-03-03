@@ -186,6 +186,37 @@ export default function BottomDrawer({
   const drawerContentHeightStyle = tall && !isMeasuring ? { height: heightAnim } : undefined;
   const drawerOnLayout = tall && isMeasuring ? handleContentLayout : undefined;
 
+  const drawerInner = (
+    <>
+      <View
+        style={styles.drawerHandle}
+        {...(tall ? panResponder.panHandlers : {})}
+      />
+      {(title != null || subtitle != null || headerRight != null) && (
+        <View style={styles.drawerHeader}>
+          <View style={styles.drawerHeaderLeft}>
+            {title != null && <Text style={styles.drawerTitle}>{title}</Text>}
+            {subtitle != null && (
+              <Text style={styles.drawerSubtitle}>{subtitle}</Text>
+            )}
+          </View>
+          {headerRight != null && (
+            <View style={styles.drawerHeaderRight}>{headerRight}</View>
+          )}
+        </View>
+      )}
+      <View
+        style={[
+          styles.drawerBody,
+          tall && !isMeasuring && styles.drawerBodyTall,
+          contentStyle,
+        ]}
+      >
+        {children}
+      </View>
+    </>
+  );
+
   return (
     <Modal
       visible={visible}
@@ -201,40 +232,19 @@ export default function BottomDrawer({
           onPress={onClose}
         />
         <Animated.View
-          style={[
-            styles.drawerContent,
-            tall ? [{ maxHeight: expandedHeight }, drawerContentHeightStyle] : null,
-            { transform: [{ translateY: slideAnim }] },
-          ]}
-          onLayout={drawerOnLayout}
+          style={[styles.drawerContent, { transform: [{ translateY: slideAnim }] }]}
           onStartShouldSetResponder={() => true}
         >
-          <View
-            style={styles.drawerHandle}
-            {...(tall ? panResponder.panHandlers : {})}
-          />
-          {(title != null || subtitle != null || headerRight != null) && (
-            <View style={styles.drawerHeader}>
-              <View style={styles.drawerHeaderLeft}>
-                {title != null && <Text style={styles.drawerTitle}>{title}</Text>}
-                {subtitle != null && (
-                  <Text style={styles.drawerSubtitle}>{subtitle}</Text>
-                )}
-              </View>
-              {headerRight != null && (
-                <View style={styles.drawerHeaderRight}>{headerRight}</View>
-              )}
-            </View>
+          {tall ? (
+            <Animated.View
+              style={[{ maxHeight: expandedHeight }, drawerContentHeightStyle]}
+              onLayout={drawerOnLayout}
+            >
+              {drawerInner}
+            </Animated.View>
+          ) : (
+            drawerInner
           )}
-          <View
-            style={[
-              styles.drawerBody,
-              tall && !isMeasuring && styles.drawerBodyTall,
-              contentStyle,
-            ]}
-          >
-            {children}
-          </View>
         </Animated.View>
       </View>
     </Modal>

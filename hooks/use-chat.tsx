@@ -6,6 +6,7 @@ import type { HistoryEntry, PathState } from '@/lib/api/chat';
 import * as chatApi from '@/lib/api/chat';
 import type { CrisisResource } from '@/lib/api/safety';
 import * as safetyApi from '@/lib/api/safety';
+import { getTokenLimitMessage, isTokenLimitError } from '@/lib/tokenLimit';
 import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 
 export interface AnalysisResult {
@@ -220,6 +221,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       if (code === 'safety_suspended') {
         await refetchSafetyStatus();
         setSafetyStatus((prev) => (prev ? { ...prev, suspended: true } : { showResources: true, suspended: true }));
+      } else if (isTokenLimitError(err)) {
+        setError(getTokenLimitMessage());
       } else {
         const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
         setError(errorMessage);
@@ -284,7 +287,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         newChatId: analysisResult.initiatedChat?.chatId || chatId,
       };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to finish chat';
+      const errorMessage = isTokenLimitError(err) ? getTokenLimitMessage() : (err instanceof Error ? err.message : 'Failed to finish chat');
       setError(errorMessage);
       console.error('Failed to finish chat:', err);
       throw err;

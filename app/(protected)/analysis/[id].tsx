@@ -374,7 +374,7 @@ export default function AnalysisDetailScreen() {
               >
                 <ImageBackground
                   source={jungleImage}
-                  resizeMode="cover"
+                  contentFit="cover"
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',

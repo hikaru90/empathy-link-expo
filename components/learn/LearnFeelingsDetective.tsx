@@ -14,6 +14,8 @@ import LoadingIndicator from '@/components/LoadingIndicator';
 import { useBottomDrawerSlot } from '@/hooks/use-bottom-drawer-slot';
 import { getFeelings, type Feeling } from '@/lib/api/chat';
 import { feelingsDetectiveAI, type LearningSession } from '@/lib/api/learn';
+import { isTokenLimitError } from '@/lib/tokenLimit';
+import TokenLimitModal from '@/components/TokenLimitModal';
 import { SquareMousePointer } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -69,6 +71,7 @@ export default function LearnFeelingsDetective({
   const [aiSummary, setAiSummary] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showTokenLimitModal, setShowTokenLimitModal] = useState(false);
   const [responseTime, setResponseTime] = useState<number | null>(null);
   const [feelings, setFeelings] = useState<Feeling[]>([]);
   const [feelingsLoading, setFeelingsLoading] = useState(true);
@@ -268,7 +271,12 @@ export default function LearnFeelingsDetective({
       gotoNextStep?.();
     } catch (error) {
       console.error('Error getting AI response:', error);
-      setErrorMessage("Sorry, I couldn't process your answer right now. Please try again.");
+      if (isTokenLimitError(error)) {
+        setShowTokenLimitModal(true);
+        setErrorMessage('');
+      } else {
+        setErrorMessage("Sorry, I couldn't process your answer right now. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -390,7 +398,12 @@ export default function LearnFeelingsDetective({
       // Don't call gotoNextStep here - the summary should be displayed in the same step
     } catch (error) {
       console.error('Error generating summary:', error);
-      setErrorMessage("Sorry, I couldn't generate the summary right now. Please try again.");
+      if (isTokenLimitError(error)) {
+        setShowTokenLimitModal(true);
+        setErrorMessage('');
+      } else {
+        setErrorMessage("Sorry, I couldn't generate the summary right now. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -399,6 +412,8 @@ export default function LearnFeelingsDetective({
   // Step 0: Situation Input
   if (internalStep === 0) {
     return (
+      <>
+        <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
       <View nativeID="learn-feelings-detective-step-0" className="flex-grow flex-col justify-between">
         {/* Question */}
         <View className="flex-grow items-center justify-center px-4">
@@ -438,6 +453,7 @@ export default function LearnFeelingsDetective({
           />
         </View>
       </View>
+      </>
     );
   }
 
@@ -445,6 +461,8 @@ export default function LearnFeelingsDetective({
   if (internalStep === 1) {
     if (aiReflection) {
       return (
+        <>
+          <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
         <View nativeID="learn-feelings-detective-step-1" className="flex-grow flex-col justify-between">
           <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
             <View className="flex-grow items-center justify-center px-4 py-6">
@@ -485,10 +503,13 @@ export default function LearnFeelingsDetective({
             />
           </View>
         </View>
+        </>
       );
     } else {
       // AI Reflection is missing - show error/retry UI
       return (
+        <>
+          <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
         <View nativeID="learn-feelings-detective-step-1" className="flex-grow flex-col items-center justify-center p-8" style={{ gap: 16 }}>
           <View className="rounded-lg border border-yellow-200 bg-yellow-50 p-6">
             <Text className="mb-2 text-center text-lg font-semibold text-yellow-900">
@@ -528,6 +549,7 @@ export default function LearnFeelingsDetective({
             </View>
           </View>
         </View>
+        </>
       );
     }
   }
@@ -535,6 +557,8 @@ export default function LearnFeelingsDetective({
   // Step 2: Thoughts Input
   if (internalStep === 2) {
     return (
+      <>
+        <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
       <View nativeID="learn-feelings-detective-step-2" className="flex-grow flex-col justify-between">
         {/* Question */}
         <View className="flex-grow items-center justify-center px-4">
@@ -571,6 +595,7 @@ export default function LearnFeelingsDetective({
           />
         </View>
       </View>
+      </>
     );
   }
 
@@ -585,6 +610,8 @@ export default function LearnFeelingsDetective({
     }
 
     return (
+      <>
+        <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
       <View nativeID="learn-feelings-detective-step-3" className="flex-grow flex-col justify-between">
         <View className="flex-grow flex-col justify-center space-y-4">
           <View className="flex-grow items-center justify-center px-4">
@@ -669,6 +696,7 @@ export default function LearnFeelingsDetective({
           />
         </View>
       </View>
+      </>
     );
   }
 
@@ -676,6 +704,8 @@ export default function LearnFeelingsDetective({
   if (internalStep === 4) {
     if (!aiSummary) {
       return (
+        <>
+          <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
         <View nativeID="learn-feelings-detective-step-4" className="flex-grow flex-col justify-between">
           <ScrollView
             className="flex-grow"
@@ -712,9 +742,12 @@ export default function LearnFeelingsDetective({
             )}
           </ScrollView>
         </View>
+        </>
       );
     } else {
       return (
+        <>
+          <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
         <View nativeID="learn-feelings-detective-step-4" className="flex-grow flex-col justify-between">
           <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
             <View className="flex-grow items-center justify-center px-4 py-6">
@@ -753,12 +786,15 @@ export default function LearnFeelingsDetective({
             />
           </View>
         </View>
+        </>
       );
     }
   }
 
   // Fallback: Unknown step
   return (
+    <>
+      <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
     <View nativeID="learn-feelings-detective-step-unknown" className="flex-grow flex-col items-center justify-center p-8" style={{ gap: 16 }}>
       <View className="rounded-lg border border-yellow-200 bg-yellow-50 p-6">
         <Text className="mb-2 text-center text-lg font-semibold text-yellow-900">
@@ -780,6 +816,7 @@ export default function LearnFeelingsDetective({
         ) : null}
       </View>
     </View>
+    </>
   );
 }
 

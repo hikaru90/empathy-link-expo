@@ -2,19 +2,21 @@ import { expoClient } from "@better-auth/expo/client";
 import { createAuthClient } from "better-auth/react";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
-import { BETTER_AUTH_URL } from "./config";
+import { getBetterAuthURL } from "./config";
 
-// Debug: Log SecureStore availability
-if (__DEV__) {
-  SecureStore.isAvailableAsync().then((isAvailable) => {
-    console.log(`[Auth] SecureStore available on ${Platform.OS}:`, isAvailable);
-  }).catch((err) => {
-    console.error('[Auth] Error checking SecureStore availability:', err);
-  });
+// Debug: Log SecureStore availability. Skip on Android dev - async .then() callback was suspected of triggering rebundle.
+if (__DEV__ && Platform.OS !== 'android') {
+  SecureStore.isAvailableAsync()
+    .then((isAvailable) => {
+      console.log(`[Auth] SecureStore available on ${Platform.OS}:`, isAvailable);
+    })
+    .catch((err: unknown) => {
+      console.error('[Auth] Error checking SecureStore availability:', err instanceof Error ? err.message : err);
+    });
 }
 
 export const authClient = createAuthClient({
-    baseURL: BETTER_AUTH_URL, // Base URL of your Better Auth backend.
+    baseURL: getBetterAuthURL(), // Resolved at load time (after setResolvedBackendURL in root layout).
     plugins: [
         expoClient({
             scheme: "empathy-link",

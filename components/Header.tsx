@@ -428,7 +428,7 @@ function Header({ className }: HeaderProps) {
           >
             <ImageBackground
               source={jungleImage}
-              resizeMode="cover"
+              contentFit="cover"
               style={{
                 width: '100%',
                 flexDirection: 'row',

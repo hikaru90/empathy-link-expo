@@ -10,7 +10,7 @@ import {
   fetchLearnTopics
 } from './learn-helpers';
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND ?? 'http://localhost:4000';
 
 /** Clear learn sessions via DELETE. Must use page.request so auth cookies are sent. */
 async function clearLearnSessions(page: Page): Promise<void> {

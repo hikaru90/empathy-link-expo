@@ -15,6 +15,8 @@ import LearnMessageInput, {
 import LearnNavigation from '@/components/learn/LearnNavigation';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { askAIQuestion, type LearningSession } from '@/lib/api/learn';
+import { getTokenLimitMessage, isTokenLimitError } from '@/lib/tokenLimit';
+import TokenLimitModal from '@/components/TokenLimitModal';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Keyboard,
@@ -69,6 +71,7 @@ export default function LearnAIQuestion({
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [responseTime, setResponseTime] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showTokenLimitModal, setShowTokenLimitModal] = useState(false);
   const [feelings, setFeelings] = useState<Feeling[]>([]);
   const [needs, setNeeds] = useState<Need[]>([]);
   const [feelingSelectorVisible, setFeelingSelectorVisible] = useState(false);
@@ -212,9 +215,12 @@ export default function LearnAIQuestion({
       gotoNextStep?.();
     } catch (error) {
       console.error('Error getting AI response:', error);
-      setErrorMessage(
-        "Sorry, I couldn't process your answer right now. Please try again."
-      );
+      if (isTokenLimitError(error)) {
+        setShowTokenLimitModal(true);
+        setErrorMessage('');
+      } else {
+        setErrorMessage("Sorry, I couldn't process your answer right now. Please try again.");
+      }
       setHasSubmitted(false);
     } finally {
       setIsLoading(false);
@@ -289,6 +295,8 @@ export default function LearnAIQuestion({
 
     // ALWAYS show response view when internalStep === 1
     return (
+      <>
+        <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
       <View className="flex-grow flex-col justify-between">
         {responseText ? (
           <ScrollView
@@ -345,6 +353,7 @@ export default function LearnAIQuestion({
           />
         </View>
       </View>
+      </>
     );
   }
 
@@ -354,6 +363,8 @@ export default function LearnAIQuestion({
     console.log('✅ RENDERING INPUT FORM');
     const selectorVisible = feelingSelectorVisible || needSelectorVisible;
     return (
+      <>
+        <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
       <View className="flex flex-1 flex-col justify-between" style={{ minHeight: 0, overflow: 'hidden' }}>
         {/* Question - scrollable so content stays visible when selector is expanded */}
         <ScrollView
@@ -453,6 +464,7 @@ export default function LearnAIQuestion({
           }}
         />
       </View>
+      </>
     );
   }
 

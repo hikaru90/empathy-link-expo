@@ -2,7 +2,7 @@
   "expo": {
     "name": "empathy-link-expo",
     "slug": "empathy-link-expo",
-    "version": "1.0.0",
+    "version": "0.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "empathy-link",
@@ -10,9 +10,10 @@
     "androidNavigationBar": {
       "backgroundColor": "#f2f2f2"
     },
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hikaru90.empathylinkexpo"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +23,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.hikaru90.empathylinkexpo"
     },
     "web": {
       "output": "single",
@@ -30,6 +32,12 @@
       "bundler": "metro"
     },
     "plugins": [
+      [
+        "expo-dev-client",
+        {
+          "launchMode": "launcher"
+        }
+      ],
       "expo-router",
       "expo-notifications",
       [
@@ -44,11 +52,21 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-asset",
+      "expo-localization",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "64d6cf7a-8b6a-4795-8c83-de32fe3ee17b"
+      }
     }
   }
 }

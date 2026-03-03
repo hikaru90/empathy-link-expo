@@ -1,20 +1,19 @@
 import jungleImage from '@/assets/images/Jungle.jpg';
 import baseColors from '@/baseColors.config';
+import BackgroundImageButton from '@/components/BackgroundImageButton';
 import LearnStepIndicator from '@/components/learn/LearnStepIndicator';
 import { ONBOARDING_STEPS } from '@/constants/onboarding';
 import { getChatSettings, updateChatSettings } from '@/lib/api/chat';
 import { CoveredByYourGrace_400Regular } from '@expo-google-fonts/covered-by-your-grace/400Regular';
 import { useFonts } from '@expo-google-fonts/covered-by-your-grace/useFonts';
 import { Image } from 'expo-image';
-import { ArrowLeft, ArrowRight } from 'lucide-react-native';
+import { ArrowLeft, RedoDot } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
-  ImageBackground,
   Modal,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -107,10 +106,14 @@ export default function OnboardingWelcome({ visible, onComplete }: OnboardingWel
   } else {
     return (
       <Modal visible={visible} animationType="fade" transparent>
-        <View style={styles.overlay}>
-          <View style={{
-            flex: 1,
-          }}>
+        <View style={{
+          flex: 1,
+          backgroundColor: baseColors.background,
+          paddingHorizontal: 24,
+          paddingTop: Platform.OS === 'ios' ? 60 : Platform.OS === 'android' ? 44 : 24,
+          paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+        }}>
+          <View style={{ flex: 1 }}>
             <View className="flex justify-center items-center">
               <View style={{ maxWidth: 140, width: '100%' }}>
                 <LearnStepIndicator
@@ -152,7 +155,6 @@ export default function OnboardingWelcome({ visible, onComplete }: OnboardingWel
                     maxWidth: 200,
                     maxHeight: 200,
                     aspectRatio: 1,
-                    resizeMode: 'contain',
                   }}
                   contentFit="contain"
                 />
@@ -169,34 +171,31 @@ export default function OnboardingWelcome({ visible, onComplete }: OnboardingWel
                   {step.component === 'userGoal' ? (
                     <UserGoal selectedGoal={selectedGoal} onSelectGoal={setSelectedGoal} />
                   ) : (
-                    <Text style={styles.content}>{step.content}</Text>
+                    <Text style={{ fontSize: 16, lineHeight: 24, color: baseColors.black, opacity: 0.9 }}>{step.content}</Text>
                   )}
                 </ScrollView>
 
-              {/* Buttons */}
-              <View style={styles.buttons}>
-                <View style={styles.buttonRow}>
-                  <TouchableOpacity style={styles.skipButton} onPress={skipOnboarding}>
-                    <Text style={styles.skipText}>Überspringen</Text>
-                    <ArrowRight size={16} color="#000" style={{ backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
-                  </TouchableOpacity>
-                  {!isFirstStep && (
-                    <TouchableOpacity style={styles.backButton} onPress={prevStep}>
-                      <ArrowLeft size={16} color={baseColors.black} />
+                {/* Buttons */}
+                <View style={{ paddingTop: 16 }}>
+                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 8, paddingLeft: 16, paddingRight: 8, borderRadius: 999, backgroundColor: baseColors.white, flexShrink: 0 }} onPress={skipOnboarding}>
+                      <Text style={{ fontSize: 14, fontWeight: '500', color: baseColors.black }}>Überspringen</Text>
+
+                      <RedoDot size={16} color="#000" style={{ backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
                     </TouchableOpacity>
-                  )}
-                  <TouchableOpacity style={styles.nextButton} onPress={nextStep}>
-                    <ImageBackground
+                    {!isFirstStep && (
+                      <TouchableOpacity style={{ width: 32, height: 32, borderRadius: 22, backgroundColor: baseColors.white, alignItems: 'center', justifyContent: 'center' }} onPress={prevStep}>
+                        <ArrowLeft size={16} color={baseColors.black} />
+                      </TouchableOpacity>
+                    )}
+                    <BackgroundImageButton
+                      onPress={nextStep}
+                      label={isLastStep ? "Los geht's" : 'Weiter'}
                       source={jungleImage}
-                      resizeMode="cover"
-                      style={styles.nextButtonBackground}
-                    >
-                      <Text style={styles.nextText}>{isLastStep ? "Los geht's" : 'Weiter'}</Text>
-                      <ArrowRight size={16} color="#fff" style={{ backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
-                    </ImageBackground>
-                  </TouchableOpacity>
+                      style={{ flex: 1 }}
+                    />
+                  </View>
                 </View>
-              </View>
               </View>
             </Animated.View>
           </View>
@@ -205,75 +204,3 @@ export default function OnboardingWelcome({ visible, onComplete }: OnboardingWel
     );
   }
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: baseColors.background,
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 60 : Platform.OS === 'android' ? 44 : 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-  },
-  content: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: baseColors.black,
-    opacity: 0.9,
-  },
-  buttons: {
-    paddingTop: 16,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-  },
-  skipText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: baseColors.black,
-  },
-  backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 22,
-    backgroundColor: baseColors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nextButton: {
-    flex: 1,
-    overflow: 'hidden',
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  skipButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    paddingLeft: 16,
-    paddingRight: 8,
-    borderRadius: 999,
-    backgroundColor: baseColors.white,
-    flexShrink: 0,
-  },
-  nextButtonBackground: {
-    width: '100%',
-    height: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    gap: 16,
-    paddingLeft: 16,
-    paddingRight: 8,
-  },
-  nextText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: baseColors.offwhite,
-  },
-});

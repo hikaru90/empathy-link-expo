@@ -9,7 +9,7 @@ import baseColors from '@/baseColors.config';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import StatsSuperCommunicator, { type SuperCommunicatorData } from '@/components/stats/StatsSuperCommunicator';
 import { useAuthGuard } from '@/hooks/use-auth';
-import { useNotifications } from '@/hooks/use-notifications';
+import { useNotifications } from '@/lib/notification-context';
 import { getAllAnalyses } from '@/lib/api/analysis';
 import { getSuperCommunicatorData } from '@/lib/api/stats';
 import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-calculator';

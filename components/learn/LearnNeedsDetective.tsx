@@ -8,6 +8,8 @@ import LearnMessageInput, {
 import { getNeeds, type Need } from '@/lib/api/chat';
 import type { LearningSession } from '@/lib/api/learn';
 import { needsDetectiveAI } from '@/lib/api/learn';
+import { isTokenLimitError } from '@/lib/tokenLimit';
+import TokenLimitModal from '@/components/TokenLimitModal';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -55,6 +57,7 @@ export default function LearnNeedsDetective({
   const [aiSummary, setAiSummary] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showTokenLimitModal, setShowTokenLimitModal] = useState(false);
   const [needs, setNeeds] = useState<Need[]>([]);
   const [needSelectorVisible, setNeedSelectorVisible] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -160,7 +163,12 @@ export default function LearnNeedsDetective({
       gotoNextStep?.();
     } catch (e) {
       console.error(e);
-      setErrorMessage('Die Reflexion konnte gerade nicht geladen werden. Bitte versuche es erneut.');
+      if (isTokenLimitError(e)) {
+        setShowTokenLimitModal(true);
+        setErrorMessage('');
+      } else {
+        setErrorMessage('Die Reflexion konnte gerade nicht geladen werden. Bitte versuche es erneut.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -200,13 +208,20 @@ export default function LearnNeedsDetective({
       });
     } catch (e) {
       console.error(e);
-      setErrorMessage('Die Zusammenfassung konnte gerade nicht erstellt werden.');
+      if (isTokenLimitError(e)) {
+        setShowTokenLimitModal(true);
+        setErrorMessage('');
+      } else {
+        setErrorMessage('Die Zusammenfassung konnte gerade nicht erstellt werden.');
+      }
     } finally {
       setIsLoading(false);
     }
   }, [situationInput, thoughtsInput, needsInput, aiReflection, isLoading, onResponse]);
 
   return (
+    <>
+      <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
     <View className="flex flex-1 flex-col rounded-lg">
       <View className="flex flex-1 flex-col justify-between rounded-lg">
         {internalStep === 0 && (
@@ -442,5 +457,6 @@ export default function LearnNeedsDetective({
         )}
       </View>
     </View>
+    </>
   );
 }
