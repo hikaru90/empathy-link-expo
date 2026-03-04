@@ -11,19 +11,12 @@ import { getAllAnalyses, updateAnalysis, type AnalysisDetail } from './analysis'
 
 const API_BASE = API_BASE_URL;
 
-/**
- * Helper to make authenticated fetch requests using Better Auth
- */
 async function authenticatedFetch<T = any>(url: string, options: RequestInit = {}): Promise<T> {
   const result = await authClient.$fetch(url, options);
-
   if ((result as any).error) {
-    const errorMessage = typeof (result as any).error === 'string'
-      ? (result as any).error
-      : (result as any).error?.message || 'Unknown error';
-    throw new Error(errorMessage);
+    const err = (result as any).error;
+    throw new Error(typeof err === 'string' ? err : err?.message || 'Unknown error');
   }
-
   return (result as any).data as T;
 }
 

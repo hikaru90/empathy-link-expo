@@ -4,7 +4,7 @@
  * Uses authClient directly; no session restore on load.
  */
 import { AuthContext, type AuthContextType } from '@/lib/auth-context';
-import { authClient } from '@/lib/auth';
+import { authClient, clearBearerToken } from '@/lib/auth';
 import { EXPO_APP_URL } from '@/lib/config';
 import * as Linking from 'expo-linking';
 import React, { useState } from 'react';
@@ -41,6 +41,7 @@ export function AndroidDevAuthProvider({ children }: { children: React.ReactNode
 
   const signOut: AuthContextType['signOut'] = async () => {
     await authClient.signOut();
+    clearBearerToken();
     setUser(null);
   };
 

@@ -20,15 +20,12 @@ export function getBackendURLOverride(): string | null {
 /** Resolved backend URL after resolveBackendURL(); set by setResolvedBackendURL(). */
 let _resolvedUrl: string | null = null;
 
-// When EXPO_PUBLIC_BACKEND is set, resolve at module load so root layout never needs setState (setState in root triggers Android rebundle).
 const _overrideAtLoad = getBackendURLOverride();
 if (_overrideAtLoad) {
   _resolvedUrl = _overrideAtLoad;
-  if (__DEV__) console.log('[Config] setResolvedBackendURL at module load, url:', _resolvedUrl);
 }
 
 export function setResolvedBackendURL(url: string): void {
-  if (__DEV__) console.log('[Config] setResolvedBackendURL called, url:', url);
   _resolvedUrl = url;
 }
 
@@ -71,26 +68,16 @@ export async function isReachable(
  * Never throws when override is set. When only local is available, returns local URL even if unreachable.
  */
 export async function resolveBackendURL(): Promise<string> {
-  if (__DEV__) console.log('[Config] resolveBackendURL() started');
   try {
     const url = getBackendURLOverride();
-    if (url) {
-      if (__DEV__) console.log('[Config] resolveBackendURL() using EXPO_PUBLIC_BACKEND:', url);
-      if (__DEV__) console.log('[Config] resolveBackendURL() about to return (sync)');
-      return url;
-    }
+    if (url) return url;
     const L = getLocalBackendURL();
     if (L) {
       const reachable = await isReachable(L);
-      if (__DEV__) console.log('[Config] resolveBackendURL() local reachability:', reachable, 'URL:', L);
-      if (reachable) return L;
-      if (__DEV__) console.warn('[Config] resolveBackendURL() local unreachable, using anyway:', L);
-      return L;
+      return reachable ? L : L;
     }
-    if (__DEV__) console.error('[Config] resolveBackendURL() no override and no local URL');
     throw new Error('Set EXPO_PUBLIC_BACKEND in .env');
   } catch (e) {
-    if (__DEV__) console.error('[Config] resolveBackendURL() threw:', e);
     throw e;
   }
 }
@@ -149,16 +136,3 @@ export function getExpoAppURL(): string {
 }
 
 export const EXPO_APP_URL = getExpoAppURL();
-
-if (__DEV__) {
-  try {
-    const url = getBackendURL();
-    console.log(
-      '[Config] module load - URL in use:',
-      url,
-      _resolvedUrl ? '(from setResolvedBackendURL)' : '(from EXPO_PUBLIC_BACKEND or local fallback; layout effect will set _resolvedUrl next)'
-    );
-  } catch (e) {
-    console.log('[Config] module load - getBackendURL threw:', (e as Error)?.message);
-  }
-}

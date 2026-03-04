@@ -5,6 +5,15 @@
 import { API_BASE_URL } from '../config';
 import { authClient } from '../auth';
 
+async function authenticatedFetch<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
+  const result = await authClient.$fetch(url, options);
+  if ((result as { error?: unknown }).error) {
+    const err = (result as { error: { message?: string } }).error;
+    throw new Error(err?.message || 'Request failed');
+  }
+  return (result as { data: T }).data;
+}
+
 export type FeedbackType = 'bug' | 'improvement' | 'other';
 
 export interface SubmitFeedbackInput {
@@ -35,15 +44,6 @@ export interface FeedbackItem {
   type: string;
   title: string;
   created: string;
-}
-
-async function authenticatedFetch<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
-  const result = await authClient.$fetch(url, options);
-  if ((result as { error?: unknown }).error) {
-    const err = (result as { error: { message?: string } }).error;
-    throw new Error(err?.message || 'Request failed');
-  }
-  return (result as { data: T }).data;
 }
 
 export async function submitFeedback(input: SubmitFeedbackInput): Promise<SubmitFeedbackResponse> {

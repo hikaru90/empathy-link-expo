@@ -9,7 +9,7 @@ import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, Send } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Keyboard, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Keyboard, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import GroupedFeelingsSelector from './GroupedFeelingsSelector';
 import GroupedNeedsSelector from './GroupedNeedsSelector';
 
@@ -159,7 +159,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
 
   return (
     <View style={{
-      
+
       position: 'absolute',
       bottom: bottomOffset,
       left: 16,
@@ -180,13 +180,20 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
         end={{ x: 0, y: 1 }}
       />
       <View
-        className="shadow-lg shadow-black/10 flex flex-col gap-2 rounded-3xl"
         style={{
           zIndex: 1000,
           backgroundColor: baseColors.background,
+          boxShadow: '0 10px 10px 0 rgba(0, 0, 0, 0.06)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          borderWidth: 0,
+          borderColor: baseColors.background,
+          borderRadius: 24,
+          overflow: 'hidden',
         }}
       >
-        <View className="border-t border-white rounded-3xl" style={{ backgroundColor: baseColors.offwhite + 'ee' }}>
+        <View className="relative z-10 border-t border-white" style={{ backgroundColor: baseColors.offwhite + 'ee', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 1, borderTopColor: 'rgba(0, 0, 0, 1)' }}>
           {/* Feelings Selector */}
           {feelingSelectorVisible && (
             <View className="max-h-40 border-b border-black/5">
@@ -203,7 +210,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
 
           {/* Needs Selector */}
           {needSelectorVisible && (
-            <View className="max-h-40 border-b border-black/5">
+            <View style={{ maxHeight: 160, borderBottomWidth: 1, borderBottomColor: 'rgba(0, 0, 0, 0.05)' }}>
               <GroupedNeedsSelector
                 needs={needs}
                 onNeedPress={addText}
@@ -213,7 +220,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
           )}
 
           {/* Input Row */}
-          <View className="p-1 flex-row items-end gap-3 overflow-hidden">
+          <View style={{ backgroundColor: 'red', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
             <TextInput
               ref={textInputRef}
               value={text}
@@ -221,9 +228,20 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
               onKeyPress={handleKeyPress}
               placeholder="Schreibe eine Nachricht..."
               placeholderTextColor="rgba(0, 0, 0, 0.5)"
-              className="flex-1 rounded-[18px] p-3 text-base"
-              style={styles.textInput}
+              style={{
+                fontSize: 16, // text-base
+                lineHeight: 20, // Approximate line height for calculation
+                borderWidth: 0,
+                borderRadius: 18,
+                backgroundColor: 'green',
+                width: '100%',
+                textAlignVertical: 'top',
+                textAlign: 'left',
+                minHeight: 66,
+                padding: 12,
+              }}
               multiline
+              numberOfLines={3}
               scrollEnabled={true}
               maxLength={2000}
               editable={!isSending}
@@ -296,13 +314,4 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  textInput: {
-    minHeight: 44, // min-h-11 equivalent
-    maxHeight: 104, // 4 lines: (4 * 20px line height) + (12px top padding) + (12px bottom padding) = 104px
-    fontSize: 16, // text-base
-    lineHeight: 20, // Approximate line height for calculation
-  },
-});
 

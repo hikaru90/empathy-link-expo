@@ -7,28 +7,17 @@ import { authClient } from '../auth';
 
 const API_BASE = API_BASE_URL;
 
-/**
- * Helper to make authenticated fetch requests using Better Auth
- * Better Auth's $fetch returns {data, error} format, not a Response object
- */
 async function authenticatedFetch<T = any>(url: string, options: RequestInit = {}): Promise<T> {
   const result = await authClient.$fetch(url, options);
-
-  // Better Auth returns {data: ..., error: ...}
   if (result.error) {
     const err = result.error as any;
-    const errorMessage = typeof err === 'string'
-      ? err
-      : err?.message || JSON.stringify(err);
-
+    const errorMessage = typeof err === 'string' ? err : err?.message || JSON.stringify(err);
     const error = new Error(errorMessage);
     if (err?.status) (error as Error & { status: number }).status = err.status;
     if (err?.statusCode) (error as Error & { statusCode: number }).statusCode = err.statusCode;
     if (err?.error) (error as Error & { code?: string }).code = err.error;
-
     throw error;
   }
-
   return result.data as T;
 }
 

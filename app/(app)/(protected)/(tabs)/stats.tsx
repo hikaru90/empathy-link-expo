@@ -55,23 +55,13 @@ export default function StatsScreen() {
       setLoadingData(true);
       console.log('Fetching stats with auth...');
 
-      // Use Better Auth's $fetch which returns {data, error} format
-      const result = await authClient.$fetch(`${API_BASE_URL}/api/stats`, {
-        method: 'GET',
-      });
-
-      console.log('Stats response received:', result);
-
-      // Better Auth returns {data: ..., error: ...}
+      const result = await authClient.$fetch(`${API_BASE_URL}/api/stats`, { method: 'GET' });
       if ((result as any).error) {
-        console.error('Stats error:', (result as any).error);
-        const errorMessage = typeof (result as any).error === 'string'
-          ? (result as any).error
-          : (result as any).error?.message || 'Unknown error';
-        throw new Error(errorMessage);
+        const err = (result as any).error;
+        throw new Error(typeof err === 'string' ? err : err?.message || 'Unknown error');
       }
-
       const data = (result as any).data as StatsData;
+      console.log('Stats response received:', data);
       console.log('Stats data received:', {
         analysesCount: data.analyses?.length || 0,
         memoriesCount: data.memories?.length || 0,

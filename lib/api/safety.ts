@@ -7,6 +7,17 @@ import { authClient } from '../auth';
 
 const API_BASE = API_BASE_URL;
 
+async function authenticatedFetch<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
+  const result = await authClient.$fetch(url, options);
+  if ((result as { error?: unknown }).error) {
+    const err = (result as { error: { message?: string; error?: string } }).error;
+    const error = new Error(err?.message || 'Request failed');
+    (error as Error & { code?: string }).code = err?.error;
+    throw error;
+  }
+  return (result as { data: T }).data;
+}
+
 export interface SafetyStatus {
   level: number;
   suspended: boolean;
@@ -19,18 +30,6 @@ export interface CrisisResource {
   description: string;
   phone?: string;
   url?: string;
-}
-
-async function authenticatedFetch<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
-  const result = await authClient.$fetch(url, options);
-
-  if ((result as { error?: unknown }).error) {
-    const err = (result as { error: { message?: string; error?: string } }).error;
-    const error = new Error(err?.message || 'Request failed');
-    (error as Error & { code?: string }).code = err?.error;
-    throw error;
-  }
-  return (result as { data: T }).data;
 }
 
 /**
@@ -47,16 +46,10 @@ export async function getSafetyStatus(): Promise<SafetyStatus> {
  * Get crisis resources (public, for flagged users). Pass lang for localized resources.
  */
 export async function getCrisisResources(lang = 'de'): Promise<{ resources: CrisisResource[] }> {
-  const result = await authClient.$fetch(
+  return authenticatedFetch<{ resources: CrisisResource[] }>(
     `${API_BASE}/api/safety/resources?lang=${lang.slice(0, 2)}`,
     { method: 'GET' }
   );
-
-  if ((result as { error?: unknown }).error) {
-    const err = (result as { error: { message?: string } }).error;
-    throw new Error(err?.message || 'Failed to fetch resources');
-  }
-  return (result as { data: { resources: CrisisResource[] } }).data;
 }
 
 /**

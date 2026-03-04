@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "paraglide": "paraglide-js compile --project ./project.inlang --outdir ./src/paraglide",
-    "postinstall": "npm run paraglide",
+    "postinstall": "npm run paraglide && patch-package",
     "start": "expo start",
     "start --tunnel": "expo start --tunnel",
     "android": "expo run:android",
@@ -15,11 +15,6 @@
     "test:e2e": "playwright test --headed",
     "build:android:local": "eas build --platform android --local",
     "prebuild": "expo prebuild",
-    "run:ios": "expo run:ios",
-    "run:android": "expo run:android",
-    "run:android:local": "REACT_NATIVE_PACKAGER_HOSTNAME=10.0.2.2 expo run:android",
-    "run:android:usb": "adb -d reverse tcp:8081 tcp:8081 && REACT_NATIVE_PACKAGER_HOSTNAME=127.0.0.1 expo run:android",
-    "start:tailscale": "node scripts/start-tailscale.js",
     "tailscale:funnel": "/Applications/Tailscale.app/Contents/MacOS/Tailscale funnel 4000"
   },
   "dependencies": {
@@ -73,6 +68,7 @@
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
+    "patch-package": "^8.0.0",
     "@inlang/paraglide-js": "^2.3.2",
     "@playwright/test": "^1.58.2",
     "@types/react": "~19.2.10",

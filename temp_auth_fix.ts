@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { betterAuth } from "better-auth";
+import { bearer } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -13,6 +14,7 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  plugins: [bearer()],
   emailAndPassword: {
     enabled: true,
   },

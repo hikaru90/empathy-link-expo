@@ -10,11 +10,7 @@ import { authClient } from '../auth';
 
 async function authenticatedFetch<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
   const result = await authClient.$fetch(url, options);
-
-  if (result.error) {
-    throw new Error(result.error.message || String(result.error));
-  }
-
+  if (result.error) throw new Error((result.error as any)?.message || String(result.error));
   return result.data as T;
 }
 

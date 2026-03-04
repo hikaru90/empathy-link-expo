@@ -14,10 +14,8 @@ import React from 'react';
 import { View } from 'react-native';
 
 function AndroidDevStack() {
-  if (__DEV__) console.log('[Layout] AndroidDevStack render');
   const { user } = useAuth();
   const isLoggedIn = !!user;
-  if (__DEV__) console.log('[Layout] AndroidDevStack useAuth done, isLoggedIn=', isLoggedIn);
   return (
     <ThemeProvider value={DefaultTheme}>
       <Stack
@@ -41,7 +39,6 @@ function AndroidDevStack() {
 }
 
 export default function LayoutContentAndroidDev() {
-  if (__DEV__) console.log('[Layout] LayoutContentAndroidDev mount');
   return (
     <AndroidDevAuthProvider>
       <NotificationProviderNoop>

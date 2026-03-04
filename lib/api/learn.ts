@@ -67,43 +67,14 @@ export interface LearningSession {
   updated: string;
 }
 
-/**
- * Helper to make authenticated fetch requests using Better Auth
- */
 async function authenticatedFetch<T = any>(url: string, options: RequestInit = {}): Promise<T> {
-  try {
-    const result = await authClient.$fetch(url, options);
-
-    if (result.error) {
-      // Handle different error formats
-      let errorMessage: string;
-      const error = result.error as any;
-
-      if (typeof error === 'string') {
-        errorMessage = error;
-      } else if (error.message) {
-        errorMessage = error.message;
-      } else if (error.status && error.statusText) {
-        // HTTP error with status code
-        errorMessage = `${error.statusText} (${error.status})`;
-      } else {
-        errorMessage = JSON.stringify(error);
-      }
-      throw new Error(errorMessage);
-    }
-
-    return result.data as T;
-  } catch (error: any) {
-    // Re-throw if it's already an Error with a message
-    if (error instanceof Error) {
-      throw error;
-    }
-    // Handle other error formats
-    if (error?.status && error?.statusText) {
-      throw new Error(`${error.statusText} (${error.status})`);
-    }
-    throw new Error(error?.message || String(error));
+  const result = await authClient.$fetch(url, options);
+  if (result.error) {
+    const error = result.error as any;
+    const msg = typeof error === 'string' ? error : error?.message || (error?.status && error?.statusText ? `${error.statusText} (${error.status})` : null) || JSON.stringify(error);
+    throw new Error(msg);
   }
+  return result.data as T;
 }
 
 /** In-memory cache for content (categories, topics, topic by slug) to cut repeated calls. */

@@ -70,13 +70,10 @@ function Header({ className }: HeaderProps) {
   async function fetchUnreadCount() {
     try {
       const result = await authClient.$fetch(`${API_BASE_URL}/api/messages?unread=true&perPage=1`);
-
-      // Better Auth returns {data: ..., error: ...}
       if (result.error) {
         console.error('Failed to fetch unread count:', result.error);
         return;
       }
-
       setUnreadCount((result.data as { unreadCount: number }).unreadCount);
     } catch (error) {
       console.error('Failed to fetch unread count:', error);

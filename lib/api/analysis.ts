@@ -7,17 +7,12 @@ import { authClient } from '../auth';
 
 const API_BASE = API_BASE_URL;
 
-/**
- * Helper to make authenticated fetch requests using Better Auth
- */
 async function authenticatedFetch<T = any>(url: string, options: RequestInit = {}): Promise<T> {
   const result = await authClient.$fetch(url, options);
-
   if (result.error) {
     const error = result.error as any;
     throw new Error(error.message || (typeof error === 'string' ? error : 'Unknown error'));
   }
-
   return result.data as T;
 }
 

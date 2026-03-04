@@ -1,27 +1,65 @@
 import { expoClient } from "@better-auth/expo/client";
 import { createAuthClient } from "better-auth/react";
-import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
 import { getBetterAuthURL } from "./config";
 
-// Debug: Log SecureStore availability. Skip on Android dev - async .then() callback was suspected of triggering rebundle.
-if (__DEV__ && Platform.OS !== 'android') {
-  SecureStore.isAvailableAsync()
-    .then((isAvailable) => {
-      console.log(`[Auth] SecureStore available on ${Platform.OS}:`, isAvailable);
-    })
-    .catch((err: unknown) => {
-      console.error('[Auth] Error checking SecureStore availability:', err instanceof Error ? err.message : err);
-    });
+/** Expo plugin expects sync getItem/setItem. SecureStore on web does not provide setValueWithKeySync. */
+const authStorage =
+  Platform.OS === "web" && typeof localStorage !== "undefined"
+    ? {
+        getItem: (key: string) => localStorage.getItem(key) ?? "",
+        setItem: (key: string, value: string) => {
+          localStorage.setItem(key, value);
+        },
+      }
+    : SecureStore;
+
+const STORAGE_PREFIX = "empathy-link";
+
+/**
+ * Web only: Bearer token for cross-origin API calls (cookie cannot be set from JS).
+ * Backend must: (1) add bearer() plugin to betterAuth, (2) use auth.api.getSession({ headers }) on protected routes.
+ */
+const BEARER_TOKEN_KEY = `${STORAGE_PREFIX}_bearer_token`;
+
+function getBearerToken(): string {
+  if (Platform.OS !== "web" || typeof localStorage === "undefined") return "";
+  return localStorage.getItem(BEARER_TOKEN_KEY) ?? "";
 }
 
+function setBearerToken(token: string) {
+  if (Platform.OS !== "web" || typeof localStorage === "undefined") return;
+  if (token) localStorage.setItem(BEARER_TOKEN_KEY, token);
+  else localStorage.removeItem(BEARER_TOKEN_KEY);
+}
+
+/** Call on sign-out so next session doesn't reuse an old token. */
+export function clearBearerToken() {
+  setBearerToken("");
+}
+
+const isWeb = Platform.OS === "web";
+
 export const authClient = createAuthClient({
-    baseURL: getBetterAuthURL(), // Resolved at load time (after setResolvedBackendURL in root layout).
-    plugins: [
-        expoClient({
-            scheme: "empathy-link",
-            storagePrefix: "empathy-link",
-            storage: SecureStore,
-        })
-    ]
+  baseURL: getBetterAuthURL(),
+  plugins: [
+    expoClient({
+      scheme: "empathy-link",
+      storagePrefix: STORAGE_PREFIX,
+      storage: authStorage,
+    }),
+  ],
+  // Web cross-origin: browser cannot send cookies. Use Bearer token; backend must add bearer() plugin.
+  ...(isWeb
+    ? {
+        fetchOptions: {
+          auth: { type: "Bearer" as const, token: getBearerToken },
+          onSuccess: (ctx: { response: Response }) => {
+            const token = ctx.response?.headers?.get("set-auth-token");
+            if (token) setBearerToken(token);
+          },
+        },
+      }
+    : {}),
 });

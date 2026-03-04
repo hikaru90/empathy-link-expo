@@ -101,14 +101,8 @@ export default function ConflictResolutionsScreen() {
       setLoading(true);
       
       // Load stats to get all analyses with requests
-      const statsResult = await authClient.$fetch(`${API_BASE_URL}/api/stats`, {
-        method: 'GET',
-      });
-
-      if ((statsResult as any).error) {
-        throw new Error('Failed to load stats');
-      }
-
+      const statsResult = await authClient.$fetch(`${API_BASE_URL}/api/stats`, { method: 'GET' });
+      if ((statsResult as any).error) throw new Error('Failed to load stats');
       const statsData = (statsResult as any).data as StatsData;
       
       // Filter and map requests

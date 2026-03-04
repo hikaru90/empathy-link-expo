@@ -3,8 +3,6 @@ import React from 'react';
 import { Platform, StatusBar, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import InvertedBorder from '@/assets/icons/InvertedBorder';
-import baseColors from '@/baseColors.config';
 import Header from '@/components/Header';
 import TabBar from '@/components/TabBar';
 
@@ -43,9 +41,6 @@ export default function TabLayout() {
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1001 }}>
         <Header />
       </View>
-      {/* Add your custom view here */}
-      <InvertedBorder color={baseColors.white} style={{ zIndex: 1002, position: 'absolute', bottom: Platform.OS === 'android' ? 70 + tabBarBottom : 70, left: 0, height: 28, width: 28 }} />
-      <InvertedBorder color={baseColors.white} style={{ zIndex: 1002, position: 'absolute', bottom: Platform.OS === 'android' ? 70 + tabBarBottom : 70, right: 0, height: 28, width: 28, transform: [{ scaleX: -1 }] }} />
       <Tabs
           tabBar={() => <TabBar />}
           screenOptions={{

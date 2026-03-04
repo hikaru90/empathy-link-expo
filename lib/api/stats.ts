@@ -7,21 +7,12 @@ import { authClient } from '../auth';
 
 const API_BASE = API_BASE_URL;
 
-/**
- * Helper to make authenticated fetch requests using Better Auth
- */
 async function authenticatedFetch<T = any>(url: string, options: RequestInit = {}): Promise<T> {
   const result = await authClient.$fetch(url, options);
-
   if (result.error) {
-    // Handle different error formats
     const error = result.error as any;
-    const errorMessage =
-      error.message ||
-      (typeof error === 'string' ? error : JSON.stringify(error));
-    throw new Error(errorMessage);
+    throw new Error(error.message || (typeof error === 'string' ? error : JSON.stringify(error)));
   }
-
   return result.data as T;
 }
 
@@ -292,23 +283,10 @@ export async function getNeedTimeseries(
 export async function getTrackedNeedStrategies(trackedNeedId: string): Promise<{ strategies: string[]; doneStrategies: number[] }> {
   try {
     const url = `${API_BASE}/api/stats/tracked-needs/${trackedNeedId}/strategies`;
-    const result = await authClient.$fetch(url, {
+    const data = await authenticatedFetch<{ strategies: string[]; doneStrategies?: number[] }>(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
-
-    if (result.error) {
-      // If it's a 404, return empty arrays
-      const errorMessage = result.error?.message || String(result.error || '');
-      if (errorMessage.includes('404') || errorMessage.toLowerCase().includes('not found')) {
-        return { strategies: [], doneStrategies: [] };
-      }
-      throw new Error(errorMessage);
-    }
-
-    const data = result.data as { strategies: string[]; doneStrategies?: number[] };
     return {
       strategies: data?.strategies || [],
       doneStrategies: data?.doneStrategies || [],
@@ -419,21 +397,10 @@ export async function getBlindSpotsAnalysis(): Promise<BlindSpotInsight> {
  */
 export async function generateBlindSpotsAnalysis(): Promise<BlindSpotInsight> {
   try {
-    const result = await authClient.$fetch(`${API_BASE}/api/stats/blind-spots/generate`, {
+    return await authenticatedFetch<BlindSpotInsight>(`${API_BASE}/api/stats/blind-spots/generate`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
-
-    if (result.error) {
-      // Extract the user-friendly message if available
-      const errorData = result.error as any;
-      const errorMessage = errorData?.message || errorData || 'Fehler beim Erstellen der Analyse';
-      throw new Error(errorMessage);
-    }
-
-    return result.data as BlindSpotInsight;
   } catch (error: any) {
     // If it's already an Error object, just re-throw it
     if (error instanceof Error) {
