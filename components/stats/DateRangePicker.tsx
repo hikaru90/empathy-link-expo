@@ -1,7 +1,8 @@
 import baseColors from '@/baseColors.config';
+import DropdownModalWrapper from '@/components/ui/DropdownModalWrapper';
 import { Calendar, ChevronsUpDown } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface DateRangePickerProps {
   onTimeframeChange?: (timeframe: string) => void;
@@ -19,110 +20,54 @@ const timeframeOptions = [
 
 export default function DateRangePicker({ onTimeframeChange, selectedTimeframe = 'lastWeek' }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [buttonLayout, setButtonLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
-  const buttonRef = useRef<View>(null);
-  const tooltipOpacity = useState(new Animated.Value(0))[0];
-
-  useEffect(() => {
-    if (isOpen) {
-      // Animate tooltip fade in
-      Animated.spring(tooltipOpacity, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
-    } else {
-      // Animate tooltip fade out
-      Animated.spring(tooltipOpacity, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 65,
-        friction: 11,
-      }).start();
-    }
-  }, [isOpen]);
 
   const handleSelect = (value: string) => {
     onTimeframeChange?.(value);
     setIsOpen(false);
   };
 
-  const handleButtonPress = () => {
-    buttonRef.current?.measureInWindow((pageX, pageY, width, height) => {
-      setButtonLayout({ x: pageX, y: pageY, width, height });
-      setIsOpen(true);
-    });
-  };
-
   const selectedLabel = timeframeOptions.find((opt) => opt.value === selectedTimeframe)?.label || 'Zeitraum wählen';
 
   return (
-    <>
-      <View ref={buttonRef} collapsable={false}>
-        <TouchableOpacity style={styles.triggerButton} onPress={handleButtonPress}>
-          <Calendar size={12} color={baseColors.black} />
-          <Text style={styles.triggerText}>{selectedLabel}</Text>
-          <ChevronsUpDown size={14} color={baseColors.black} />
-        </TouchableOpacity>
-      </View>
-
-      <Modal
-        visible={isOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setIsOpen(false)}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0)' }}
-          onPress={() => setIsOpen(false)}
-        >
-          <Animated.View
-            style={[
-              styles.tooltipContent,
-              {
-                opacity: tooltipOpacity,
-                top: buttonLayout.y + buttonLayout.height + 8,
-                left: buttonLayout.x + buttonLayout.width / 2 - 120, // Center the tooltip on the button
-                maxWidth: 240,
-              },
-            ]}
-            onStartShouldSetResponder={() => true}
-          >
-            {/* Tooltip arrow */}
-            <View style={styles.tooltipArrow} />
-
-            <View style={styles.optionsList}>
-              {timeframeOptions.map((option) => (
-                <TouchableOpacity
-                  key={option.value}
-                  style={[
-                    styles.option,
-                    selectedTimeframe === option.value && styles.selectedOption,
-                  ]}
-                  onPress={() => handleSelect(option.value)}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      selectedTimeframe === option.value && styles.selectedOptionText,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                  {selectedTimeframe === option.value && (
-                    <View style={styles.checkmark}>
-                      <Text style={styles.checkmarkText}>✓</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </Animated.View>
-        </TouchableOpacity>
-      </Modal>
-    </>
+    <DropdownModalWrapper
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      position="below"
+      dropdownContent={
+        <View style={styles.optionsList}>
+          {timeframeOptions.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                styles.option,
+                selectedTimeframe === option.value && styles.selectedOption,
+              ]}
+              onPress={() => handleSelect(option.value)}
+            >
+              <Text
+                style={[
+                  styles.optionText,
+                  selectedTimeframe === option.value && styles.selectedOptionText,
+                ]}
+              >
+                {option.label}
+              </Text>
+              {selectedTimeframe === option.value && (
+                <View style={styles.checkmark}>
+                  <Text style={styles.checkmarkText}>✓</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      }
+    >
+      <TouchableOpacity style={styles.triggerButton} onPress={() => setIsOpen((v) => !v)}>
+        <Calendar size={12} color={baseColors.black} />
+        <Text style={styles.triggerText}>{selectedLabel}</Text>
+        <ChevronsUpDown size={14} color={baseColors.black} />
+      </TouchableOpacity>
+    </DropdownModalWrapper>
   );
 }
 
@@ -138,32 +83,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: baseColors.black,
     marginRight: 4,
-  },
-  tooltipContent: {
-    position: 'absolute',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 12,
-    zIndex: 2000,
-    minWidth: 180,
-  },
-  tooltipArrow: {
-    position: 'absolute',
-    top: -8,
-    left: '50%',
-    marginLeft: -8,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderBottomWidth: 8,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#fff',
   },
   optionsList: {
     padding: 8,

@@ -5,9 +5,10 @@ import baseColors from '@/baseColors.config';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { getNeeds, Need } from '@/lib/api/chat';
 import { deleteTrackedNeed, getCurrentFillLevelsWithTimestamps, getNeedTimeseries, getTrackedNeeds, getTrackedNeedStrategies, NeedTimeseriesData, saveFillLevelsSnapshot, saveTrackedNeeds, TrackedNeed, updateTrackedNeedStrategies } from '@/lib/api/stats';
+import { Image } from 'expo-image';
 import { Check, ChevronLeft, ChevronsUpDown, ListFilter, Pencil, Plus, RotateCcw, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, ImageBackground, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Animated, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import GroupedNeedsSelector from '../chat/GroupedNeedsSelector';
 import DateRangePicker from './DateRangePicker';
 import NeedCup from './NeedCup';
@@ -72,25 +73,25 @@ export default function StatsTrackedNeeds() {
   // Re-check if needs have been filled today when timeseries data changes
   useEffect(() => {
     if (Object.keys(allTimeseriesData).length === 0 || trackedNeeds.length === 0) return;
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     let hasTodayFillLevel = false;
     for (const [needId, timeseries] of Object.entries(allTimeseriesData)) {
       const todayEntry = timeseries.find(entry => {
         const entryDate = new Date(entry.date);
         entryDate.setHours(0, 0, 0, 0);
-        return entryDate.getTime() === today.getTime() && 
-               entry.fillLevel != null && 
-               entry.fillLevel > 0;
+        return entryDate.getTime() === today.getTime() &&
+          entry.fillLevel != null &&
+          entry.fillLevel > 0;
       });
       if (todayEntry) {
         hasTodayFillLevel = true;
         break;
       }
     }
-    
+
     if (hasTodayFillLevel) {
       setHasFilledToday(true);
     }
@@ -281,7 +282,7 @@ export default function StatsTrackedNeeds() {
       // Preserve old tracked needs list before updating (for fill level preservation)
       const oldTrackedNeeds = trackedNeeds;
       setTrackedNeeds(tracked);
-      
+
       // Close need selector if we already have 3 tracked needs
       if (tracked.length >= 3) {
         setShowNeedSelector(false);
@@ -322,7 +323,7 @@ export default function StatsTrackedNeeds() {
             // Existing tracked need - preserve fill level
             levels[tn.id] = fillLevels[tn.id];
             timestamps[tn.id] = lastUpdated[tn.id] || null;
-            
+
             // Also check if the preserved fill level was updated today
             const lastUpdatedTime = lastUpdated[tn.id];
             if (lastUpdatedTime && fillLevels[tn.id] !== null && fillLevels[tn.id] !== undefined && (fillLevels[tn.id] as number) > 0) {
@@ -349,25 +350,25 @@ export default function StatsTrackedNeeds() {
       const lastLevels: Record<string, number> = {};
       const todayForCheck = new Date();
       todayForCheck.setHours(0, 0, 0, 0);
-      
+
       await Promise.all(
         tracked.map(async (tn) => {
           try {
             const timeseries = await getNeedTimeseries(tn.id);
-            
+
             // Check if there's an entry for today with a fill level > 0
             const todayEntry = timeseries.find(entry => {
               const entryDate = new Date(entry.date);
               entryDate.setHours(0, 0, 0, 0);
-              return entryDate.getTime() === todayForCheck.getTime() && 
-                     entry.fillLevel != null && 
-                     entry.fillLevel > 0;
+              return entryDate.getTime() === todayForCheck.getTime() &&
+                entry.fillLevel != null &&
+                entry.fillLevel > 0;
             });
-            
+
             if (todayEntry) {
               hasTodayData = true;
             }
-            
+
             if (timeseries.length > 1) {
               // Get the second-to-last entry (previous fill level)
               // Sort by date to ensure we get the correct order
@@ -401,7 +402,7 @@ export default function StatsTrackedNeeds() {
         })
       );
       setLastFillLevels(lastLevels);
-      
+
       // Update hasFilledToday based on timeseries check
       if (hasTodayData) {
         setHasFilledToday(true);
@@ -812,8 +813,8 @@ export default function StatsTrackedNeeds() {
 
       if (!allFilled) {
         // Don't save if not all cups have values
-        console.warn('Cannot save: not all cups have fill levels', { 
-          fillLevels, 
+        console.warn('Cannot save: not all cups have fill levels', {
+          fillLevels,
           trackedNeeds: trackedNeeds.map(tn => ({ id: tn.id, name: tn.needName, level: fillLevels[tn.id] }))
         });
         return;
@@ -830,29 +831,29 @@ export default function StatsTrackedNeeds() {
             fillLevelsForSave[tn.id] = level;
           }
         });
-        
+
         console.log('Saving fill levels:', fillLevelsForSave);
         console.log('Tracked needs:', trackedNeeds.map(tn => ({ id: tn.id, needId: tn.needId, name: tn.needName })));
-        
+
         if (Object.keys(fillLevelsForSave).length === 0) {
           console.warn('No fill levels to save');
           setIsSavingFillLevels(false);
           return;
         }
-        
+
         if (Object.keys(fillLevelsForSave).length !== trackedNeeds.length) {
           console.warn('Mismatch: not all tracked needs have fill levels to save', {
             fillLevelsForSaveKeys: Object.keys(fillLevelsForSave),
             trackedNeedsIds: trackedNeeds.map(tn => tn.id)
           });
         }
-        
+
         const result = await saveFillLevelsSnapshot(fillLevelsForSave);
         console.log('Fill levels saved successfully:', result);
-        
+
         // Only exit edit mode and update state after successful save
         setIsEditMode(false);
-        
+
         setHasFilledToday(true);
         setYesterdayFillLevels({}); // Clear yesterday's values since we just saved today
         // Update last updated timestamps
@@ -957,10 +958,10 @@ export default function StatsTrackedNeeds() {
               >
                 <Pencil size={16} color={baseColors.black} />
               </TouchableOpacity>
-                <DateRangePicker
-                  selectedTimeframe={selectedTimeframe}
-                  onTimeframeChange={setSelectedTimeframe}
-                />
+              <DateRangePicker
+                selectedTimeframe={selectedTimeframe}
+                onTimeframeChange={setSelectedTimeframe}
+              />
             </View>
           )}
         </View>
@@ -976,23 +977,26 @@ export default function StatsTrackedNeeds() {
               className=" rounded-xl mt-2 mb-4 overflow-hidden"
               style={{ backgroundColor: baseColors.lilac }}
             >
-              
-              <View className="p-3">
-              <Text className="ml-1 flex-1 leading-[18px] mb-4" style={{ color: baseColors.black }}>
-                Du kannst heute deine Schalen füllen! Nutze die Gelegenheit, um deine Bedürfnisse zu reflektieren.
-              </Text>
-              <TouchableOpacity
-                className="px-3 py-1 rounded-full self-start shadow-md shadow-black/10"
-                style={{ backgroundColor: baseColors.offwhite, borderRadius: 999, overflow: 'hidden' }}
-                onPress={handleEditModeToggle}
-              >
-                <ImageBackground source={purpleImageHighres} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                </ImageBackground>
-                <Text className="text-sm font-medium" style={{ color: baseColors.forest }}>
-                  Schalen füllen
+              <Image source={purpleImageHighres} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.3 }}>
+              </Image>
+              <View className="px-4 pt-4 pb-6">
+                <Text className="ml-1 flex-1 leading-[18px] mb-2" style={{ color: baseColors.black }}>
+                  Du kannst heute deine Schalen füllen! Nutze die Gelegenheit, um deine Bedürfnisse zu reflektieren.
                 </Text>
-              </TouchableOpacity>
-            </View>
+                <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                  <TouchableOpacity
+                    className="rounded-full self-start"
+                    style={{ backgroundColor: baseColors.offwhite, borderRadius: 999, overflow: 'hidden', paddingHorizontal: 16, paddingVertical: 6, borderWidth: 1, borderColor: baseColors.lilac, boxShadow: '0 10px 10px 0 rgba(0, 0, 0, 0.1)' }}
+                    onPress={handleEditModeToggle}
+                  >
+                    <Image source={purpleImageHighres} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+                    </Image>
+                    <Text className="text-sm font-medium" style={{ color: baseColors.forest }}>
+                      Schalen füllen
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           )}
         </View>
@@ -1063,13 +1067,17 @@ export default function StatsTrackedNeeds() {
                 <TouchableOpacity
                   onPress={handleEditModeToggle}
                   disabled={!hasFilledAllCups || isSavingFillLevels}
-                  style={{ opacity: (!hasFilledAllCups || isSavingFillLevels) ? 0.5 : 1, position: 'relative' }}
+                  style={{ opacity: (!hasFilledAllCups || isSavingFillLevels) ? 0.5 : 1, position: 'relative', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, paddingVertical: 8, paddingLeft: 16, paddingRight: 8, borderRadius: 999 }}
                 >
-                  <ImageBackground
+                  <Image
                     source={jungleImage}
-                    resizeMode="cover"
                     style={{
-                      width: '100%', height: '100%',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      display: 'flex',
                       flexDirection: 'row',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1083,17 +1091,18 @@ export default function StatsTrackedNeeds() {
                       borderColor: 'rgba(0, 0, 0, 0.1)',
                     }}
                   >
-                    {isSavingFillLevels ? (
-                      <LoadingIndicator />
-                    ) : (
-                      <>
-                        <Text style={{ fontSize: 14, color: baseColors.offwhite }}>
-                          Füllstand speichern
-                        </Text>
-                        <Check size={16} color="#fff" style={{ backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
-                      </>
-                    )}
-                  </ImageBackground>
+
+                  </Image>
+                  {isSavingFillLevels ? (
+                    <LoadingIndicator />
+                  ) : (
+                    <>
+                      <Text style={{ fontSize: 14, color: baseColors.offwhite }}>
+                        Füllstand speichern
+                      </Text>
+                      <Check size={16} color="#fff" style={{ backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
+                    </>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>

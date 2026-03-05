@@ -193,7 +193,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
           overflow: 'hidden',
         }}
       >
-        <View className="relative z-10 border-t border-white" style={{ backgroundColor: baseColors.offwhite + 'ee', borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 1, borderTopColor: 'rgba(0, 0, 0, 1)' }}>
+        <View style={{ backgroundColor: baseColors.offwhite + 'ee', borderTopLeftRadius: 24, borderTopRightRadius: 24, zIndex: 10, position: 'relative' }}>
           {/* Feelings Selector */}
           {feelingSelectorVisible && (
             <View className="max-h-40 border-b border-black/5">
@@ -220,7 +220,7 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
           )}
 
           {/* Input Row */}
-          <View style={{ backgroundColor: 'red', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
             <TextInput
               ref={textInputRef}
               value={text}
@@ -233,7 +233,6 @@ export default function MessageInput({ onSelectorStateChange }: MessageInputProp
                 lineHeight: 20, // Approximate line height for calculation
                 borderWidth: 0,
                 borderRadius: 18,
-                backgroundColor: 'green',
                 width: '100%',
                 textAlignVertical: 'top',
                 textAlign: 'left',

@@ -2,7 +2,7 @@ import baseColors from '@/baseColors.config';
 import { getFeelings, type Feeling } from '@/lib/api/chat';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import DateRangePicker from './DateRangePicker';
 import DonutChart from './DonutChart';
@@ -39,24 +39,24 @@ const computedColor = (backgroundColor: string): string => {
       return luminance < 0.5 ? '#ffffff' : '#000000';
     }
   }
-  
+
   // Handle hex format
   let hex = backgroundColor.replace('#', '');
-  
+
   // Handle 3-digit hex (e.g., #fff)
   if (hex.length === 3) {
     hex = hex.split('').map(char => char + char).join('');
   }
-  
+
   // Parse RGB values
   const r = parseInt(hex.substring(0, 2), 16);
   const g = parseInt(hex.substring(2, 4), 16);
   const b = parseInt(hex.substring(4, 6), 16);
-  
+
   // Calculate relative luminance (perceived brightness)
   // Using the relative luminance formula from WCAG
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
+
   // Return white if background is dark (luminance < 0.5), black if light
   return luminance < 0.5 ? '#ffffff' : '#000000';
 };
@@ -75,6 +75,7 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
   const [mainViewHeight, setMainViewHeight] = useState(0);
   const [timelineViewHeight, setTimelineViewHeight] = useState(0);
   const heightAnim = useRef(new Animated.Value(0)).current;
+  const lastAnimatedTimelineHeight = useRef(0);
 
   // Load feelings reference data to map names to positive/negative
   useEffect(() => {
@@ -100,7 +101,7 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
       const shouldShow =
         (feelingTypeFilter === 'positive' && isPositive === true) ||
         (feelingTypeFilter === 'negative' && isPositive === false);
-      
+
       if (!shouldShow) {
         setSelectedFeeling(null);
       }
@@ -110,7 +111,7 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
   // Animate when selectedFeeling changes
   useEffect(() => {
     if (selectedFeeling) {
-      // Slide in timeline view
+      // Slide in timeline view; height is animated after timeline onLayout (see effect below)
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 1,
@@ -121,11 +122,6 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
           toValue: 0,
           duration: 200,
           useNativeDriver: true,
-        }),
-        Animated.timing(heightAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: false,
         }),
       ]).start();
     } else {
@@ -149,20 +145,29 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
       ]).start();
     }
   }, [selectedFeeling]);
-  
-  // Update height animation when heights are measured
+
+  // Update height animation when heights are measured. When opening timeline, only
+  // animate to timeline height after onLayout has run (timelineViewHeight changed).
   useEffect(() => {
     if (mainViewHeight > 0 && timelineViewHeight > 0) {
-      // Set the correct value based on current selection state
-      const targetValue = selectedFeeling ? 1 : 0;
-      Animated.timing(heightAnim, {
-        toValue: targetValue,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
+      if (!selectedFeeling) {
+        lastAnimatedTimelineHeight.current = 0;
+        Animated.timing(heightAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false,
+        }).start();
+      } else if (timelineViewHeight !== lastAnimatedTimelineHeight.current) {
+        lastAnimatedTimelineHeight.current = timelineViewHeight;
+        Animated.timing(heightAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false,
+        }).start();
+      }
     }
   }, [mainViewHeight, timelineViewHeight, selectedFeeling]);
-  
+
 
   const getDateFilter = (timeframe: string) => {
     const now = new Date();
@@ -209,7 +214,7 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
 
   const getEndDate = (timeframe: string): Date | null => {
     const now = new Date();
-    
+
     // For single-day filters, set end date to end of that day
     if (timeframe === 'today' || timeframe === 'yesterday' || timeframe === 'dayBeforeYesterday') {
       const startDate = getDateFilter(timeframe);
@@ -217,14 +222,14 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
       endDate.setHours(23, 59, 59, 999);
       return endDate;
     }
-    
+
     // For lastWeek, include today (end at end of today)
     if (timeframe === 'lastWeek') {
       const endDate = new Date(now);
       endDate.setHours(23, 59, 59, 999);
       return endDate;
     }
-    
+
     // For other timeframes, include up to now
     return null;
   };
@@ -331,7 +336,7 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
     return rawAnalyses
       .filter((analysis) => {
         if (!analysis.created || !analysis.feelings) return false;
-        
+
         // Check if analysis contains the selected feeling
         const hasFeeling = analysis.feelings.includes(selectedFeeling);
         if (!hasFeeling) return false;
@@ -340,7 +345,7 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
         const analysisDate = new Date(analysis.created);
         const isAfterStart = analysisDate >= startDate;
         const isBeforeEnd = analysisDate <= endDate;
-        
+
         return isAfterStart && isBeforeEnd;
       })
       .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime()); // Sort newest first
@@ -387,7 +392,7 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
   // Single animated height value
   const currentHeight = useRef(new Animated.Value(0)).current;
   const prevMainHeight = useRef(0);
-  
+
   // Animate height when mainViewHeight changes (data filtering)
   useEffect(() => {
     if (mainViewHeight > 0 && !selectedFeeling) {
@@ -406,22 +411,44 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
       prevMainHeight.current = mainViewHeight;
     }
   }, [mainViewHeight, selectedFeeling]);
-  
+
+  // When returning to main view, sync layout and animated values immediately so we never get stuck
+  useLayoutEffect(() => {
+    if (!selectedFeeling) {
+      slideAnim.setValue(0);
+      fadeAnim.setValue(1);
+      heightAnim.setValue(0);
+      if (mainViewHeight > 0) {
+        currentHeight.setValue(mainViewHeight);
+      }
+    }
+  }, [selectedFeeling, mainViewHeight]);
+
   // Interpolate between main and timeline heights when switching views
   const animatedHeight = heightAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [mainViewHeight || 500, timelineViewHeight || 500],
   });
-  
+
   // Use currentHeight when in main view (for data changes), animatedHeight when switching
-  const finalAnimatedHeight = selectedFeeling 
-    ? animatedHeight 
+  const finalAnimatedHeight = selectedFeeling
+    ? animatedHeight
     : currentHeight;
 
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <View style={styles.header}>
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: 4,
+          gap: 12,
+          position: 'relative',
+          zIndex: 10,
+        }}>
           <View style={styles.titleContainer}>
             <Text style={styles.title}>Gefühle</Text>
           </View>
@@ -438,7 +465,13 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
         </View>
 
         <View style={styles.contentContainer}>
-          <Animated.View style={[styles.animatedHeightContainer, { height: finalAnimatedHeight }]}>
+          <Animated.View
+            style={[
+              styles.animatedHeightContainer,
+              { height: finalAnimatedHeight },
+              !selectedFeeling && mainViewHeight > 0 && { minHeight: mainViewHeight },
+            ]}
+          >
             {/* Main view with donut chart and list */}
             <Animated.View
               style={[
@@ -450,6 +483,9 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
               ]}
               pointerEvents={selectedFeeling ? 'none' : 'auto'}
               onLayout={(event) => {
+                // Only capture height when main view is visible; when timeline is open the container
+                // clips this view and we must not overwrite mainViewHeight with the clipped value.
+                if (selectedFeeling) return;
                 const { height } = event.nativeEvent.layout;
                 if (height > 0) {
                   setMainViewHeight(height);
@@ -469,7 +505,16 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
                       <TouchableOpacity
                         key={`${feeling.value}-${index}`}
                         style={[
-                          styles.listItem,
+                          {
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            paddingVertical: 8,
+                            paddingHorizontal: 8,
+                            borderTopWidth: 1,
+                            borderTopColor: baseColors.background,
+                            marginHorizontal: -8
+                          },
                           index === 0 && styles.firstListItem
                         ]}
                         onPress={() => setSelectedFeeling(feeling.value)}
@@ -489,11 +534,10 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
                               borderRadius: 10,
                               justifyContent: 'center',
                               alignItems: 'center',
-                              shadowColor: '#000',
-                              shadowOffset: { width: 0, height: 1 },
-                              shadowOpacity: 0.1,
-                              shadowRadius: 2,
-                              elevation: 2,
+                              backgroundColor: baseColors.offwhite,
+                              borderWidth: 1,
+                              borderColor: 'white',
+                              boxShadow: '0 4px 4px 0 rgba(0, 0, 0, 0.1)',
                             }}>
                               <ChevronRight size={12} color="#000" />
                             </View>
@@ -748,17 +792,17 @@ export default function StatsFeelings({ data, rawAnalyses }: StatsFeelingsProps)
                             </Text>
                           </View>
                           <View className="size-5 items-center justify-center rounded-full bg-white" style={{
-                              width: 20,
-                              height: 20,
-                              borderRadius: 10,
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              shadowColor: '#000',
-                              shadowOffset: { width: 0, height: 1 },
-                              shadowOpacity: 0.1,
-                              shadowRadius: 2,
-                              elevation: 2,
-                            }}>
+                            width: 20,
+                            height: 20,
+                            borderRadius: 10,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 2,
+                            elevation: 2,
+                          }}>
                             <ChevronRight size={12} color={baseColors.black} />
                           </View>
                         </TouchableOpacity>
@@ -782,7 +826,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 16,
     shadowColor: '#000',
-    backgroundColor: baseColors.offwhite+'90',
+    backgroundColor: baseColors.offwhite + '90',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -790,15 +834,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
     borderWidth: 1,
     borderColor: 'white',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-    gap: 12,
   },
   backButtonContainer: {
     paddingHorizontal: 16,
@@ -829,6 +864,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
+    minHeight: 280,
   },
   viewContainer: {
     width: '100%',
@@ -848,16 +884,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
-  },
-  listItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0, 0.1)',
-    marginHorizontal: -8,
   },
   firstListItem: {
     borderTopWidth: 0,

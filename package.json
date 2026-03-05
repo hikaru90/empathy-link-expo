@@ -10,11 +10,10 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint",
     "build": "expo export -p web",
-    "test:e2e": "playwright test --headed",
-    "build:android:local": "eas build --platform android --local",
     "prebuild": "expo prebuild",
+    "playwright:test": "playwright test --headed",
+    "eas:build:android:local": "eas build --platform android --local",
     "tailscale:funnel": "/Applications/Tailscale.app/Contents/MacOS/Tailscale funnel 4000"
   },
   "dependencies": {
