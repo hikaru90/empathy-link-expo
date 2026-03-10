@@ -20,7 +20,8 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "ANDROID_HOME": "/Users/alexanderbuckner/Library/Android/sdk"
+        "ANDROID_HOME": "/Users/alexanderbuckner/Library/Android/sdk",
+        "EXPO_PUBLIC_BACKEND": "https://fsowkw4soogsgw08c0o8w8ws.clustercluster.de"
       }
     }
   },

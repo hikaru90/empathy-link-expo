@@ -1,6 +1,7 @@
 import baseColors from '@/baseColors.config';
 import ImageIconButton from '@/components/ImageIconButton';
 import SparklePill from '@/components/SparklePill';
+import { getBackendURL } from '@/lib/config';
 import { useAuth } from '@/hooks/use-auth';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, LogIn, TriangleAlert } from 'lucide-react-native';
@@ -62,6 +63,7 @@ export default function SigninScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [showResendButton, setShowResendButton] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
@@ -148,10 +150,37 @@ export default function SigninScreen() {
     }
   };
 
+  /** Build verbose error string for debugging (e.g. network errors with no status). */
+  function getVerboseErrorDetails(err: unknown): string {
+    if (err == null) return 'null';
+    const e = err as Record<string, unknown>;
+    const parts: string[] = [];
+    if (e?.message != null) parts.push(`message: ${String(e.message)}`);
+    if (e?.status != null) parts.push(`status: ${e.status}`);
+    if (e?.statusText != null) parts.push(`statusText: ${e.statusText}`);
+    if (e?.code != null) parts.push(`code: ${e.code}`);
+    if (e?.cause != null) parts.push(`cause: ${e.cause instanceof Error ? e.cause.message : String(e.cause)}`);
+    try {
+      const rest = { ...e };
+      delete rest.message;
+      delete rest.status;
+      delete rest.statusText;
+      delete rest.code;
+      delete rest.cause;
+      if (Object.keys(rest).length > 0) {
+        parts.push(`raw: ${JSON.stringify(rest)}`);
+      }
+    } catch (_) {
+      parts.push(`toString: ${String(err)}`);
+    }
+    return parts.length ? parts.join(' · ') : String(err);
+  }
+
   const handleSignin = async () => {
     console.log('handleSignin called');
     // Clear any previous error and resend state
     setErrorMessage(null);
+    setErrorDetails(null);
     setShowResendButton(false);
     setResendSuccess(false);
 
@@ -192,19 +221,21 @@ export default function SigninScreen() {
 
       // Check if it's a 403 error about email verification
       // The backend translates this to: "Deine E-Mail-Adresse wurde noch nicht verifiziert..."
-      console.log('is403Error', is403Error);
       is403Error = status === 403 ||
         msg.includes('nicht verifiziert') ||
         msg.includes('E-Mail-Postfach') ||
         msg.toLowerCase().includes('email not verified') ||
         msg.toLowerCase().includes('email verification required');
 
+      const details = getVerboseErrorDetails(error);
+      const backendUrl = getBackendURL();
+      const detailsWithUrl = `backend: ${backendUrl}\n${details}`;
       if (__DEV__) {
-        console.log('Login error:', { status, msg, is403Error });
+        console.log('Login error:', { status, msg, is403Error, details, backendUrl });
       }
 
-      // Display error in UI and Alert
       setErrorMessage(msg);
+      setErrorDetails(detailsWithUrl);
       setShowResendButton(is403Error);
       Alert.alert('Fehler', msg);
       setIsLoading(false);
@@ -274,6 +305,11 @@ export default function SigninScreen() {
           <Text className="text-red-700 font-medium text-center mb-2">
             {errorMessage}
           </Text>
+          {errorDetails ? (
+            <Text className="text-red-600 text-xs mt-2 font-mono" selectable>
+              {errorDetails}
+            </Text>
+          ) : null}
           {showResendButton && (
             <TouchableOpacity
               className="mt-3 py-2 px-4 rounded-lg"
@@ -352,6 +388,7 @@ export default function SigninScreen() {
           onPress={async () => {
             setSocialLoading('google');
             setErrorMessage(null);
+            setErrorDetails(null);
             try {
               await signInWithSocial('google');
               router.replace('/(protected)/(tabs)');
