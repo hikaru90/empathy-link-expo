@@ -1,6 +1,7 @@
 import FlameIconImage from '@/assets/icons/Flame.png';
 import baseColors from '@/baseColors.config';
 import BottomDrawer from '@/components/BottomDrawer';
+import ImageIconButton from '@/components/ImageIconButton';
 import { useAuth } from '@/hooks/use-auth';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { useRestartDrawer } from '@/hooks/use-restart-drawer';
@@ -18,7 +19,6 @@ import { useRouter } from 'expo-router';
 import { Bell, Brain, FileText, LogOut, RotateCcw, RotateCcwSquare, UserPlus, UserRoundCog } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Platform,
   ScrollView,
@@ -417,41 +417,16 @@ function Header({ className }: HeaderProps) {
             <Text style={styles.menuItemText}>Ergebnisse ansehen</Text>
             <FileText size={16} color="#000" />
           </TouchableOpacity>
-          <TouchableOpacity
-            testID="restart-drawer-restart"
+          <ImageIconButton
             onPress={handleRestartTopic}
+            image={jungleImage}
+            icon={<RotateCcw color="#fff" />}
+            label="Neu starten"
+            size="medium"
             disabled={isRestartingTopic}
-            style={{ opacity: isRestartingTopic ? 0.5 : 1 }}
-          >
-            <ImageBackground
-              source={jungleImage}
-              contentFit="cover"
-              style={{
-                width: '100%',
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingLeft: 16,
-                paddingRight: 12,
-                paddingVertical: 10,
-                borderRadius: 20,
-                overflow: 'hidden',
-                borderWidth: 1,
-                borderColor: 'rgba(0, 0, 0, 0.1)',
-              }}
-            >
-              {isRestartingTopic ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <Text style={{ fontSize: 14, color: baseColors.offwhite }}>
-                    Neu starten
-                  </Text>
-                  <RotateCcw size={16} color="#fff" style={{ position: 'relative', backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
-                </>
-              )}
-            </ImageBackground>
-          </TouchableOpacity>
+            loading={isRestartingTopic}
+            style={{ width: '100%' }}
+          />
         </View>
       </BottomDrawer>
     </>

@@ -125,7 +125,7 @@ export default function LearnAudio({
       setAudioModeAsync({
         playsInSilentMode: true,
         shouldPlayInBackground: false,
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, []);
 
@@ -386,113 +386,119 @@ export default function LearnAudio({
         <View className="items-center pb-2">
           <Text className="text-xl font-bold text-black">Zeit zu Meditieren</Text>
           {content.content && (
-          <View className="pb-4 text-center flex flex-rwo items-center justify-center">
-            <Markdown
-              markdownit={markdownItInstance}
-              style={{
-                body: {
-                  fontSize: 14,
-                  color: 'rgba(0, 0, 0, 0.4)',
-                  textAlign: 'center',
-                },
-              }}
-            >
-              {content.content}
-            </Markdown>
-          </View>
-        )}
+            <View className="pb-4 text-center flex flex-rwo items-center justify-center">
+              <Markdown
+                markdownit={markdownItInstance}
+                style={{
+                  body: {
+                    fontSize: 14,
+                    color: 'rgba(0, 0, 0, 0.4)',
+                    textAlign: 'center',
+                  },
+                }}
+              >
+                {content.content}
+              </Markdown>
+            </View>
+          )}
         </View>
 
         {/* Custom Audio Player */}
         {content.controls !== false && (
-        <View className="flex flex-col items-center justify-between gap-4">
-          {/* Play/Pause Button */}
-          <View className="relative z-10">
-            {isPlaying && !hasError && !isLoading && (
-              <TouchableOpacity
-                onPress={restart}
-                className="absolute -top-16 left-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-black z-10"
-                style={{
-                  transform: [{ translateX: -16 }],
-                  top: -64,
-                }}
-              >
-                <RotateCcw size={12} color="#fff" />
-              </TouchableOpacity>
-            )}
-            {isPlaying && (
-              <>
-                <Animated.View
-                  style={{
-                    position: 'absolute',
-                    width: 120,
-                    height: 120,
-                    borderRadius: 80,
-                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-                    left: '50%',
-                    top: '50%',
-                    zIndex: -1,
-                    transform: [
-                      { translateX: '-50%' },
-                      { translateY: '-50%' },
-                      { scale: expandAnim1 },
-                    ],
-                  }}
-                />
-                <Animated.View
-                  style={{
-                    position: 'absolute',
-                    width: 100,
-                    height: 100,
-                    borderRadius: 56,
-                    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-                    left: '50%',
-                    top: '50%',
-                    zIndex: -1,
-                    transform: [
-                      { translateX: '-50%' },
-                      { translateY: '-50%' },
-                      { scale: expandAnim2 },
-                    ],
-                  }}
-                />
-              </>
-            )}
-            <TouchableOpacity
-              testID="audio-play"
-              onPress={togglePlay}
-              disabled={isLoading || hasError}
-              className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg"
-              style={[styles.shadowButton, (isLoading || hasError) && { opacity: 0.5 }, { backgroundColor: baseColors.forest }]}
+          <View className="flex flex-col items-center justify-between gap-4 relative">
+            <View
+              style={
+                { position: 'relative', zIndex: 10, width: 120, height: 120, justifyContent: 'center', alignItems: 'center'}}
             >
-              {hasError ? (
-                <Text className="text-red-400 text-lg">⚠️</Text>
-              ) : isLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : isPlaying ? (
-                <Pause size={24} color="#fff" />
-              ) : (
-                <Play size={24} color="#fff" fill="#fff" />
-              )}
-            </TouchableOpacity>
-          </View>
+              {/* Play/Pause Button */}
+              <TouchableOpacity
+                testID="audio-play"
+                onPress={togglePlay}
+                disabled={isLoading || hasError}
+                className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg"
+                style={[styles.shadowButton, (isLoading || hasError) && { opacity: 0.5 }, { backgroundColor: baseColors.forest }]}
+              >
+                {hasError ? (
+                  <Text className="text-red-400 text-lg">⚠️</Text>
+                ) : isLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : isPlaying ? (
+                  <Pause size={24} color="#fff" />
+                ) : (
+                  <Play size={24} color="#fff" fill="#fff" />
+                )}
+              </TouchableOpacity>
 
-          {/* Time remaining */}
-          <View className="relative z-10 rounded-full bg-white/90 px-3 py-1">
-            <Text className="text-sm">{formatTime(Math.max(0, duration - currentTime))}</Text>
+              {isPlaying && !hasError && !isLoading && (
+                <TouchableOpacity
+                  onPress={restart}
+                  className="absolute left-1/2 flex h-8 w-8 items-center justify-center rounded-full z-10"
+                  style={{
+                    backgroundColor: baseColors.forest,
+                    bottom: -48,
+                    marginLeft: -16,
+                  }}
+                >
+                  <RotateCcw size={12} color="#fff" />
+                </TouchableOpacity>
+              )}
+
+              {isPlaying && (
+                <>
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      width: 120,
+                      height: 120,
+                      borderRadius: 120 / 2,
+                      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                      left: '50%',
+                      top: '50%',
+                      zIndex: -1,
+                      transform: [
+                        { translateX: -120 / 2 },
+                        { translateY: -120 / 2 },
+                        { scale: expandAnim1 },
+                      ],
+                    }}
+                  />
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      width: 100,
+                      height: 100,
+                      borderRadius: 100 / 2,
+                      backgroundColor: 'rgba(255, 255, 255, 0.4)',
+                      left: '50%',
+                      top: '50%',
+                      zIndex: -1,
+                      transform: [
+                        { translateX: -100 / 2 },
+                        { translateY: -100 / 2 },
+                        { scale: expandAnim2 },
+                      ],
+                    }}
+                  />
+                </>
+              )}
+            </View>
+
+            {/* Time remaining */}
+            <View style={{ position: 'absolute', top: -8, zIndex: 10, backgroundColor: 'white', borderRadius: 120 / 2, paddingHorizontal: 8, paddingVertical: 4 }}>
+              <Text className="text-sm">{formatTime(Math.max(0, duration - currentTime))}</Text>
+            </View>
           </View>
-        </View>
         )}
       </View>
 
       <LearnNavigation
         onPrev={onPrev}
-        onNext={onNext ?? (() => {})}
+        onNext={onNext ?? (() => { })}
         showPrev={!!onPrev}
         nextText="Überspringen"
         variant="light"
       />
-    </View>
+    </View >
   );
 }
 

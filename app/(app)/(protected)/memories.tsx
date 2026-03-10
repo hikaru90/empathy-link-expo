@@ -1,4 +1,5 @@
 import baseColors from '@/baseColors.config';
+import ImageIconButton from '@/components/ImageIconButton';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { deleteMemories, getMemories, type Memory } from '@/lib/api/memories';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -486,42 +487,16 @@ export default function MemoriesPage() {
             gap: 12,
             width: '100%',
           }}>
-            <TouchableOpacity
+            <ImageIconButton
               onPress={() => {
                 setIsSelectionMode(false);
                 setSelectedMemories([]);
               }}
-            >
-              <ImageBackground
-                source={jungleImage}
-                resizeMode="cover"
-                style={{
-                  flex: 1,
-                  height: '100%',
-                  width: '100%',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 16,
-                  paddingVertical: 8,
-                  paddingLeft: 16,
-                  paddingRight: 8,
-                  borderRadius: 999,
-                  overflow: 'hidden',
-                  borderWidth: 1,
-                  borderColor: 'rgba(0, 0, 0, 0.1)',
-                }}
-              >
-                <Text style={{
-                  fontSize: 14,
-                  color: baseColors.offwhite,
-                }}>Abbrechen</Text>
-                <X size={16} color="#fff" style={{
-                  backgroundColor: baseColors.white + '44',
-                  padding: 3,
-                  borderRadius: 999,
-                }} />
-              </ImageBackground>
-            </TouchableOpacity>
+              image={jungleImage}
+              icon={<X color="#fff" />}
+              label="Abbrechen"
+              size="medium"
+            />
             <TouchableOpacity
               onPress={handleDeleteMemories}
               disabled={isDeleting}

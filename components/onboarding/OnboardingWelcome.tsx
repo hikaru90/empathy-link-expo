@@ -1,13 +1,13 @@
 import jungleImage from '@/assets/images/Jungle.jpg';
 import baseColors from '@/baseColors.config';
-import BackgroundImageButton from '@/components/BackgroundImageButton';
+import ImageIconButton from '@/components/ImageIconButton';
 import LearnStepIndicator from '@/components/learn/LearnStepIndicator';
 import { ONBOARDING_STEPS } from '@/constants/onboarding';
 import { getChatSettings, updateChatSettings } from '@/lib/api/chat';
 import { CoveredByYourGrace_400Regular } from '@expo-google-fonts/covered-by-your-grace/400Regular';
 import { useFonts } from '@expo-google-fonts/covered-by-your-grace/useFonts';
 import { Image } from 'expo-image';
-import { ArrowLeft, RedoDot } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, RedoDot } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -188,10 +188,12 @@ export default function OnboardingWelcome({ visible, onComplete }: OnboardingWel
                         <ArrowLeft size={16} color={baseColors.black} />
                       </TouchableOpacity>
                     )}
-                    <BackgroundImageButton
+                    <ImageIconButton
                       onPress={nextStep}
+                      image={jungleImage}
+                      icon={<ArrowRight color="#fff" />}
                       label={isLastStep ? "Los geht's" : 'Weiter'}
-                      source={jungleImage}
+                      size="medium"
                       style={{ flex: 1 }}
                     />
                   </View>

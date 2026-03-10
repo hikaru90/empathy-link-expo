@@ -1,8 +1,9 @@
 import baseColors from '@/baseColors.config';
 import { NeedTimeseriesData } from '@/lib/api/stats';
+import { Image } from 'expo-image';
 import { ChevronRight } from 'lucide-react-native';
 import React from 'react';
-import { ImageBackground, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
 interface NeedsLineChartProps {
@@ -70,9 +71,9 @@ export default function NeedsLineChart({
 
   if (!hasAnyData || sortedDates.length === 0) {
     return (
-      <View className="items-center justify-center py-12">
+      <View className="items-center justify-center py-4">
         <Text className="text-sm text-gray-400 text-center mb-1">
-          Noch keine Daten vorhanden
+          Keine Daten vorhanden
         </Text>
         <Text className="text-xs text-gray-400 text-center">
           Fülle deine Schalen, um den Verlauf zu sehen
@@ -333,28 +334,29 @@ export default function NeedsLineChart({
                     borderRadius: 6,
                   }}
                 />
-                <Text className={`text-sm ${isSelected ? 'font-semibold' : 'font-normal'} text-black whitespace-nowrap overflow-hidden text-ellipsis`}>
+                <Text className={`text-sm ${isSelected ? 'font-semibold' : 'font-normal'} text-black whitespace-nowrap overflow-hidden text-ellipsis flex-shrink`}>
                   {need.needName}
                 </Text>
               </View>
-              {average !== null && (
-                <View className="flex-row items-center flex-shrink-0 overflow-hidden rounded-full relative gap-1 px-2 bg-red-200">
-                  <ImageBackground
-                    source={require('@/assets/images/background-lilac.png')}
-                    resizeMode="cover"
-                    style={{ zIndex: -1, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                  >
-                  </ImageBackground>
-                  <View className="px-3 py-1.5 rounded-full">
-                    <Text className="text-xs font-medium text-black">
-                      Ø {Math.round(average)}%
-                    </Text>
-                  </View>
-                  <View className="rounded-full bg-white/20 flex items-center justify-center" >
-                    <ChevronRight size={16} color="#666" />
-                  </View>
-                </View>
-              )}
+              <View className="flex-row items-center flex-shrink-0 overflow-hidden rounded-full relative gap-1 px-2">
+                {average !== null && (
+                  <>
+                    <Image
+                      source={require('@/assets/images/background-lilac.png')}
+                      style={{ zIndex: -1, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                    >
+                    </Image>
+                    <View className="px-3 py-1.5 rounded-full">
+                      <Text className="text-xs font-medium text-black">
+                        Ø {Math.round(average)}%
+                      </Text>
+                    </View>
+                    <View className="rounded-full bg-white/20 flex items-center justify-center" >
+                      <ChevronRight size={16} color="#666" />
+                    </View>
+                  </>
+                )}
+              </View>
             </TouchableOpacity>
           );
         })}

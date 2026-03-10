@@ -17,7 +17,7 @@ export default function LearnText({ content, onPrev, onNext }: LearnTextProps) {
   return (
     <View className="flex-1 flex-col justify-between">
       <View className="flex flex-grow flex-col items-center justify-center gap-2 text-left">
-        <View className="relative max-w-[20em]">
+        <View className="relative px-4">
           <Markdown
             markdownit={markdownItInstance}
             style={{

@@ -310,12 +310,12 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
   return (
     <View>
       <View
-        className="rounded-2xl overflow-hidden shadow-lg shadow-black/10"
+        className="rounded-2xl overflow-hidden shadow-lg shadow-black/10 border border-white"
         style={{ backgroundColor: baseColors.offwhite }}
       >
         <View className="px-5 pt-4 pb-3 border-b border-black/5">
           <View className="flex-row justify-between items-center mb-3">
-            <Text className="text-base font-semibold text-black">Deine Bitten</Text>
+            <Text className="text-lg font-semibold text-black">Deine Bitten</Text>
             {totalCount > 0 && (
               <View className="flex-row items-center gap-2">
                 {updatingIds.size > 0 && (
@@ -332,15 +332,15 @@ export default function StatsConflictResolution({ requests }: StatsConflictResol
           </View>
           {/* Statistics row */}
           <View className="flex-row gap-2 mt-1">
-            <View className="flex-1 items-center py-2 px-2 bg-white rounded-lg">
+            <View className="flex-1 items-center rounded-lg">
               <Text className="text-lg font-bold text-black mb-0.5">{totalCount}</Text>
               <Text className="text-[10px] text-gray-600 font-medium">Gesamt</Text>
             </View>
-            <View className="flex-1 items-center py-2 px-2 bg-white rounded-lg">
+            <View className="flex-1 items-center rounded-lg">
               <Text className="text-lg font-bold text-emerald-500 mb-0.5">{resolvedCount}</Text>
               <Text className="text-[10px] text-gray-600 font-medium">Gelöst</Text>
             </View>
-            <View className="flex-1 items-center py-2 px-2 bg-white rounded-lg">
+            <View className="flex-1 items-center rounded-lg">
               <Text className="text-lg font-bold mb-0.5" style={{ color: baseColors.lilac }}>{unresolvedCount}</Text>
               <Text className="text-[10px] text-gray-600 font-medium">Offen</Text>
             </View>

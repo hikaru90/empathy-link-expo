@@ -258,7 +258,7 @@ export default function LearnMultipleChoice({
               activeOpacity={0.7}
             >
               <View className="flex-row items-center justify-between">
-                <Markdown markdownit={markdownItInstance} style={{ body: { fontSize: 16, flex: 1 } as any }}>
+                <Markdown markdownit={markdownItInstance} style={{ body: { fontSize: 18, flex: 1, lineHeight: 24 } as any }}>
                   {option.text}
                 </Markdown>
                 <View className="ml-2">

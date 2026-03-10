@@ -2,13 +2,14 @@ import jungleImage from '@/assets/images/Jungle.jpg';
 import purpleImageHighres from '@/assets/images/background-lilac-highres.png';
 import purpleImage from '@/assets/images/background-lilac.png';
 import baseColors from '@/baseColors.config';
+import ImageIconButton from '@/components/ImageIconButton';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { getNeeds, Need } from '@/lib/api/chat';
 import { deleteTrackedNeed, getCurrentFillLevelsWithTimestamps, getNeedTimeseries, getTrackedNeeds, getTrackedNeedStrategies, NeedTimeseriesData, saveFillLevelsSnapshot, saveTrackedNeeds, TrackedNeed, updateTrackedNeedStrategies } from '@/lib/api/stats';
 import { Image } from 'expo-image';
 import { Check, ChevronLeft, ChevronsUpDown, ListFilter, Pencil, Plus, RotateCcw, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Animated, ImageBackground, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import GroupedNeedsSelector from '../chat/GroupedNeedsSelector';
 import DateRangePicker from './DateRangePicker';
 import NeedCup from './NeedCup';
@@ -925,7 +926,6 @@ export default function StatsTrackedNeeds() {
         className={`rounded-2xl shadow-lg shadow-black/10 relative z-10 border border-white`}
         style={{
           backgroundColor: baseColors.offwhite + '90',
-          elevation: 10, // For Android
         }}
       >
         <View className="flex-row justify-between items-center px-4 pt-3 pb-2 mb-2">
@@ -943,7 +943,7 @@ export default function StatsTrackedNeeds() {
                 <ChevronLeft size={20} color="#000" />
               </TouchableOpacity>
             )}
-            <Text className="text-base font-semibold text-black">Top Bedürfnisse</Text>
+            <Text className="text-lg font-semibold text-black">Top Bedürfnisse</Text>
           </View>
           {!isEditMode && trackedNeeds.length > 0 && (
             <View className="flex-row items-center gap-2">
@@ -980,8 +980,8 @@ export default function StatsTrackedNeeds() {
               <Image source={purpleImageHighres} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.3 }}>
               </Image>
               <View className="px-4 pt-4 pb-6">
-                <Text className="ml-1 flex-1 leading-[18px] mb-2" style={{ color: baseColors.black }}>
-                  Du kannst heute deine Schalen füllen! Nutze die Gelegenheit, um deine Bedürfnisse zu reflektieren.
+                <Text style={{ color: baseColors.black, lineHeight: 18, marginBottom: 8 }}>
+                  Fülle deine Schalen und reflektiere deine Bedürfnisse.
                 </Text>
                 <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                   <TouchableOpacity
@@ -992,7 +992,7 @@ export default function StatsTrackedNeeds() {
                     <Image source={purpleImageHighres} resizeMode="cover" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
                     </Image>
                     <Text className="text-sm font-medium" style={{ color: baseColors.forest }}>
-                      Schalen füllen
+                    Jetzt einchecken
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1064,46 +1064,15 @@ export default function StatsTrackedNeeds() {
                 )}
               </View>
               <View className="mt-2 flex-row items-center justify-center" style={{ overflow: 'hidden', borderRadius: 999 }}>
-                <TouchableOpacity
+                <ImageIconButton
                   onPress={handleEditModeToggle}
+                  image={jungleImage}
+                  icon={<Check color="#fff" />}
+                  label="Füllstand speichern"
+                  size="small"
                   disabled={!hasFilledAllCups || isSavingFillLevels}
-                  style={{ opacity: (!hasFilledAllCups || isSavingFillLevels) ? 0.5 : 1, position: 'relative', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, paddingVertical: 8, paddingLeft: 16, paddingRight: 8, borderRadius: 999 }}
-                >
-                  <Image
-                    source={jungleImage}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 16,
-                      paddingVertical: 8,
-                      paddingLeft: 16,
-                      paddingRight: 8,
-                      borderRadius: 999,
-                      overflow: 'hidden',
-                      borderWidth: 1,
-                      borderColor: 'rgba(0, 0, 0, 0.1)',
-                    }}
-                  >
-
-                  </Image>
-                  {isSavingFillLevels ? (
-                    <LoadingIndicator />
-                  ) : (
-                    <>
-                      <Text style={{ fontSize: 14, color: baseColors.offwhite }}>
-                        Füllstand speichern
-                      </Text>
-                      <Check size={16} color="#fff" style={{ backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
-                    </>
-                  )}
-                </TouchableOpacity>
+                  loading={isSavingFillLevels}
+                />
               </View>
             </View>
           ) : (
@@ -1138,7 +1107,7 @@ export default function StatsTrackedNeeds() {
                 </View>
               ) : (
                 <>
-                  <Text className="text-base font-semibold text-black">Strategien</Text>
+                  <Text className="text-lg font-semibold text-black">Strategien</Text>
                   <View className="flex-row items-center gap-2">
                     <View ref={filterButtonRef} collapsable={false}>
                       <TouchableOpacity

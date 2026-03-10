@@ -13,10 +13,10 @@ import LearnMessageInput, {
   LearnInputPrevButton,
 } from '@/components/learn/LearnMessageInput';
 import LearnNavigation from '@/components/learn/LearnNavigation';
+import TokenLimitModal from '@/components/TokenLimitModal';
 import { getFeelings, getNeeds, type Feeling, type Need } from '@/lib/api/chat';
 import { askAIQuestion, type LearningSession } from '@/lib/api/learn';
-import { getTokenLimitMessage, isTokenLimitError } from '@/lib/tokenLimit';
-import TokenLimitModal from '@/components/TokenLimitModal';
+import { isTokenLimitError } from '@/lib/tokenLimit';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Keyboard,
@@ -78,13 +78,13 @@ export default function LearnAIQuestion({
   const [needSelectorVisible, setNeedSelectorVisible] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-    const [selection, setSelection] = useState({ start: 0, end: 0 });
-    const textInputRef = useRef<TextInput>(null);
+  const [selection, setSelection] = useState({ start: 0, end: 0 });
+  const textInputRef = useRef<TextInput>(null);
 
-    // Track selection changes
-    const onSelectionChange = (event: { nativeEvent: { selection: { start: number; end: number } } }) => {
-      setSelection(event.nativeEvent.selection);
-    };
+  // Track selection changes
+  const onSelectionChange = (event: { nativeEvent: { selection: { start: number; end: number } } }) => {
+    setSelection(event.nativeEvent.selection);
+  };
 
   const internalStep = totalSteps[currentStep]?.internalStep ?? 0;
 
@@ -297,62 +297,63 @@ export default function LearnAIQuestion({
     return (
       <>
         <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
-      <View className="flex-grow flex-col justify-between">
-        {responseText ? (
-          <ScrollView
-            className="flex-grow"
-            contentContainerStyle={{ flexGrow: 1 }}
-          >
-            <View className="flex-grow items-center justify-center px-4">
-              <View className="max-h-80 rounded-lg">
-                <Markdown
-                  markdownit={markdownItInstance}
-                  style={{
-                    body: {
-                      fontSize: 18,
-                    },
-                    paragraph: {
-                      marginBottom: 12,
-                    },
-                  }}
-                >
-                  {responseText}
-                </Markdown>
+        <View className="flex-grow flex-col justify-between">
+          {responseText ? (
+            <ScrollView
+              className="flex-grow"
+              style={{ maxHeight: '100%', flexBasis: 0 }}
+              contentContainerStyle={{ flexGrow: 1 }}
+            >
+              <View className="flex-grow items-center justify-center px-4" style={{paddingVertical: 16}}>
+                <View className=" rounded-lg">
+                  <Markdown
+                    markdownit={markdownItInstance}
+                    style={{
+                      body: {
+                        fontSize: 18,
+                      },
+                      paragraph: {
+                        marginBottom: 12,
+                      },
+                    }}
+                  >
+                    {responseText}
+                  </Markdown>
+                </View>
               </View>
+            </ScrollView>
+          ) : (
+            <View className="flex-grow items-center justify-center">
+              <Text>Loading response...</Text>
             </View>
-          </ScrollView>
-        ) : (
-          <View className="flex-grow items-center justify-center">
-            <Text>Loading response...</Text>
-          </View>
-        )}
+          )}
 
-        {/* Navigation - ALWAYS show when on response step */}
-        <View
-          className="border-t border-black/10"
-          style={{
-            backgroundColor: baseColors.background,
-            paddingTop: 16,
-            marginLeft: -16,
-            marginRight: -16,
-            paddingLeft: 16,
-            paddingRight: 16,
-          }}
-        >
-          <LearnNavigation
-            onNext={() => {
-              console.log('Navigation Next clicked');
-              gotoNextStep?.();
+          {/* Navigation - ALWAYS show when on response step */}
+          <View
+            className="border-t border-black/10"
+            style={{
+              backgroundColor: baseColors.background,
+              paddingTop: 16,
+              marginLeft: -16,
+              marginRight: -16,
+              paddingLeft: 16,
+              paddingRight: 16,
             }}
-            onPrev={() => {
-              console.log('Navigation Prev clicked');
-              gotoPrevStep?.();
-            }}
-            showPrev={true}
-            nextText="Weiter"
-          />
+          >
+            <LearnNavigation
+              onNext={() => {
+                console.log('Navigation Next clicked');
+                gotoNextStep?.();
+              }}
+              onPrev={() => {
+                console.log('Navigation Prev clicked');
+                gotoPrevStep?.();
+              }}
+              showPrev={true}
+              nextText="Weiter"
+            />
+          </View>
         </View>
-      </View>
       </>
     );
   }
@@ -365,105 +366,105 @@ export default function LearnAIQuestion({
     return (
       <>
         <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
-      <View className="flex flex-1 flex-col justify-between" style={{ minHeight: 0, overflow: 'hidden' }}>
-        {/* Question - scrollable so content stays visible when selector is expanded */}
-        <ScrollView
-          className="flex-1"
-          style={{ minHeight: 0, flexBasis: 0 }}
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 16 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <Markdown
-            markdownit={markdownItInstance}
-            style={{
-              body: {
-                fontSize: 18,
-                color: '#1f2937',
-                lineHeight: 24,
-                fontWeight: '500',
-              },
-              paragraph: {
-                marginBottom: 12,
-              },
-            }}
+        <View className="flex flex-1 flex-col justify-between" style={{ minHeight: 0, overflow: 'hidden' }}>
+          {/* Question - scrollable so content stays visible when selector is expanded */}
+          <ScrollView
+            className="flex-1"
+            style={{ minHeight: 0, flexBasis: 0 }}
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 16, paddingVertical: 16 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            {content.question || ''}
-          </Markdown>
-        </ScrollView>
+            <Markdown
+              markdownit={markdownItInstance}
+              style={{
+                body: {
+                  fontSize: 18,
+                  color: '#1f2937',
+                  lineHeight: 24,
+                  fontWeight: '500',
+                },
+                paragraph: {
+                  marginBottom: 12,
+                },
+              }}
+            >
+              {content.question || ''}
+            </Markdown>
+          </ScrollView>
 
-        {/* Input Section - in document flow */}
-        <LearnMessageInput
-          value={userAnswer}
-          onChangeText={setUserAnswer}
-          onSelectionChange={onSelectionChange}
-          onSubmit={submitAnswer}
-          placeholder={content.placeholder || 'Schreibe deine Antwort hier...'}
-          disabled={isLoading}
-          isLoading={isLoading}
-          sendDisabled={!userAnswer.trim()}
-          errorMessage={errorMessage}
-          textInputRef={textInputRef}
-          selectorContent={
-            <>
-              {content.showFeelingsButton && feelingSelectorVisible && (
-                <View className="max-h-40 border-b border-black/5">
-                  <GroupedFeelingsSelector
-                    feelings={feelings}
-                    onFeelingPress={addText}
-                    isLoading={isLoadingData}
-                    selectType="single"
-                    highlightSelection={false}
-                  />
-                </View>
-              )}
-              {content.showNeedsButton && needSelectorVisible && (
-                <View className="max-h-40 border-b border-black/5">
-                  <GroupedNeedsSelector
-                    needs={needs}
-                    onNeedPress={addText}
-                    isLoading={isLoadingData}
-                  />
-                </View>
-              )}
-            </>
-          }
-          leftActions={
-            <>
-              {gotoPrevStep && <LearnInputPrevButton onPress={gotoPrevStep} />}
-              {existingResponse && (
-                <LearnInputExistingResponseButton
-                  onPress={() => gotoNextStep?.()}
-                  compact={content.showFeelingsButton || content.showNeedsButton}
-                />
-              )}
-              {content.showFeelingsButton && !isPreview && (
-                <LearnInputFeelingsButton
-                  visible={feelingSelectorVisible}
-                  onPress={toggleFeelingSelector}
-                  disabled={isLoadingData}
-                />
-              )}
-              {content.showNeedsButton && !isPreview && (
-                <LearnInputNeedsButton
-                  visible={needSelectorVisible}
-                  onPress={toggleNeedSelector}
-                  disabled={isLoadingData}
-                />
-              )}
-            </>
-          }
-          onKeyPress={(e) => {
-            if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
-              e.preventDefault();
+          {/* Input Section - in document flow */}
+          <LearnMessageInput
+            value={userAnswer}
+            onChangeText={setUserAnswer}
+            onSelectionChange={onSelectionChange}
+            onSubmit={submitAnswer}
+            placeholder={content.placeholder || 'Schreibe deine Antwort hier...'}
+            disabled={isLoading}
+            isLoading={isLoading}
+            sendDisabled={!userAnswer.trim()}
+            errorMessage={errorMessage}
+            textInputRef={textInputRef}
+            selectorContent={
+              <>
+                {content.showFeelingsButton && feelingSelectorVisible && (
+                  <View className="max-h-40 border-b border-black/5">
+                    <GroupedFeelingsSelector
+                      feelings={feelings}
+                      onFeelingPress={addText}
+                      isLoading={isLoadingData}
+                      selectType="single"
+                      highlightSelection={false}
+                    />
+                  </View>
+                )}
+                {content.showNeedsButton && needSelectorVisible && (
+                  <View className="max-h-40 border-b border-black/5">
+                    <GroupedNeedsSelector
+                      needs={needs}
+                      onNeedPress={addText}
+                      isLoading={isLoadingData}
+                    />
+                  </View>
+                )}
+              </>
             }
-          }}
-          onBeforeSubmit={() => {
-            setFeelingSelectorVisible(false);
-            setNeedSelectorVisible(false);
-          }}
-        />
-      </View>
+            leftActions={
+              <>
+                {gotoPrevStep && <LearnInputPrevButton onPress={gotoPrevStep} />}
+                {existingResponse && (
+                  <LearnInputExistingResponseButton
+                    onPress={() => gotoNextStep?.()}
+                    compact={content.showFeelingsButton || content.showNeedsButton}
+                  />
+                )}
+                {content.showFeelingsButton && !isPreview && (
+                  <LearnInputFeelingsButton
+                    visible={feelingSelectorVisible}
+                    onPress={toggleFeelingSelector}
+                    disabled={isLoadingData}
+                  />
+                )}
+                {content.showNeedsButton && !isPreview && (
+                  <LearnInputNeedsButton
+                    visible={needSelectorVisible}
+                    onPress={toggleNeedSelector}
+                    disabled={isLoadingData}
+                  />
+                )}
+              </>
+            }
+            onKeyPress={(e) => {
+              if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
+                e.preventDefault();
+              }
+            }}
+            onBeforeSubmit={() => {
+              setFeelingSelectorVisible(false);
+              setNeedSelectorVisible(false);
+            }}
+          />
+        </View>
       </>
     );
   }

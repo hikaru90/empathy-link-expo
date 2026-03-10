@@ -120,13 +120,13 @@ export default function LearnNeedsRubiksCube({
   }, [isPreview, userSentence, onResponse, gotoNextStep]);
 
   return (
-    <View className="flex flex-1 flex-col justify-between gap-4 rounded-lg mb-6">
+    <View className="flex-1 flex-col justify-between gap-4 rounded-lg">
       {internalStep === 0 && (
         <View className="flex flex-1 flex-col justify-between" style={{ minHeight: 0, overflow: 'hidden' }}>
           <ScrollView
             className="flex-1"
             style={{ minHeight: 0, flexBasis: 0 }}
-            contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 8, paddingVertical: 16 }}
+            contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 8, paddingVertical: 16, justifyContent: 'center' }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
@@ -136,7 +136,7 @@ export default function LearnNeedsRubiksCube({
               </View>
               <Markdown
                 markdownit={markdownItInstance}
-                style={{ body: { fontSize: 16, fontWeight: '500', color: '#111827', textAlign: 'center' } }}
+                style={{ body: { fontSize: 18, fontWeight: '500', color: '#111827', textAlign: 'center', lineHeight: 24 } }}
               >
                 {content.title || 'Gib einen schwierigen Satz ein, den du gehört hast'}
               </Markdown>

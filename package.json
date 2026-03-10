@@ -13,7 +13,8 @@
     "build": "expo export -p web",
     "prebuild": "expo prebuild",
     "playwright:test": "playwright test --headed",
-    "eas:build:android:local": "eas build --platform android --local",
+    "eas:build:android:local": "eas build --platform android --profile preview --local",
+    "eas:build:ios:local": "eas build --platform ios --profile preview --local",
     "tailscale:funnel": "/Applications/Tailscale.app/Contents/MacOS/Tailscale funnel 4000"
   },
   "dependencies": {

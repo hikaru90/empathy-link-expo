@@ -1,20 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, ImageBackground, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 
 import jungleImage from '@/assets/images/Jungle.jpg';
 import baseColors from '@/baseColors.config';
 import ChatAnalysisModal from '@/components/chat/ChatAnalysisModal';
 import MessageBubble from '@/components/chat/MessageBubble';
 import MessageInput from '@/components/chat/MessageInput';
-import TokenLimitModal from '@/components/TokenLimitModal';
 import SafetyResources from '@/components/chat/SafetyResources';
 import TypingIndicator from '@/components/chat/TypingIndicator';
+import ImageIconButton from '@/components/ImageIconButton';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import OnboardingWelcome from '@/components/onboarding/OnboardingWelcome';
+import TokenLimitModal from '@/components/TokenLimitModal';
 import { useAuthGuard } from '@/hooks/use-auth';
+import { ChatProvider, useChat } from '@/hooks/use-chat';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import type { HistoryEntry } from '@/lib/api/chat';
-import { ChatProvider, useChat } from '@/hooks/use-chat';
 import { getTokenLimitMessage } from '@/lib/tokenLimit';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Check } from 'lucide-react-native';
@@ -212,133 +213,121 @@ function ChatContent() {
   return (
     <>
       <TokenLimitModal visible={error === getTokenLimitMessage()} onClose={clearError} />
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'android' ? 70 : 0}
-    >
-      <View style={{ position: 'absolute', top: -gradientSize / 3, left: -gradientSize / 3, right: 0, bottom: 0, zIndex: -1}}>
-
-        <Svg height={gradientSize} width={gradientSize}>
-          <Defs>
-            <RadialGradient
-              id="grad"
-              cx={gradientSize / 2} 
-              cy={gradientSize / 2}
-              rx={gradientSize / 2}
-              ry={gradientSize / 2}
-              fx={gradientSize / 2}
-              fy={gradientSize / 2}
-              gradientUnits="userSpaceOnUse"
-            >
-              <Stop offset="0" stopColor='white' stopOpacity="1" />
-              <Stop offset="1" stopColor='white' stopOpacity="0" />
-            </RadialGradient>
-          </Defs>
-          <Ellipse cx={gradientSize / 2} cy={gradientSize / 2} rx={gradientSize / 2} ry={gradientSize / 2} fill="url(#grad)" />
-        </Svg>
-      </View>
-      <FlatList
-        ref={flatListRef}
-        data={displayHistory || []}
-        keyExtractor={(item, index) => `${index}-${item.timestamp}`}
-        ListHeaderComponent={
-          safetyStatus?.showResources && !safetyStatus?.suspended ? (
-            <View style={styles.safetyBanner}>
-              <SafetyResources
-                resources={crisisResources || []}
-                suspended={false}
-                onAppeal={requestAppeal}
-                compact
-              />
-            </View>
-          ) : null
-        }
-        renderItem={({ item, index }) => (
-          <View
-            onLayout={(event) => {
-              const { height } = event.nativeEvent.layout;
-              onItemLayout(index, height);
-            }}
-          >
-            <MessageBubble message={item} />
-          </View>
-        )}
-        contentContainerStyle={[
-          styles.messageList,
-          {
-            paddingBottom: (feelingSelectorVisible || needSelectorVisible)
-              ? Platform.OS === 'web' ? 200 : Platform.OS === 'ios' ? 380 : 320  // Extra padding when selectors are open
-              : Platform.OS === 'web' ? 60 : Platform.OS === 'ios' ? 260 : 180
-          }
-        ]}
-        getItemLayout={getItemLayout}
-        onScrollToIndexFailed={(info) => {
-          // Wait for layout and retry
-          setTimeout(() => {
-            flatListRef.current?.scrollToIndex({
-              index: info.index,
-              viewPosition: 0,
-              viewOffset: 100,
-              animated: true
-            });
-          }, 100);
-        }}
-        onContentSizeChange={scrollToBottom}
-        ListFooterComponent={
-          <>
-            {isSending && <TypingIndicator />}
-            {showFinishButton && (
-              <View style={styles.finishButtonContainer}>
-                <TouchableOpacity
-                  onPress={handleFinishChat}
-                >
-                  <ImageBackground source={jungleImage} resizeMode="cover" style={{
-                    width: '100%', height: '100%', flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 16,
-                    paddingVertical: 8,
-                    paddingLeft: 16,
-                    paddingRight: 8,
-                    borderRadius: 999,
-                    overflow: 'hidden',
-                    borderWidth: 1,
-                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                  }}>
-                    <Text style={styles.finishButtonText}>Chat abschließen & auswerten</Text>
-                    <Check size={16} color="#fff" style={{ backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
-                  </ImageBackground>
-                </TouchableOpacity>
-              </View>
-            )}
-          </>
-        }
-        style={styles.flatList}
-        scrollEnabled={true}
-      />
-      <LinearGradient
-        colors={[baseColors.background, baseColors.background + 'ee', baseColors.background + '00']}
-        start={{ x: 0, y: 1 }}
-        end={{ x: 0, y: 0 }}
-        style={styles.gradient}
+      <KeyboardAvoidingView
+        style={{ flex: 1, paddingBottom: 70 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'android' ? 70 : 0}
       >
-      </LinearGradient>
-      <MessageInput
-        onSelectorStateChange={(feelingVisible, needVisible) => {
-          setFeelingSelectorVisible(feelingVisible);
-          setNeedSelectorVisible(needVisible);
-        }}
-      />
-      <ChatAnalysisModal
-        visible={showAnalysisModal}
-        isAnalyzing={isAnalyzing}
-        analysisComplete={analysisComplete}
-        analysisFailed={analysisFailed}
-        analysisId={analysisId}
-        onRetry={handleRetryAnalysis}
-        onClose={handleCloseModal}
-      />
-    </KeyboardAvoidingView>
+        <View style={{ position: 'absolute', top: -gradientSize / 3, left: -gradientSize / 3, right: 0, bottom: 0, zIndex: -1 }}>
+
+          <Svg height={gradientSize} width={gradientSize}>
+            <Defs>
+              <RadialGradient
+                id="grad"
+                cx={gradientSize / 2}
+                cy={gradientSize / 2}
+                rx={gradientSize / 2}
+                ry={gradientSize / 2}
+                fx={gradientSize / 2}
+                fy={gradientSize / 2}
+                gradientUnits="userSpaceOnUse"
+              >
+                <Stop offset="0" stopColor='white' stopOpacity="1" />
+                <Stop offset="1" stopColor='white' stopOpacity="0" />
+              </RadialGradient>
+            </Defs>
+            <Ellipse cx={gradientSize / 2} cy={gradientSize / 2} rx={gradientSize / 2} ry={gradientSize / 2} fill="url(#grad)" />
+          </Svg>
+        </View>
+        <FlatList
+          ref={flatListRef}
+          data={displayHistory || []}
+          keyExtractor={(item, index) => `${index}-${item.timestamp}`}
+          ListHeaderComponent={
+            safetyStatus?.showResources && !safetyStatus?.suspended ? (
+              <View style={styles.safetyBanner}>
+                <SafetyResources
+                  resources={crisisResources || []}
+                  suspended={false}
+                  onAppeal={requestAppeal}
+                  compact
+                />
+              </View>
+            ) : null
+          }
+          renderItem={({ item, index }) => (
+            <View
+              onLayout={(event) => {
+                const { height } = event.nativeEvent.layout;
+                onItemLayout(index, height);
+              }}
+            >
+              <MessageBubble message={item} />
+            </View>
+          )}
+          contentContainerStyle={[
+            styles.messageList,
+            {
+              paddingBottom: (feelingSelectorVisible || needSelectorVisible)
+                ? Platform.OS === 'web' ? 200 : Platform.OS === 'ios' ? 380 : 320  // Extra padding when selectors are open
+                : Platform.OS === 'web' ? 60 : Platform.OS === 'ios' ? 260 : 180
+            }
+          ]}
+          getItemLayout={getItemLayout}
+          onScrollToIndexFailed={(info) => {
+            // Wait for layout and retry
+            setTimeout(() => {
+              flatListRef.current?.scrollToIndex({
+                index: info.index,
+                viewPosition: 0,
+                viewOffset: 100,
+                animated: true
+              });
+            }, 100);
+          }}
+          onContentSizeChange={scrollToBottom}
+          ListFooterComponent={
+            <>
+              {isSending && <TypingIndicator />}
+              {showFinishButton && (
+                <View style={styles.finishButtonContainer}>
+                  <ImageIconButton
+                    onPress={handleFinishChat}
+                    image={jungleImage}
+                    icon={<Check color="#fff" />}
+                    label="Chat abschließen & auswerten"
+                    size="small"
+                  />
+                </View>
+              )}
+            </>
+          }
+          style={styles.flatList}
+          scrollEnabled={true}
+        />
+        <LinearGradient
+          colors={[baseColors.background, baseColors.background + 'ee', baseColors.background + '00']}
+          start={{ x: 0, y: 1 }}
+          end={{ x: 0, y: 0 }}
+          style={styles.gradient}
+        >
+        </LinearGradient>
+        <MessageInput
+          onSelectorStateChange={(feelingVisible, needVisible) => {
+            setFeelingSelectorVisible(feelingVisible);
+            setNeedSelectorVisible(needVisible);
+          }}
+        />
+        <ChatAnalysisModal
+          visible={showAnalysisModal}
+          isAnalyzing={isAnalyzing}
+          analysisComplete={analysisComplete}
+          analysisFailed={analysisFailed}
+          analysisId={analysisId}
+          onRetry={handleRetryAnalysis}
+          onClose={handleCloseModal}
+        />
+      </KeyboardAvoidingView>
     </>
   );
 }
@@ -383,9 +372,6 @@ const styles = StyleSheet.create({
     bottom: Platform.OS === 'ios' ? 70 : 0,
     zIndex: 5,
   },
-  container: {
-    flex: 1,
-  },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -428,9 +414,5 @@ const styles = StyleSheet.create({
   },
   safetyBanner: {
     marginBottom: 16,
-  },
-  finishButtonText: {
-    fontSize: 14,
-    color: baseColors.offwhite,
   },
 });

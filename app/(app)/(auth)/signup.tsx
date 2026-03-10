@@ -1,10 +1,12 @@
 import jungleImage from '@/assets/images/Jungle.jpg';
 import baseColors from '@/baseColors.config';
+import ImageIconButton from '@/components/ImageIconButton';
 import SparklePill from '@/components/SparklePill';
 import { useAuth } from '@/hooks/use-auth';
 import { Link, useRouter } from 'expo-router';
+import { UserPlus } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, ImageBackground, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -173,49 +175,17 @@ export default function SignupScreen() {
         />
       </View>
 
-      <View className="flex-row justify-center">
-        <TouchableOpacity
+      <View className="flex-row justify-center" style={{ width: '100%', maxWidth: 300 }}>
+        <ImageIconButton
           onPress={handleSignup}
+          image={jungleImage}
+          icon={<UserPlus color="#fff" />}
+          label="Konto erstellen"
+          size="large"
           disabled={isLoading}
-          accessibilityRole="button"
-          accessibilityLabel="Konto erstellen"
-          accessibilityState={{ disabled: isLoading }}
-          testID="signup-button"
-          style={{
-            width: '100%',
-            maxWidth: 300,
-            height: 48,
-            opacity: isLoading ? 0.5 : 1,
-          }}
-        >
-          <ImageBackground source={jungleImage} resizeMode="cover" style={{
-            flex: 1,
-            height: '100%',
-            width: '100%',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 12,
-            paddingVertical: 12,
-            paddingHorizontal: 24,
-            borderRadius: 999,
-            overflow: 'hidden',
-            borderWidth: 1,
-            borderColor: 'rgba(0, 0, 0, 0.1)',
-          }}>
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Text style={{
-                  fontSize: 16,
-                  color: baseColors.offwhite,
-                  fontWeight: '600',
-                }}>Konto erstellen</Text>
-              </>
-            )}
-          </ImageBackground>
-        </TouchableOpacity>
+          loading={isLoading}
+          style={{ flex: 1 }}
+        />
       </View>
 
       <View className="mt-6 flex-row justify-center">

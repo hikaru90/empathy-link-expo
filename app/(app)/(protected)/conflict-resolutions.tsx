@@ -1,14 +1,16 @@
 import baseColors from '@/baseColors.config';
+import ImageIconButton from '@/components/ImageIconButton';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { getConflictResolutions, updateConflictResolution, type ConflictResolution } from '@/lib/api/conflict-resolution';
 import { authClient } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/config';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Archive, Check, CheckCircle, ChevronLeft, ListFilter, ListTodo, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, ImageBackground, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Modal, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface RequestItem {
   id: string;
@@ -99,12 +101,12 @@ export default function ConflictResolutionsScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // Load stats to get all analyses with requests
       const statsResult = await authClient.$fetch(`${API_BASE_URL}/api/stats`, { method: 'GET' });
       if ((statsResult as any).error) throw new Error('Failed to load stats');
       const statsData = (statsResult as any).data as StatsData;
-      
+
       // Filter and map requests
       const requestsData = statsData.analyses
         .filter((analysis) => analysis.request && analysis.request.trim().length > 0)
@@ -291,7 +293,7 @@ export default function ConflictResolutionsScreen() {
   return (
     <View className="flex-1" style={{ backgroundColor: baseColors.background }}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <LinearGradient
@@ -319,7 +321,7 @@ export default function ConflictResolutionsScreen() {
         >
           <ChevronLeft size={20} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>Deine Bitten</Text>
+        <Text className="text-lg font-semibold text-black">Deine Bitten</Text>
         <View style={{ flex: 1 }} />
         <TouchableOpacity
           style={{
@@ -328,7 +330,7 @@ export default function ConflictResolutionsScreen() {
             borderRadius: 16,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: isSelectionMode ? baseColors.black+'11' : '',
+            backgroundColor: isSelectionMode ? baseColors.black + '11' : '',
           }}
           onPress={toggleSelectionMode}
         >
@@ -397,8 +399,8 @@ export default function ConflictResolutionsScreen() {
               {filterOptions.map((option) => {
                 const count = option.value === 'open' ? unresolvedRequests.length
                   : option.value === 'resolved' ? resolvedRequests.length
-                  : archivedRequests.length;
-                
+                    : archivedRequests.length;
+
                 return (
                   <TouchableOpacity
                     key={option.value}
@@ -446,8 +448,8 @@ export default function ConflictResolutionsScreen() {
         </TouchableOpacity>
       </Modal>
 
-      <ScrollView 
-        style={styles.scrollView} 
+      <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.container}>
@@ -460,8 +462,8 @@ export default function ConflictResolutionsScreen() {
                 const isResolved = resolution?.resolved || false;
                 const isArchived = resolution?.archived || false;
                 const isLast = index === filteredRequests.length - 1;
-                
-                  return (
+
+                return (
                   <View
                     key={item.id}
                     className={isLast ? '' : 'border-b border-black/10'}
@@ -473,7 +475,7 @@ export default function ConflictResolutionsScreen() {
                         alignItems: 'stretch',
                         gap: 8,
                         borderRadius: 16,
-                        backgroundColor: selectedRequests.includes(item.analysisId) ? baseColors.black+'11' : '',
+                        backgroundColor: selectedRequests.includes(item.analysisId) ? baseColors.black + '11' : '',
                         paddingLeft: 8,
                       }}
                       onPress={() => {
@@ -504,8 +506,8 @@ export default function ConflictResolutionsScreen() {
                             height: 20,
                             borderRadius: 10,
                             borderWidth: 1,
-                            borderColor: baseColors.black+'22',
-                            backgroundColor: baseColors.black+'05',
+                            borderColor: baseColors.black + '22',
+                            backgroundColor: baseColors.black + '05',
                             justifyContent: 'center',
                             alignItems: 'center',
                             marginTop: -1,
@@ -578,84 +580,67 @@ export default function ConflictResolutionsScreen() {
             width: '100%',
           }}>
             <View style={{ flexDirection: 'row', gap: 8, flex: 1, justifyContent: 'center' }}>
-              <TouchableOpacity
+              <ImageIconButton
                 onPress={() => {
                   setIsSelectionMode(false);
                   setSelectedRequests([]);
                 }}
+                image={jungleImage}
+                icon={<X color="#fff" />}
+                label="Abbrechen"
+                size="medium"
                 disabled={isProcessing}
-              >
-                <ImageBackground
-                  source={jungleImage}
-                  resizeMode="cover"
-                  style={{
-                    flex: 1,
-                    height: '100%',
-                    width: '100%',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 16,
-                    paddingVertical: 8,
-                    paddingLeft: 16,
-                    paddingRight: 8,
-                    borderRadius: 999,
-                    overflow: 'hidden',
-                    borderWidth: 1,
-                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                  }}
-                >
-                  <Text style={{
-                    fontSize: 14,
-                    color: baseColors.offwhite,
-                  }}>Abbrechen</Text>
-                  <X size={16} color="#fff" style={{
-                    backgroundColor: baseColors.white + '44',
-                    padding: 3,
-                    borderRadius: 999,
-                  }} />
-                </ImageBackground>
-              </TouchableOpacity>
+              />
               <TouchableOpacity
                 onPress={handleMarkAsResolved}
                 disabled={isProcessing}
+                style={{
+                  position: 'relative',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 16,
+                  paddingVertical: 8,
+                  paddingLeft: 16,
+                  paddingRight: 8,
+                  borderRadius: 999,
+                  overflow: 'hidden',
+                  borderWidth: 1,
+                  borderColor: 'rgba(0, 0, 0, 0.1)',
+                }}
               >
-                <ImageBackground
+                <Image
                   source={greenImage}
-                  resizeMode="cover"
                   style={{
+                    position: 'absolute',
                     flex: 1,
-                    height: '100%',
-                    width: '100%',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 16,
-                    paddingVertical: 8,
-                    paddingLeft: 16,
-                    paddingRight: 8,
-                    borderRadius: 999,
-                    overflow: 'hidden',
-                    borderWidth: 1,
-                    borderColor: 'rgba(0, 0, 0, 0.1)',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                   }}
                 >
-                  <Text style={{
-                    fontSize: 14,
-                    color: baseColors.offwhite,
-                  }}>Abhaken</Text>
-                  <CheckCircle size={16} color={baseColors.forest} style={{
-                    backgroundColor: baseColors.white + '88',
-                    padding: 3,
-                    borderRadius: 999,
-                  }} />
-                </ImageBackground>
+
+                </Image>
+                <Text style={{
+                  fontSize: 14,
+                  color: baseColors.offwhite,
+                }}>Abhaken</Text>
+                <View style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 3,
+                  backgroundColor: baseColors.white + '88',
+                  borderRadius: 999,
+                }}>
+
+                <CheckCircle size={12} color={baseColors.forest} style={{
+                }} />
+                </View>
               </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleArchive}
-              disabled={isProcessing}
-            >
-              <ImageBackground
-                source={whiteImage}
-                resizeMode="cover"
+              <TouchableOpacity
+                onPress={handleArchive}
+                disabled={isProcessing}
                 style={{
                   width: 32.5,
                   height: 32.5,
@@ -664,16 +649,27 @@ export default function ConflictResolutionsScreen() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   overflow: 'hidden',
+                  position: 'relative',
                   borderWidth: 1,
                   borderColor: 'rgba(0, 0, 0, 0.1)',
                 }}
               >
+                <Image
+                  source={whiteImage}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                  }}
+                >
+                </Image>
                 <Archive size={16} color={baseColors.black} style={{
-                    backgroundColor: baseColors.white + '88',
-                    borderRadius: 999,
-                  }} />
-              </ImageBackground>
-            </TouchableOpacity>
+                  backgroundColor: baseColors.white + '88',
+                  borderRadius: 999,
+                }} />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -713,12 +709,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 3,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
   },
   statsContainer: {
     flexDirection: 'row',

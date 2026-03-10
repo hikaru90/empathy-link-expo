@@ -43,7 +43,7 @@ export default function LearnTask({ content, color, onComplete, onPrev, onNext }
       <Markdown
         markdownit={markdownItInstance}
         style={{
-          body: { fontSize: 16, color: '#1f2937', lineHeight: 22 },
+          body: { fontSize: 18, color: '#1f2937', lineHeight: 24 },
           paragraph: { marginBottom: 8 },
         }}
       >

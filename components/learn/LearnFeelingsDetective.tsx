@@ -11,11 +11,11 @@ import LearnMessageInput, {
 } from '@/components/learn/LearnMessageInput';
 import LearnNavigation from '@/components/learn/LearnNavigation';
 import LoadingIndicator from '@/components/LoadingIndicator';
+import TokenLimitModal from '@/components/TokenLimitModal';
 import { useBottomDrawerSlot } from '@/hooks/use-bottom-drawer-slot';
 import { getFeelings, type Feeling } from '@/lib/api/chat';
 import { feelingsDetectiveAI, type LearningSession } from '@/lib/api/learn';
 import { isTokenLimitError } from '@/lib/tokenLimit';
-import TokenLimitModal from '@/components/TokenLimitModal';
 import { SquareMousePointer } from 'lucide-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -212,7 +212,7 @@ export default function LearnFeelingsDetective({
                   className="rounded-full px-2 py-1"
                   style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: baseColors.forest + '22' }}
                 >
-                  <Text className="text-xs text-gray-800">{f?.nameDE ?? id}</Text>
+                  <Text className="text-sm text-gray-800">{f?.nameDE ?? id}</Text>
                 </View>
               );
             })}
@@ -416,8 +416,8 @@ export default function LearnFeelingsDetective({
         <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
       <View nativeID="learn-feelings-detective-step-0" className="flex-grow flex-col justify-between">
         {/* Question */}
-        <View className="flex-grow items-center justify-center px-4">
-          <Text className="max-w-xs text-base font-medium text-gray-900">
+        <View className="flex-grow items-center justify-center px-8">
+          <Text className="text-gray-900" style={{ fontSize: 18 }}>
             {content.question || 'Beschreibe eine Situation, die du erlebt hast:'}
           </Text>
         </View>
@@ -465,15 +465,15 @@ export default function LearnFeelingsDetective({
           <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
         <View nativeID="learn-feelings-detective-step-1" className="flex-grow flex-col justify-between">
           <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
-            <View className="flex-grow items-center justify-center px-4 py-6">
-              <View className="max-w-xs">
+            <View className="flex-grow items-center justify-center px-8 py-6">
+              <View className="">
                 <Markdown
                   markdownit={markdownItInstance}
                   style={{
                     body: {
-                      fontSize: 16,
+                      fontSize: 18,
                       color: '#374151',
-                      lineHeight: 22,
+                      lineHeight: 24,
                     },
                     paragraph: {
                       marginBottom: 12,
@@ -512,10 +512,10 @@ export default function LearnFeelingsDetective({
           <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
         <View nativeID="learn-feelings-detective-step-1" className="flex-grow flex-col items-center justify-center p-8" style={{ gap: 16 }}>
           <View className="rounded-lg border border-yellow-200 bg-yellow-50 p-6">
-            <Text className="mb-2 text-center text-lg font-semibold text-yellow-900">
+            <Text className="mb-2 text-center text-base font-semibold text-yellow-900">
               Reflexion fehlt
             </Text>
-            <Text className="mb-4 text-center text-sm text-yellow-800">
+            <Text className="mb-4 text-center text-base text-yellow-800">
               Die KI-Reflexion konnte nicht geladen werden. Du kannst sie neu erstellen oder zum
               nächsten Schritt springen.
             </Text>
@@ -530,7 +530,7 @@ export default function LearnFeelingsDetective({
                   {isLoading ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <Text className="text-center text-white">Reflexion neu erstellen</Text>
+                    <Text className="text-center text-base text-white">Reflexion neu erstellen</Text>
                   )}
                 </TouchableOpacity>
               ) : null}
@@ -538,13 +538,13 @@ export default function LearnFeelingsDetective({
                 onPress={() => gotoNextStep?.()}
                 className="rounded-lg bg-gray-600 px-4 py-2"
               >
-                <Text className="text-center text-white">Überspringen</Text>
+                <Text className="text-center text-base text-white">Überspringen</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => gotoPrevStep?.()}
                 className="rounded-lg bg-gray-200 px-4 py-2"
               >
-                <Text className="text-center text-gray-700">Zurück</Text>
+                <Text className="text-center text-base text-gray-700">Zurück</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -561,8 +561,8 @@ export default function LearnFeelingsDetective({
         <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
       <View nativeID="learn-feelings-detective-step-2" className="flex-grow flex-col justify-between">
         {/* Question */}
-        <View className="flex-grow items-center justify-center px-4">
-          <Text className="max-w-xs text-start text-base font-medium text-gray-900">
+        <View className="flex-grow items-center justify-center px-8">
+          <Text className="text-start text-gray-900" style={{ fontSize: 18 }}>
             Welche Urteile und Bewertungen hattest Du spontan im Kopf?
           </Text>
         </View>
@@ -614,15 +614,15 @@ export default function LearnFeelingsDetective({
         <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
       <View nativeID="learn-feelings-detective-step-3" className="flex-grow flex-col justify-between">
         <View className="flex-grow flex-col justify-center space-y-4">
-          <View className="flex-grow items-center justify-center px-4">
-            <Text className="max-w-xs text-center text-base font-medium text-gray-900">
+          <View className="flex-grow items-center justify-center px-8">
+            <Text className="text-center  text-gray-900" style={{ fontSize: 18 }}>
               Wie fühlst Du Dich in dieser Situation?
             </Text>
           </View>
 
           <View className="px-4">
             <View className="rounded-2xl border border-white bg-white/20 p-3 mb-5">
-              <Text className="mb-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <Text className="mb-3 text-center text-sm font-semibold uppercase tracking-wide text-gray-500">
                 Ausgewählte Gefühle
               </Text>
               {selectedFeelingItems.length > 0 ? (
@@ -632,7 +632,7 @@ export default function LearnFeelingsDetective({
                       key={feeling.id}
                       className="rounded-full bg-black/5 px-3 py-1"
                     >
-                      <Text className="text-sm text-gray-800">{feeling.nameDE}</Text>
+                      <Text className="text-base text-gray-800">{feeling.nameDE}</Text>
                     </View>
                   ))}
                 </View>
@@ -640,11 +640,11 @@ export default function LearnFeelingsDetective({
               {feelingsLoading ? (
                 <View className="flex items-center justify-center py-4">
                   <LoadingIndicator inline />
-                  <Text className="ml-2 text-sm text-gray-600">Gefühle werden geladen...</Text>
+                  <Text className="ml-2 text-base text-gray-600">Gefühle werden geladen...</Text>
                 </View>
               ) : feelingsError ? (
                 <View className="rounded-lg border border-red-200 bg-red-50 p-4">
-                  <Text className="mb-2 text-sm text-red-800">
+                  <Text className="mb-2 text-base text-red-800">
                     Fehler beim Laden der Gefühle. Bitte versuche es erneut.
                   </Text>
                   <TouchableOpacity
@@ -662,7 +662,7 @@ export default function LearnFeelingsDetective({
                     }}
                     className="mt-2 rounded-lg bg-red-600 px-3 py-1"
                   >
-                    <Text className="text-xs text-white">Erneut versuchen</Text>
+                    <Text className="text-sm text-white">Erneut versuchen</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -672,7 +672,7 @@ export default function LearnFeelingsDetective({
                   onPress={openFeelingsSelectionDrawer}
                   className="rounded-full border border-white bg-white/60 py-1 px-4 flex items-center justify-between flex-row gap-4"
                 >
-                  <Text className="text-base font-medium text-gray-800">
+                  <Text className="text-base  text-gray-800">
                     {selectedFeelingItems.length > 0 ? 'Auswahl ändern' : 'Gefühle wählen'}
                   </Text>
                   <SquareMousePointer size={16} color="#666" />
@@ -716,9 +716,9 @@ export default function LearnFeelingsDetective({
             }}
           >
             <View className="flex-grow items-center justify-center px-4">
-              <Text className="text-center text-base font-medium text-gray-900 mt-4">
-                Lass uns eine Zusammenfassung deiner Erkenntnisse erstellen.
-              </Text>
+<Text className="text-center  text-gray-900 mt-4" style={{ fontSize: 18 }}>
+              Lass uns eine Zusammenfassung deiner Erkenntnisse erstellen.
+            </Text>
             </View>
 
 
@@ -729,7 +729,7 @@ export default function LearnFeelingsDetective({
               </View>
             ) : (
               <View
-                className="pt-4 border-t border-black/10 px-4"
+                className="pt-4 border-t border-black/10 px-8"
                 style={{ backgroundColor: baseColors.background }}
               >
                 <LearnNavigation
@@ -750,15 +750,15 @@ export default function LearnFeelingsDetective({
           <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
         <View nativeID="learn-feelings-detective-step-4" className="flex-grow flex-col justify-between">
           <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
-            <View className="flex-grow items-center justify-center px-4 py-6">
-              <View className="max-w-sm max-h-80">
+            <View className="flex-grow items-center justify-center px-8 py-6">
+              <View className="">
                 <Markdown
                   markdownit={markdownItInstance}
                   style={{
                     body: {
-                      fontSize: 16,
+                      fontSize: 18,
                       color: '#374151',
-                      lineHeight: 22,
+                      lineHeight: 24,
                     },
                     paragraph: {
                       marginBottom: 12,
@@ -797,13 +797,13 @@ export default function LearnFeelingsDetective({
       <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
     <View nativeID="learn-feelings-detective-step-unknown" className="flex-grow flex-col items-center justify-center p-8" style={{ gap: 16 }}>
       <View className="rounded-lg border border-yellow-200 bg-yellow-50 p-6">
-        <Text className="mb-2 text-center text-lg font-semibold text-yellow-900">
+        <Text className="mb-2 text-center text-base font-semibold text-yellow-900">
           Unerwarteter Schritt
         </Text>
-        <Text className="mb-2 text-center text-sm text-yellow-800">
+        <Text className="mb-2 text-center text-base text-yellow-800">
           Interner Schritt: {internalStep}
         </Text>
-        <Text className="mb-4 text-center text-sm text-yellow-800">
+        <Text className="mb-4 text-center text-base text-yellow-800">
           Aktueller Schritt: {currentStep} von {totalSteps?.length ?? '?'}
         </Text>
         {gotoPrevStep ? (

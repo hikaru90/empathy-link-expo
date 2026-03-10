@@ -13,7 +13,10 @@
     "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hikaru90.empathylinkexpo"
+      "bundleIdentifier": "com.hikaru90.empathylinkexpo",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {

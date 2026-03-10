@@ -107,7 +107,7 @@ export default function StatsBlindSpots() {
   if (!insight?.hasInsight) {
     return (
       <View
-        className="rounded-2xl p-5 shadow-lg shadow-black/10"
+        className="rounded-2xl p-5 shadow-lg shadow-black/10 border border-white"
         style={{ backgroundColor: baseColors.offwhite }}
       >
         <View className="items-center justify-center py-3">
@@ -168,12 +168,12 @@ export default function StatsBlindSpots() {
 
   return (
     <View
-      className="rounded-2xl p-5 shadow-lg shadow-black/10"
+      className="rounded-2xl p-5 shadow-lg shadow-black/10 border border-white"
       style={{ backgroundColor: baseColors.offwhite }}
     >
       {/* Header with Icon and Generate Button */}
       <View className="flex-row justify-between items-center mb-4">
-        <Text className="text-base font-semibold text-black">Muster</Text>
+        <Text className="text-lg font-semibold text-black">Muster</Text>
 
         {/* Generate Button - top right corner */}
         {(insight.canGenerateNew || insight.isAdmin) && (
@@ -206,7 +206,7 @@ export default function StatsBlindSpots() {
         >
           <ImageBackground source={require('@/assets/images/background-lilac-highres.png')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}></ImageBackground>
             <View className="px-4 py-3">
-              <Text className="text-sm flex-1 leading-[18px]" style={{ color: baseColors.black }}>
+              <Text className="text-sm leading-[18px]" style={{ color: baseColors.black }}>
                 Nächste Analyse {insight.daysUntilNext === 1
                   ? 'morgen'
                   : `in ${insight.daysUntilNext} Tagen`} verfügbar.

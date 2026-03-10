@@ -422,10 +422,10 @@ export default function LearnDetailScreen() {
                                       markdownit={markdownItInstance}
                                       style={{
                                         body: {
-                                          fontSize: 15,
+                                          fontSize: 18,
                                           fontWeight: 'bold',
                                           color: '#111827',
-                                          lineHeight: 20,
+                                          lineHeight: 24,
                                         },
                                         paragraph: {
                                           marginBottom: 0,
@@ -451,9 +451,9 @@ export default function LearnDetailScreen() {
                                     markdownit={markdownItInstance}
                                     style={{
                                       body: {
-                                        fontSize: 16,
+                                        fontSize: 18,
                                         color: '#1f2937',
-                                        lineHeight: 20,
+                                        lineHeight: 24,
                                       },
                                       paragraph: {
                                         marginBottom: 8,

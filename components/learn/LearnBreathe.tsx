@@ -145,9 +145,13 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
         inhaleAudioWebRef.current.play().catch(() => { });
       }
     } else {
-      if (inhalePlayer) {
-        inhalePlayer.seekTo(0);
-        inhalePlayer.play();
+      try {
+        if (inhalePlayer?.seekTo && inhalePlayer?.play) {
+          inhalePlayer.seekTo(0);
+          inhalePlayer.play();
+        }
+      } catch {
+        // Native player may already be released (e.g. on unmount)
       }
     }
   };
@@ -158,9 +162,13 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
         exhaleAudioWebRef.current.play().catch(() => { });
       }
     } else {
-      if (exhalePlayer) {
-        exhalePlayer.seekTo(0);
-        exhalePlayer.play();
+      try {
+        if (exhalePlayer?.seekTo && exhalePlayer?.play) {
+          exhalePlayer.seekTo(0);
+          exhalePlayer.play();
+        }
+      } catch {
+        // Native player may already be released (e.g. on unmount)
       }
     }
   };
@@ -330,8 +338,12 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
       if (inhaleAudioWebRef.current) inhaleAudioWebRef.current.pause();
       if (exhaleAudioWebRef.current) exhaleAudioWebRef.current.pause();
     } else {
-      if (inhalePlayer) inhalePlayer.pause();
-      if (exhalePlayer) exhalePlayer.pause();
+      try {
+        if (inhalePlayer?.pause) inhalePlayer.pause();
+        if (exhalePlayer?.pause) exhalePlayer.pause();
+      } catch {
+        // Native player may already be released (e.g. on unmount)
+      }
     }
   };
   const startTimer = () => {
@@ -377,8 +389,12 @@ export default function LearnBreathe({ content, onNext, onPrev }: LearnBreathePr
       if (inhaleAudioWebRef.current) inhaleAudioWebRef.current.pause();
       if (exhaleAudioWebRef.current) exhaleAudioWebRef.current.pause();
     } else {
-      if (inhalePlayer) inhalePlayer.pause();
-      if (exhalePlayer) exhalePlayer.pause();
+      try {
+        if (inhalePlayer?.pause) inhalePlayer.pause();
+        if (exhalePlayer?.pause) exhalePlayer.pause();
+      } catch {
+        // Native player may already be released (e.g. on unmount)
+      }
     }
 
     setTimeout(() => {

@@ -1,14 +1,15 @@
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { BadgeCheck, Play, RotateCcw } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
-  Image,
   Platform,
-  ScrollView, StyleSheet, Text,
+  ScrollView,
+  Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 
 import baseColors from '@/baseColors.config';
@@ -27,7 +28,6 @@ import {
   type Topic,
   type TopicCategory,
 } from '@/lib/api/learn';
-import { ImageBackground } from 'expo-image';
 
 interface GroupedCategory {
   category: TopicCategory;
@@ -269,30 +269,31 @@ export default function LearnScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          ...styles.scrollContent,
+          paddingTop: Platform.OS === 'web' ? 80 : 120,
+          paddingBottom: 64,
         }}
       >
 
         <View testID="learn-list" className="px-4 pt-4 pb-6">
           <View
-            className="intro rounded-2xl p-5 justify-center overflow-hidden shadow-xl shadow-black/10 mb-6"
+            className="intro rounded-2xl p-5 justify-center overflow-hidden shadow-xl shadow-black/10 mb-4"
             style={{ position: 'relative', backgroundColor: baseColors.forest }}
           >
-            <ImageBackground
+            <Image
               source={require('@/assets/images/Jungle.jpg')}
               style={{
                 position: 'absolute',
                 top: 0,
                 left: -1,
-                width: '102%',
-                height: '102%',
+                right: -1,
+                bottom: 0,
                 zIndex: -1,
                 opacity: 0.6,
               }}
-            />
+            ></Image>
             <Animated.View style={{ height: heightAnim, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Animated.View style={{ opacity: contentOpacity }} onLayout={handleContentLayout}>
-                <Image source={require('@/assets/images/illustration-book.png')} style={{ width: 46, height: 46, marginLeft: -8, marginBottom: 8 }} />
+                <Image source={require('@/assets/images/illustration-heartlilac.png')} style={{ width: 46, height: 46, marginLeft: -8, marginBottom: 8 }} ></Image>
                 <Text className="text-base leading-6 text-white inline">
                   Stärke deine Empathiefähigkeit, Schritt für Schritt.
                   <Text className=""> Lerne praktische Werkzeuge, um klar, mitfühlend und selbstbewusst zu kommunizieren.</Text>
@@ -302,8 +303,8 @@ export default function LearnScreen() {
           </View>
           {/* Progress Summary */}
           {overallCompletion.total > 0 && (
-            <View className="mb-8 rounded-xl bg-white/80 border border-white/20 px-4 py-5 shadow-lg" style={{ shadowColor: '#065f46', shadowOpacity: 0.05 }}>
-              <View className="flex-row items-center justify-between">
+            <View className="mb-8 rounded-2xl border border-white/20 px-4 py-5" style={{backgroundColor: baseColors.offwhite, borderColor: baseColors.white, boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)' }}>
+              <View className="flex-row items-center justify-between" style={{ borderBottomWidth: 1, borderBottomColor: baseColors.white+'20' }}>
                 <View className="flex-row items-center gap-3">
                   {donutData.length > 0 ? (
                     <View style={{ width: 64, height: 64 }}>
@@ -317,13 +318,13 @@ export default function LearnScreen() {
                       />
                     </View>
                   ) : (
-                    <View className="w-16 h-16 rounded-full bg-gray-200 items-center justify-center">
+                    <View className="w-16 h-16 rounded-full items-center justify-center">
                       <Text className="text-xs text-gray-600">0%</Text>
                     </View>
                   )}
                   <View className="flex-col">
                     <Text className="text-lg font-bold leading-tight">Dein Fortschritt</Text>
-                    <Text className="text-xs text-black/50">
+                    <Text className="text-base text-black/50">
                       {overallCompletion.completed} von {overallCompletion.total} Modulen abgeschlossen
                     </Text>
                   </View>
@@ -367,9 +368,9 @@ export default function LearnScreen() {
                     className="px-0"
                     contentContainerStyle={{ paddingRight: 16 }}
                     pagingEnabled={true}
-                    snapToInterval={300}
+                    snapToInterval={260}
                     decelerationRate="fast"
-                    snapToOffsets={group.topics.map((topic, index) => index * 300)}
+                    snapToOffsets={group.topics.map((topic, index) => index * 270)}
                   >
                     {group.topics.map((topic) => {
                       const topicVersion = topic.expand?.currentVersion;
@@ -393,7 +394,7 @@ export default function LearnScreen() {
                           onPress={() => handleTopicPress(topic)}
                           disabled={topicActionInProgress === topic.id}
                           className="mr-4"
-                          style={{ width: 300 }}
+                          style={{ width: 260 }}
                           activeOpacity={0.9}
                         >
                           <View
@@ -404,12 +405,11 @@ export default function LearnScreen() {
                               shadowOffset: { width: 0, height: 8 },
                               shadowOpacity: 0.3,
                               shadowRadius: 12,
-                              elevation: 8,
                             }}
                           >
                             {/* Gradient Overlay for depth */}
                             <LinearGradient
-                              colors={[baseColors.forest+'00', baseColors.lilac+'88', baseColors.lilac]}
+                              colors={[baseColors.forest + '00', baseColors.lilac + '88', baseColors.lilac]}
                               style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 1, opacity: 1 }}
                             />
 
@@ -423,11 +423,11 @@ export default function LearnScreen() {
 
                             {/* Topic Image - Artistic positioning */}
                             {imageUrl && (
-                                <Image
-                                  source={{ uri: imageUrl }}
-                                  className="z-0"
-                                  style={{ position: 'absolute', width: '150%', height: '150%', ...positionStyles, opacity: completed ? 0.3 : 1 }}
-                                />
+                              <Image
+                                source={{ uri: imageUrl }}
+                                className="z-0"
+                                style={{ position: 'absolute', width: '150%', height: '150%', ...positionStyles, opacity: completed ? 0.3 : 1 }}
+                              />
                             )}
 
                             {/* Content Container */}
@@ -466,17 +466,3 @@ export default function LearnScreen() {
     </View>
   );
 }
-
-
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: Platform.OS === 'web' ? 80 : 120, // Account for floating header
-    paddingBottom: 64,
-  },
-  contentContainer: {
-    paddingHorizontal: 20,
-  },
-});

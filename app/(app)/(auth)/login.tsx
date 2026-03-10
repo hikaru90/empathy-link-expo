@@ -1,9 +1,9 @@
 import baseColors from '@/baseColors.config';
+import ImageIconButton from '@/components/ImageIconButton';
 import SparklePill from '@/components/SparklePill';
 import { useAuth } from '@/hooks/use-auth';
-import { ImageBackground } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { Check, TriangleAlert } from 'lucide-react-native';
+import { Check, LogIn, TriangleAlert } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -329,56 +329,16 @@ export default function SigninScreen() {
         />
       </View>
 
-      <View className="flex-row justify-center">
-        <TouchableOpacity
-          onPress={() => {
-            console.log('Button pressed, calling handleSignin');
-            handleSignin();
-          }}
+      <View className="flex flex-row justify-center" style={{ width: '100%' }}>
+        <ImageIconButton
+          onPress={handleSignin}
+          image={jungleImage}
+          icon={<LogIn color="#fff" />}
+          label="Anmelden"
+          size="large"
           disabled={isLoading}
-          accessibilityRole="button"
-          accessibilityLabel="Anmelden"
-          accessibilityState={{ disabled: isLoading }}
-          testID="signin-button"
-          style={{
-            width: '100%',
-            maxWidth: 300,
-            height: 48,
-            opacity: isLoading ? 0.5 : 1,
-          }}
-        >
-          <ImageBackground
-            source={jungleImage}
-            contentFit="cover"
-            style={{
-              flex: 1,
-              height: '100%',
-              width: '100%',
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              paddingVertical: 12,
-              paddingHorizontal: 24,
-              borderRadius: 999,
-              overflow: 'hidden',
-              borderWidth: 1,
-              borderColor: 'rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color={baseColors.offwhite} />
-            ) : (
-              <Text style={{
-                fontSize: 16,
-                color: baseColors.offwhite,
-                fontWeight: '600',
-              }}>
-                Anmelden
-              </Text>
-            )}
-          </ImageBackground>
-        </TouchableOpacity>
+          loading={isLoading}
+        />
       </View>
 
       <View className="mt-6 mb-2 flex-row items-center gap-3">

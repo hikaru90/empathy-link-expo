@@ -20,7 +20,7 @@ export const learnInputStyles = StyleSheet.create({
   textInput: {
     minHeight: 44,
     maxHeight: 104,
-    fontSize: 16,
+    fontSize: 18,
     lineHeight: 20,
   },
   shadowButton: {

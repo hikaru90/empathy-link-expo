@@ -1,11 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, MessageSquare } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ImageBackground, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import baseColors from '@/baseColors.config';
 import MessageBubble from '@/components/chat/MessageBubble';
 import Header from '@/components/Header';
+import ImageIconButton from '@/components/ImageIconButton';
 import LoadingIndicator from '@/components/LoadingIndicator';
 import TabBar from '@/components/TabBar';
 import { useAuthGuard } from '@/hooks/use-auth';
@@ -174,8 +175,8 @@ export default function AnalysisDetailScreen() {
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  width: '100%',
-                  height: '100%',
+                  right:0,
+                  bottom:0,
                   zIndex: -1
                 }}
               />
@@ -188,7 +189,7 @@ export default function AnalysisDetailScreen() {
           <View style={{
             borderRadius: 20,
             borderWidth: 1,
-            borderColor: baseColors.white,
+            borderColor: baseColors.white+'90',
             padding: 16,
           }}>
             <Text style={styles.cardTitle}>Deine Chat Auswertung</Text>
@@ -278,7 +279,7 @@ export default function AnalysisDetailScreen() {
           <View style={{
             borderRadius: 20,
             borderWidth: 1,
-            borderColor: baseColors.white,
+            borderColor: baseColors.white+'90',
             padding: 8,
             gap: 10,
             flexDirection: 'column',
@@ -368,40 +369,15 @@ export default function AnalysisDetailScreen() {
           {/* Reopen Chat Button */}
           {analysis.chatId && (
             <View style={{ alignItems: 'center', marginBottom: 24 }}>
-              <TouchableOpacity
+              <ImageIconButton
                 onPress={handleReopenChat}
+                image={jungleImage}
+                icon={<MessageSquare color="#fff" />}
+                label="Chat fortsetzen"
+                size="medium"
                 disabled={isReopeningChat}
-              >
-                <ImageBackground
-                  source={jungleImage}
-                  contentFit="cover"
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    width: '100%',
-                    height: '100%',
-                    gap: 16,
-                    paddingVertical: 8,
-                    paddingLeft: 16,
-                    paddingRight: 8,
-                    borderRadius: 999,
-                    overflow: 'hidden',
-                    borderWidth: 1,
-                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                  }}
-                >
-                  {isReopeningChat ? (
-                    <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
-                  ) : (
-                    <>
-                      <Text style={{ fontSize: 14, color: baseColors.offwhite }}>
-                        Chat fortsetzen
-                      </Text>
-                      <MessageSquare size={16} color="#fff" style={{ backgroundColor: baseColors.white + '44', padding: 3, borderRadius: 999 }} />
-                    </>
-                  )}
-                </ImageBackground>
-              </TouchableOpacity>
+                loading={isReopeningChat}
+              />
             </View>
           )}
         </View>

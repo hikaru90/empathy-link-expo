@@ -1,11 +1,14 @@
 import baseColors from '@/baseColors.config';
+import ImageIconButton from '@/components/ImageIconButton';
 import { ImageBackground } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowRight } from 'lucide-react-native';
 import React, { useRef } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Text, View } from 'react-native';
 
 import { getPocketBaseFileUrl } from '@/lib/api/learn';
+
+const jungleImage = require('@/assets/images/Jungle.jpg');
 
 interface LearnTitleCardProps {
   title: string;
@@ -87,16 +90,16 @@ export default function LearnTitleCard({
         </Text>
 
         {/* Start Button */}
-        <TouchableOpacity
-          testID="learn-step-next"
-          onPress={onStart}
-          className="flex h-10 w-full flex-row items-center justify-between gap-2 rounded-full bg-black py-3 pl-6 pr-2 relative z-10"
-        >
-          <Text className="font-medium text-white">Starten</Text>
-          <View className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
-            <ArrowRight size={16} color="#fff" />
-          </View>
-        </TouchableOpacity>
+        <View testID="learn-step-next" className="relative z-10 w-full">
+          <ImageIconButton
+            onPress={onStart}
+            image={jungleImage}
+            icon={<ArrowRight color="#fff" />}
+            label="Starten"
+            size="medium"
+            style={{ width: '100%' }}
+          />
+        </View>
       </View>
     </View>
   );

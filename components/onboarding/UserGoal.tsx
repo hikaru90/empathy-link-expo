@@ -1,9 +1,21 @@
 import baseColors from '@/baseColors.config';
 import { USER_GOALS } from '@/constants/onboarding';
-import { useBottomDrawerSlot } from '@/hooks/use-bottom-drawer-slot';
 import { ChevronDown } from 'lucide-react-native';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
 interface UserGoalProps {
   selectedGoal?: string;
@@ -11,47 +23,67 @@ interface UserGoalProps {
 }
 
 export default function UserGoal({ selectedGoal = '', onSelectGoal }: UserGoalProps) {
-  const { openDrawer, closeDrawer } = useBottomDrawerSlot();
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(WINDOW_HEIGHT)).current;
 
-  const handleOpenDrawer = () => {
-    openDrawer({
-      title: 'Was möchtest du mit Empathy-Link erreichen?',
-      onClose: () => {},
-      tall: true,
-      initialHeight: 400,
-      children: (
-        <ScrollView style={styles.drawerScroll} showsVerticalScrollIndicator={false}>
-          {USER_GOALS.map((goal) => (
-            <TouchableOpacity
-              key={goal}
-              style={[styles.drawerOption, selectedGoal === goal && styles.drawerOptionSelected]}
-              onPress={() => {
-                onSelectGoal?.(goal);
-                closeDrawer();
-              }}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[styles.drawerOptionText, selectedGoal === goal && styles.drawerOptionTextSelected]}
-                numberOfLines={2}
-              >
-                {goal}
-              </Text>
-              {selectedGoal === goal && (
-                <Text style={styles.drawerCheckmark}>✓</Text>
-              )}
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      ),
+  useEffect(() => {
+    if (pickerVisible && !isClosing) {
+      backdropOpacity.setValue(0);
+      sheetTranslateY.setValue(WINDOW_HEIGHT);
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: 280,
+          useNativeDriver: true,
+        }),
+        Animated.spring(sheetTranslateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 65,
+          friction: 11,
+        }),
+      ]).start();
+    }
+  }, [pickerVisible, isClosing, backdropOpacity, sheetTranslateY]);
+
+  useEffect(() => {
+    if (!isClosing) return;
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+      Animated.timing(sheetTranslateY, {
+        toValue: WINDOW_HEIGHT,
+        duration: 220,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        setPickerVisible(false);
+        setIsClosing(false);
+      }
     });
+  }, [isClosing, backdropOpacity, sheetTranslateY]);
+
+  const handleOpenPicker = () => setPickerVisible(true);
+  const handleClosePicker = () => {
+    if (pickerVisible && !isClosing) setIsClosing(true);
+  };
+
+  const handleSelectGoal = (goal: string) => {
+    onSelectGoal?.(goal);
+    if (pickerVisible && !isClosing) setIsClosing(true);
   };
 
   return (
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.selectionButton}
-        onPress={handleOpenDrawer}
+        onPress={handleOpenPicker}
         activeOpacity={0.8}
       >
         <Text style={styles.selectionButtonText} numberOfLines={1}>
@@ -59,6 +91,49 @@ export default function UserGoal({ selectedGoal = '', onSelectGoal }: UserGoalPr
         </Text>
         <ChevronDown size={18} color={baseColors.black} />
       </TouchableOpacity>
+
+      <Modal
+        visible={pickerVisible}
+        transparent
+        animationType="none"
+        onRequestClose={handleClosePicker}
+        presentationStyle={Platform.OS === 'ios' ? 'overFullScreen' : undefined}
+      >
+        <View style={styles.pickerRoot}>
+          <Pressable style={styles.pickerBackdropTouch} onPress={handleClosePicker}>
+            <Animated.View style={[styles.pickerOverlay, { opacity: backdropOpacity }]} />
+          </Pressable>
+          <Animated.View
+            style={[styles.pickerSheet, { transform: [{ translateY: sheetTranslateY }] }]}
+            pointerEvents="box-none"
+          >
+            <View style={styles.pickerSheetInner} pointerEvents="box-none">
+              <View style={styles.pickerHandle} />
+              <Text style={styles.pickerTitle}>Was möchtest du mit Empathy-Link erreichen?</Text>
+              <ScrollView style={styles.drawerScroll} showsVerticalScrollIndicator={false}>
+                {USER_GOALS.map((goal) => (
+                  <TouchableOpacity
+                    key={goal}
+                    style={[styles.drawerOption, selectedGoal === goal && styles.drawerOptionSelected]}
+                    onPress={() => handleSelectGoal(goal)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[styles.drawerOptionText, selectedGoal === goal && styles.drawerOptionTextSelected]}
+                      numberOfLines={2}
+                    >
+                      {goal}
+                    </Text>
+                    {selectedGoal === goal && (
+                      <Text style={styles.drawerCheckmark}>✓</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -84,8 +159,46 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
+  pickerRoot: {
+    flex: 1,
+  },
+  pickerBackdropTouch: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  pickerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  pickerSheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: baseColors.background,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 32,
+    maxHeight: '92%',
+  },
+  pickerHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: baseColors.black + '33',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  pickerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
   drawerScroll: {
     maxHeight: 400,
+    paddingHorizontal: 16,
   },
   drawerOption: {
     flexDirection: 'row',

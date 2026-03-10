@@ -1,9 +1,7 @@
 import { Check, MessageCirclePlus } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
-  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,7 +13,9 @@ import {
   View,
 } from 'react-native';
 
+import jungleImage from '@/assets/images/Jungle.jpg';
 import baseColors from '@/baseColors.config';
+import ImageIconButton from '@/components/ImageIconButton';
 import SelectInline from '@/components/ui/SelectInline';
 import { useAuthGuard } from '@/hooks/use-auth';
 import { submitFeedback, type FeedbackType } from '@/lib/api/feedback';
@@ -172,27 +172,17 @@ export default function FeedbackScreen() {
           </View>
         )}
 
-<View className="flex-row justify-center">
-        <TouchableOpacity
-          style={styles.submitButtonContainer}
+<View className="flex-row justify-center" style={styles.submitButtonContainer}>
+        <ImageIconButton
           onPress={handleSubmit}
+          image={jungleImage}
+          icon={<Check color="#fff" />}
+          label="Absenden"
+          size="medium"
           disabled={submitting}
-        >
-          <ImageBackground
-            source={require('@/assets/images/Jungle.jpg')}
-            resizeMode="cover"
-            style={[styles.submitButton, submitting && styles.submitButtonDisabled, { width: '100%', height: '100%' }]}
-          >
-            {submitting ? (
-              <ActivityIndicator color={baseColors.offwhite} />
-            ) : (
-              <>
-                <Text style={styles.submitButtonText}>Absenden</Text>
-                <Check size={16} color="#fff" style={styles.submitButtonIcon} />
-              </>
-            )}
-          </ImageBackground>
-        </TouchableOpacity>
+          loading={submitting}
+          style={{ width: '100%' }}
+        />
         </View>
         </View>
         </Pressable>

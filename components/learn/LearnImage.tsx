@@ -1,8 +1,9 @@
 import { getPocketBaseFileUrl } from '@/lib/api/learn';
 import React, { useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import LearnNavigation from '@/components/learn/LearnNavigation';
+import { Image } from 'expo-image';
 
 export interface LearnImageProps {
   content: {
@@ -44,8 +45,7 @@ export default function LearnImage({
           <Image
             source={{ uri }}
             className="w-full"
-            style={{ aspectRatio: 1, maxHeight: 300 }}
-            resizeMode="contain"
+            style={{ aspectRatio: 1, width: '100%' }}
             onError={() => setError(true)}
             accessibilityLabel={content.alt || ''}
           />

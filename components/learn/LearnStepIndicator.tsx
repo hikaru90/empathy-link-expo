@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import Svg, { Polygon } from 'react-native-svg';
 
 /** Returns a value between -20 and -80: step 0 => -20, middle => -50, last step => -80 (linear) */
@@ -24,9 +24,10 @@ export default function LearnStepIndicator({
   color = '#A366FF',
   inactiveColor = 'rgba(0,0,0,0.1)',
   stepName,
+  
 }: LearnStepIndicatorProps) {
   return (
-    <View style={{ marginBottom: 20, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ marginBottom: 30, marginTop: Platform.OS !== 'web' ? Platform.OS === 'ios' ? 30 : 20 : 0, alignItems: 'center', justifyContent: 'center' }}>
       <View
         style={{
           flexDirection: 'row',
@@ -51,7 +52,7 @@ export default function LearnStepIndicator({
             }}
           >
             {stepName && currentStep === stepIndex ? (
-              <View>
+              <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                 <View style={{ position: 'absolute', bottom: -16, left: '50%', transform: [{ translateX: '-50%' }], zIndex: 10 }}>
                   <Svg width={8} height={4} viewBox="0 0 12 8" style={{ alignSelf: 'center' }}>
                     <Polygon points="6,0 0,8 12,8" fill={color} />
@@ -63,10 +64,10 @@ export default function LearnStepIndicator({
                   left: '50%',
                   transform: [{ translateX: `${getStepTranslateX(totalSteps, currentStep)}%` }, { translateY: '100%' as any }],
                   marginTop: 12,
-                alignItems: 'center',
-                justifyContent: 'center'
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}>
-                <Text numberOfLines={1}
+                  <Text numberOfLines={1}
                     style={{
                       fontSize: 12,
                       fontWeight: '500',

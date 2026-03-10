@@ -5,11 +5,11 @@ import LearnMessageInput, {
   LearnInputNeedsButton,
   LearnInputPrevButton,
 } from '@/components/learn/LearnMessageInput';
+import TokenLimitModal from '@/components/TokenLimitModal';
 import { getNeeds, type Need } from '@/lib/api/chat';
 import type { LearningSession } from '@/lib/api/learn';
 import { needsDetectiveAI } from '@/lib/api/learn';
 import { isTokenLimitError } from '@/lib/tokenLimit';
-import TokenLimitModal from '@/components/TokenLimitModal';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -222,130 +222,36 @@ export default function LearnNeedsDetective({
   return (
     <>
       <TokenLimitModal visible={showTokenLimitModal} onClose={() => setShowTokenLimitModal(false)} />
-    <View className="flex flex-1 flex-col rounded-lg">
-      <View className="flex flex-1 flex-col justify-between rounded-lg">
-        {internalStep === 0 && (
-          <View nativeID="learn-needs-detective-step-0" className="flex-1">
-            <Text className="flex flex-grow items-center justify-center px-0 max-w-xs text-base font-medium text-gray-900">
-              {content.question ||
-                'Beschreibe eine Situation, die du erlebt hast und welche Strategie du verwendet hast:'}
-            </Text>
-            <View
-              className="px-0"
-              style={{
-                paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
-              }}
-            >
-              <LearnMessageInput
-                value={situationInput}
-                onChangeText={setSituationInput}
-                onSubmit={submitCombinedInput}
-                placeholder="Ich war bei dem letzten Familienbesuch etwas geladen und habe dann einfach das Thema gewechselt..."
-                disabled={isLoading}
-                isLoading={isLoading}
-                sendDisabled={!situationInput.trim()}
-                errorMessage={errorMessage}
-                leftActions={
-                  <>
-                    {gotoPrevStep && <LearnInputPrevButton onPress={gotoPrevStep} />}
-                    {existingResponse && (
-                      <LearnInputExistingResponseButton onPress={() => gotoNextStep?.()} />
-                    )}
-                  </>
-                }
-                onKeyPress={(e) => {
-                  if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
-                    e.preventDefault();
-                  }
-                }}
-              />
-            </View>
-          </View>
-        )}
-
-        {internalStep === 1 && aiReflection && (
-          <View nativeID="learn-needs-detective-step-1" className="flex-1">
-            <View className="flex-grow flex-col justify-between">
-              <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
-                <View className="flex-grow items-center justify-center px-0 py-6">
-                  <View className="max-w-xs">
-                    <Markdown
-                      markdownit={markdownItInstance}
-                      style={{
-                        body: { paddingHorizontal: 8, paddingVertical: 16, fontSize: 16, color: '#374151', lineHeight: 22 },
-                        paragraph: { marginBottom: 12 },
-                      }}
-                    >
-                      {`${aiReflection || ''} Stimmt diese Aussage?`}
-                    </Markdown>
-                  </View>
-                </View>
-              </ScrollView>
-              <View
-                className="border-t border-black/10"
-                style={{
-                  backgroundColor: baseColors.background,
-                  paddingTop: 16,
-                  paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 23 : 23,
-                  marginLeft: -16,
-                  marginRight: -16,
-                  paddingLeft: 16,
-                  paddingRight: 16,
-                }}
-              >
-                <LearnNavigation
-                  onNext={gotoNextStep ?? (() => { })}
-                  onPrev={gotoPrevStep}
-                  nextText="Genau"
-                  showPrev={!!gotoPrevStep}
-                />
-              </View>
-            </View>
-          </View>
-        )}
-
-        {internalStep === 2 && (
-          <View nativeID="learn-needs-detective-step-2" className="flex-1">
-            <View className="flex-grow flex-col justify-between">
-              <View className="flex-grow items-center justify-center px-0">
-                <Text className="max-w-xs text-center text-base font-medium text-gray-900">
-                  Welche Bedürfnisse hast Du Dir dadurch erfüllt?
+      <View className="flex flex-1 flex-col rounded-lg">
+        <View className="flex flex-1 flex-col justify-between rounded-lg">
+          {internalStep === 0 && (
+            <View nativeID="learn-needs-detective-step-0" className="flex-1">
+              <View className="flex flex-grow items-center justify-center px-4">
+                <Text className="font-medium text-gray-900" style={{ fontSize: 18 }}>
+                  {content.question ||
+                    'Beschreibe eine Situation, die du erlebt hast und welche Strategie du verwendet hast:'}
                 </Text>
               </View>
               <View
-                className="px-0"
+                className="py-2"
                 style={{
-                  paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 24 : 24,
                 }}
               >
                 <LearnMessageInput
-                  value={needsInput}
-                  onChangeText={setNeedsInput}
-                  onSubmit={submitNeeds}
-                  placeholder="Sicherheit, Verständnis, Autonomie..."
+                  value={situationInput}
+                  onChangeText={setSituationInput}
+                  onSubmit={submitCombinedInput}
+                  placeholder="Ich war bei dem letzten Familienbesuch etwas geladen und habe dann einfach das Thema gewechselt..."
                   disabled={isLoading}
                   isLoading={isLoading}
-                  sendDisabled={false}
+                  sendDisabled={!situationInput.trim()}
                   errorMessage={errorMessage}
-                  textInputRef={needsInputRef}
-                  selectorContent={
-                    needSelectorVisible ? (
-                      <View className="max-h-40 border-b border-black/5">
-                        <GroupedNeedsSelector
-                          needs={needs}
-                          onNeedPress={addNeed}
-                          isLoading={false}
-                        />
-                      </View>
-                    ) : undefined
-                  }
                   leftActions={
                     <>
                       {gotoPrevStep && <LearnInputPrevButton onPress={gotoPrevStep} />}
-                      <LearnInputNeedsButton
-                        visible={needSelectorVisible}
-                        onPress={() => setNeedSelectorVisible((v) => !v)}
-                      />
+                      {existingResponse && (
+                        <LearnInputExistingResponseButton onPress={() => gotoNextStep?.()} />
+                      )}
                     </>
                   }
                   onKeyPress={(e) => {
@@ -353,110 +259,208 @@ export default function LearnNeedsDetective({
                       e.preventDefault();
                     }
                   }}
-                  onBeforeSubmit={() => setNeedSelectorVisible(false)}
                 />
               </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {internalStep === 3 && !aiSummary && (
-          <View nativeID="learn-needs-detective-step-3" className="flex-1">
-            <View className="flex-grow flex-col justify-between">
-              <ScrollView
-                className="flex-grow"
-                contentContainerStyle={{
-                  flexGrow: 1,
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  paddingBottom: 6,
-                }}
-              >
-                <Text className="text-center text-base font-medium text-gray-900 mt-4 flex flex-grow items-center justify-center px-0">
-                  Lass uns eine Zusammenfassung deiner Erkenntnisse erstellen.
-                </Text>
-                {isLoading ? (
-                  <View className="py-4 flex flex-row items-center justify-center">
-                    <ActivityIndicator size="small" color={baseColors.forest} />
-                    <Text className="ml-2">Erstelle Zusammenfassung...</Text>
+          {internalStep === 1 && aiReflection && (
+            <View nativeID="learn-needs-detective-step-1" className="flex-1">
+              <View className="flex-grow flex-col justify-between">
+                <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
+                  <View className="flex-grow items-center justify-center px-0 py-6">
+                    <View className="">
+                      <Markdown
+                        markdownit={markdownItInstance}
+                        style={{
+                          body: { paddingHorizontal: 8, paddingVertical: 16, fontSize: 18, color: '#374151', lineHeight: 24 },
+                          paragraph: { marginBottom: 12 },
+                        }}
+                      >
+                        {`${aiReflection || ''} Stimmt diese Aussage?`}
+                      </Markdown>
+                    </View>
                   </View>
-                ) : (
-                  <View
-                    className="border-t border-black/10"
-                    style={{
-                      backgroundColor: baseColors.background,
-                      paddingTop: 16,
-                      paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 23 : 23,
-                      marginLeft: -16,
-                      marginRight: -16,
-                      paddingLeft: 16,
-                      paddingRight: 16,
-                    }}
-                  >
-                    <LearnNavigation
-                      onNext={generateSummary}
-                      onPrev={gotoPrevStep}
-                      nextText="Zusammenfassung erstellen"
-                      showPrev={!!gotoPrevStep}
-                    />
-                  </View>
-                )}
-              </ScrollView>
+                </ScrollView>
+                <View
+                  className="border-t border-black/10"
+                  style={{
+                    backgroundColor: baseColors.background,
+                    paddingTop: 16,
+                    paddingBottom: 4,
+                    marginLeft: -16,
+                    marginRight: -16,
+                    paddingLeft: 16,
+                    paddingRight: 16,
+                  }}
+                >
+                  <LearnNavigation
+                    onNext={gotoNextStep ?? (() => { })}
+                    onPrev={gotoPrevStep}
+                    nextText="Genau"
+                    showPrev={!!gotoPrevStep}
+                  />
+                </View>
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
-        {internalStep === 3 && aiSummary && (
-          <View nativeID="learn-needs-detective-step-3-summary" className="flex-1">
-            <View className="flex-grow flex-col justify-between">
-              <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
-                <View className="flex-grow items-center justify-center px-0 py-6">
-                  <View className="max-w-sm max-h-80">
-                    <Markdown
-                      markdownit={markdownItInstance}
+          {internalStep === 2 && (
+            <View nativeID="learn-needs-detective-step-2" className="flex-1">
+              <View className="flex-grow flex-col justify-between">
+                <View className="flex-grow items-center justify-center px-0">
+                  <Text className="max-w-xs text-center text-gray-900" style={{ fontSize: 18 }}>
+                    Welche Bedürfnisse hast Du Dir dadurch erfüllt?
+                  </Text>
+                </View>
+                <View
+                  className="py-2"
+                  style={{
+                  }}
+                >
+                  <LearnMessageInput
+                    value={needsInput}
+                    onChangeText={setNeedsInput}
+                    onSubmit={submitNeeds}
+                    placeholder="Sicherheit, Verständnis, Autonomie..."
+                    disabled={isLoading}
+                    isLoading={isLoading}
+                    sendDisabled={false}
+                    errorMessage={errorMessage}
+                    textInputRef={needsInputRef}
+                    selectorContent={
+                      needSelectorVisible ? (
+                        <View className="max-h-40 border-b border-black/5">
+                          <GroupedNeedsSelector
+                            needs={needs}
+                            onNeedPress={addNeed}
+                            isLoading={false}
+                          />
+                        </View>
+                      ) : undefined
+                    }
+                    leftActions={
+                      <>
+                        {gotoPrevStep && <LearnInputPrevButton onPress={gotoPrevStep} />}
+                        <LearnInputNeedsButton
+                          visible={needSelectorVisible}
+                          onPress={() => setNeedSelectorVisible((v) => !v)}
+                        />
+                      </>
+                    }
+                    onKeyPress={(e) => {
+                      if (e.nativeEvent.key === 'Enter' && !(e.nativeEvent as { shiftKey?: boolean }).shiftKey) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onBeforeSubmit={() => setNeedSelectorVisible(false)}
+                  />
+                </View>
+              </View>
+            </View>
+          )}
+
+          {internalStep === 3 && !aiSummary && (
+            <View nativeID="learn-needs-detective-step-3" className="flex-1">
+              <View className="flex-grow flex-col justify-between">
+                <ScrollView
+                  className="flex-grow"
+                  contentContainerStyle={{
+                    flexDirection: 'column',
+                    paddingBottom: 6,
+                    display: 'flex',
+                    flexGrow: 1,
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <View className="flex-grow items-center justify-center">
+                    <Text className="text-gray-900 mt-4 px-4" style={{ fontSize: 18 }}>
+                      Lass uns eine Zusammenfassung deiner Erkenntnisse erstellen.
+                    </Text>
+                  </View>
+                  {isLoading ? (
+                    <View className="py-4 flex flex-row items-center justify-center">
+                      <ActivityIndicator size="small" color={baseColors.forest} />
+                      <Text className="ml-2">Erstelle Zusammenfassung...</Text>
+                    </View>
+                  ) : (
+                    <View
+                      className="border-t border-black/10"
                       style={{
-                        body: { paddingHorizontal: 8, paddingVertical: 16, fontSize: 16, color: '#374151', lineHeight: 22 },
-                        paragraph: { marginBottom: 12 },
-                      }}
-                      rules={{
-                        paragraph: (node, children, parent, styles) => (
-                          <View key={node.key} style={styles._VIEW_SAFE_paragraph}>
-                            {React.Children.map(children, (child, i) =>
-                              typeof child === 'string' ? <Text key={`${node.key}-txt-${i}`}>{child}</Text> : child
-                            )}
-                          </View>
-                        ),
+                        backgroundColor: baseColors.background,
+                        paddingTop: 16,
+                        paddingBottom: 4,
+                        marginLeft: -16,
+                        marginRight: -16,
+                        paddingLeft: 16,
+                        paddingRight: 16,
                       }}
                     >
-                      {aiSummary || ''}
-                    </Markdown>
-                  </View>
-                </View>
-              </ScrollView>
-              <View
-                className="border-t border-black/10"
-                style={{
-                  backgroundColor: baseColors.background,
-                  paddingTop: 16,
-                  paddingBottom: Platform.OS === 'android' && keyboardHeight > 0 ? keyboardHeight + 23 : 23,
-                  marginLeft: -16,
-                  marginRight: -16,
-                  paddingLeft: 16,
-                  paddingRight: 16,
-                }}
-              >
-                <LearnNavigation
-                  onNext={gotoNextStep ?? (() => { })}
-                  onPrev={gotoPrevStep}
-                  nextText="Weiter"
-                  showPrev={!!gotoPrevStep}
-                />
+                      <LearnNavigation
+                        onNext={generateSummary}
+                        onPrev={gotoPrevStep}
+                        nextText="Zusammenfassung erstellen"
+                        showPrev={!!gotoPrevStep}
+                      />
+                    </View>
+                  )}
+                </ScrollView>
               </View>
             </View>
-          </View>
-        )}
+          )}
+
+          {internalStep === 3 && aiSummary && (
+            <View nativeID="learn-needs-detective-step-3-summary" className="flex-1">
+              <View className="flex-grow flex-col justify-between">
+                <ScrollView className="flex-grow" contentContainerStyle={{ flexGrow: 1 }}>
+                  <View className="flex-grow items-center justify-center px-0 py-6">
+                    <View className="max-h-80">
+                      <Markdown
+                        markdownit={markdownItInstance}
+                        style={{
+                          body: { paddingHorizontal: 8, paddingVertical: 16, fontSize: 18, color: '#374151', lineHeight: 24 },
+                          paragraph: { marginBottom: 12 },
+                        }}
+                        rules={{
+                          paragraph: (node, children, parent, styles) => (
+                            <View key={node.key} style={styles._VIEW_SAFE_paragraph}>
+                              {React.Children.map(children, (child, i) =>
+                                typeof child === 'string' ? <Text key={`${node.key}-txt-${i}`}>{child}</Text> : child
+                              )}
+                            </View>
+                          ),
+                        }}
+                      >
+                        {aiSummary || ''}
+                      </Markdown>
+                    </View>
+                  </View>
+                </ScrollView>
+                <View
+                  className="border-t border-black/10"
+                  style={{
+                    backgroundColor: baseColors.background,
+                    paddingTop: 16,
+                    paddingBottom: 4,
+                    marginLeft: -16,
+                    marginRight: -16,
+                    paddingLeft: 16,
+                    paddingRight: 16,
+                  }}
+                >
+                  <LearnNavigation
+                    onNext={gotoNextStep ?? (() => { })}
+                    onPrev={gotoPrevStep}
+                    nextText="Weiter"
+                    showPrev={!!gotoPrevStep}
+                  />
+                </View>
+              </View>
+            </View>
+          )}
+        </View>
       </View>
-    </View>
     </>
   );
 }
