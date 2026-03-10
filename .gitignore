@@ -49,3 +49,5 @@ docs
 playwright/.auth/
 test-results/
 playwright-report/
+
+build-*
