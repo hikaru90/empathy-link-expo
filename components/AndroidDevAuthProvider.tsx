@@ -5,7 +5,7 @@
  */
 import { AuthContext, type AuthContextType } from '@/lib/auth-context';
 import { authClient, clearBearerToken } from '@/lib/auth';
-import { EXPO_APP_URL } from '@/lib/config';
+import { EXPO_APP_URL, getBetterAuthURL } from '@/lib/config';
 import * as Linking from 'expo-linking';
 import React, { useState } from 'react';
 import { Platform } from 'react-native';
@@ -47,6 +47,11 @@ export function AndroidDevAuthProvider({ children }: { children: React.ReactNode
 
   const signInWithSocial: AuthContextType['signInWithSocial'] = async (provider) => {
     const callbackURL = Platform.OS === 'web' ? `${EXPO_APP_URL}/login` : Linking.createURL('/login');
+    console.log('[auth] social sign-in start (android-dev)', {
+      provider,
+      betterAuthBaseURL: getBetterAuthURL(),
+      callbackURL,
+    });
     const result = await authClient.signIn.social({ provider, callbackURL });
     if (result?.error) throw new Error(result.error.message || `Anmeldung mit ${provider} fehlgeschlagen`);
     const session = await authClient.getSession();

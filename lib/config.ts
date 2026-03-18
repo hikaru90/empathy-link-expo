@@ -17,6 +17,21 @@ export function getBackendURLOverride(): string | null {
   return url.replace(/\/$/, '');
 }
 
+/**
+ * Frontend/App origin override (web only).
+ *
+ * Use this when your web origin is NOT stable/derivable (SSR/tests) or when you explicitly
+ * want to force a single origin (e.g. Tailscale URL) without any localhost fallbacks.
+ */
+export function getFrontendURLOverride(): string | null {
+  const url =
+    process.env.EXPO_PUBLIC_APP_URL?.trim() ||
+    process.env.EXPO_PUBLIC_FRONTEND_URL?.trim() ||
+    null;
+  if (!url) return null;
+  return url.replace(/\/$/, '');
+}
+
 /** Resolved backend URL after resolveBackendURL(); set by setResolvedBackendURL(). */
 let _resolvedUrl: string | null = null;
 
@@ -122,17 +137,24 @@ export const BETTER_AUTH_URL = stringProxy(getBetterAuthURL);
 
 /**
  * Get the Expo app URL for callback URLs (e.g., email verification links)
- * For web: uses localhost:8081 or window.location.origin
+ * For web: uses EXPO_PUBLIC_APP_URL/EXPO_PUBLIC_FRONTEND_URL, otherwise window.location.origin
  * For native: uses deep link scheme (empathy-link://)
  */
 export function getExpoAppURL(): string {
   if (Platform.OS === 'web') {
-    if (typeof window !== 'undefined' && window.location) {
+    // Web runtime should always have a location/origin. Do not hardcode localhost fallbacks.
+    if (typeof window !== 'undefined' && window.location?.origin) {
       return window.location.origin;
     }
-    return 'http://localhost:8081';
+    // Some environments may expose `location` without `window` (or during early init).
+    if (typeof location !== 'undefined' && (location as any)?.origin) {
+      return (location as any).origin as string;
+    }
+    // Last resort: unknown at this moment. Call sites that need it run in-browser anyway.
+    return '';
   }
   return 'empathy-link://';
 }
 
-export const EXPO_APP_URL = getExpoAppURL();
+/** Expo app URL (dynamic: reflects override or current window.location.origin). */
+export const EXPO_APP_URL = stringProxy(getExpoAppURL);

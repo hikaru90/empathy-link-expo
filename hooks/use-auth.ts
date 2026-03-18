@@ -1,6 +1,6 @@
 import { AuthContext, type AuthContextType } from '@/lib/auth-context';
 import { authClient, clearBearerToken } from '@/lib/auth';
-import { EXPO_APP_URL } from '@/lib/config';
+import { EXPO_APP_URL, getBetterAuthURL } from '@/lib/config';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -282,6 +282,11 @@ export function useAuthProviderStateOnly(initialLoading: boolean = false): AuthC
       Platform.OS === 'web'
         ? `${EXPO_APP_URL}/login`
         : Linking.createURL('/login');
+    console.log('[auth] social sign-in start', {
+      provider,
+      betterAuthBaseURL: getBetterAuthURL(),
+      callbackURL,
+    });
     const result = await authClient.signIn.social({
       provider,
       callbackURL,
