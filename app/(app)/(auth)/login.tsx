@@ -374,6 +374,7 @@ export default function SigninScreen() {
           size="large"
           disabled={isLoading}
           loading={isLoading}
+          testID="signin-button"
         />
       </View>
 
@@ -393,8 +394,18 @@ export default function SigninScreen() {
               await signInWithSocial('google');
               router.replace('/(protected)/(tabs)');
             } catch (e: any) {
-              setErrorMessage(e?.message || 'Anmeldung mit Google fehlgeschlagen');
-              Alert.alert('Fehler', e?.message || 'Anmeldung mit Google fehlgeschlagen');
+              const friendlyMessage =
+                e?.message ||
+                'Anmeldung mit Google fehlgeschlagen. Bitte versuche es erneut oder nutze alternativ die Anmeldung mit E-Mail und Passwort.';
+              const details = getVerboseErrorDetails(e);
+              const backendUrl = getBackendURL();
+              const detailsWithUrl = `backend: ${backendUrl}\n${details}`;
+              if (__DEV__) {
+                console.log('Google login error:', { friendlyMessage, details, backendUrl });
+              }
+              setErrorMessage(friendlyMessage);
+              setErrorDetails(detailsWithUrl);
+              Alert.alert('Fehler', friendlyMessage);
             } finally {
               setSocialLoading(null);
             }

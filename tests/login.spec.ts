@@ -17,6 +17,7 @@ test.describe('login page', () => {
   });
 
   test('should complete the full signup and verification flow', async ({ page, request }) => {
+    test.skip(!process.env.PLAYWRIGHT_RUN_SIGNUP_E2E, 'Set PLAYWRIGHT_RUN_SIGNUP_E2E=1 to run signup+verification e2e (requires backend test helpers).');
     const randomSuffix = Math.floor(Math.random() * 10000);
     const email = `testuser${randomSuffix}@example.com`;
     const password = 'Password123!';
@@ -38,15 +39,17 @@ test.describe('login page', () => {
     console.log('Clicking signup button...');
     await page.getByTestId('signup-button').click();
 
-
-    await page.waitForTimeout(2000);
-    await expect(page.getByText('Registrierung erfolgreich')).toBeVisible();
+    // Signup redirects to login and shows a success banner (SPA navigation may not trigger a full page load).
+    await expect(page.getByText(/Registrierung erfolgreich/i)).toBeVisible({ timeout: 20000 });
 
     // 3. Get the verification link from our mock API
     console.log(`Fetching verification link for ${email}`);
 
     let verificationLink: string | null = null;
-    const backendUrl = 'http://localhost:4000'; // Try localhost first
+    const backendUrl = process.env.EXPO_PUBLIC_BACKEND;
+    if (!backendUrl) {
+      throw new Error('EXPO_PUBLIC_BACKEND must be set for e2e tests (use your Tailscale URL for local dev).');
+    }
 
     for (let i = 0; i < 10; i++) {
       try {

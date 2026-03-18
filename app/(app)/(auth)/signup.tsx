@@ -66,7 +66,7 @@ export default function SignupScreen() {
       setTimeout(() => {
         if (result.needsVerification) {
           // Redirect to login with query params to show verification email sent message
-          router.replace(`/(auth)/login?initial=true&email=${encodeURIComponent(email)}`);
+          router.replace(`/login?initial=true&email=${encodeURIComponent(email)}`);
         } else {
           router.replace('/(protected)/(tabs)');
         }
@@ -184,6 +184,7 @@ export default function SignupScreen() {
           size="large"
           disabled={isLoading}
           loading={isLoading}
+          testID="signup-button"
           style={{ flex: 1 }}
         />
       </View>

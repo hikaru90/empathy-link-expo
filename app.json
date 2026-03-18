@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "empathy-link-expo",
+    "name": "Empathy-Link",
     "slug": "empathy-link-expo",
     "version": "0.2.0",
     "orientation": "portrait",
@@ -19,6 +19,9 @@
       }
     },
     "android": {
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -35,6 +38,20 @@
       "bundler": "metro"
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true
+          }
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false
+        }
+      ],
       [
         "expo-dev-client",
         {
@@ -59,7 +76,8 @@
       "expo-asset",
       "expo-localization",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true,

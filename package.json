@@ -13,9 +13,11 @@
     "build": "expo export -p web",
     "prebuild": "expo prebuild",
     "playwright:test": "playwright test --headed",
-    "eas:build:android:local": "eas build --platform android --profile preview --local",
-    "eas:build:ios:local": "eas build --platform ios --profile preview --local",
-    "tailscale:funnel": "/Applications/Tailscale.app/Contents/MacOS/Tailscale funnel 4000"
+    "tailscale:funnel": "/Applications/Tailscale.app/Contents/MacOS/Tailscale funnel 4000",
+    "eas:build:preview:android:local": "eas build --platform android --profile preview --local",
+    "eas:build:preview:ios:local": "eas build --platform ios --profile preview --local",
+    "eas:build:production:android:local": "eas build --platform android --profile production --local",
+    "eas:build:production:ios:local": "eas build --platform ios --profile production --local"
   },
   "dependencies": {
     "@better-auth/expo": "^1.3.24",
@@ -30,6 +32,7 @@
     "expo": "~55.0.4",
     "expo-asset": "~55.0.8",
     "expo-audio": "~55.0.8",
+    "expo-build-properties": "~55.0.9",
     "expo-clipboard": "~55.0.8",
     "expo-constants": "~55.0.7",
     "expo-dev-client": "~55.0.10",

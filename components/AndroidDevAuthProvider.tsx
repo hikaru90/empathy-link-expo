@@ -46,7 +46,7 @@ export function AndroidDevAuthProvider({ children }: { children: React.ReactNode
   };
 
   const signInWithSocial: AuthContextType['signInWithSocial'] = async (provider) => {
-    const callbackURL = Platform.OS === 'web' ? `${EXPO_APP_URL}/` : Linking.createURL('/');
+    const callbackURL = Platform.OS === 'web' ? `${EXPO_APP_URL}/login` : Linking.createURL('/login');
     const result = await authClient.signIn.social({ provider, callbackURL });
     if (result?.error) throw new Error(result.error.message || `Anmeldung mit ${provider} fehlgeschlagen`);
     const session = await authClient.getSession();

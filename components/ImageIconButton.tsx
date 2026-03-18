@@ -31,6 +31,7 @@ interface ImageIconButtonProps {
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
+  testID?: string;
 }
 
 export default function ImageIconButton({
@@ -42,6 +43,7 @@ export default function ImageIconButton({
   disabled = false,
   loading = false,
   style,
+  testID,
 }: ImageIconButtonProps) {
   const config = SIZE_CONFIG[size];
   const iconWithSize = React.isValidElement(icon) ? React.cloneElement(icon, { size: config.iconSize } as Record<string, unknown>) : icon;
@@ -49,6 +51,7 @@ export default function ImageIconButton({
     <TouchableOpacity
       onPress={disabled ? undefined : onPress}
       disabled={disabled}
+      testID={testID}
       style={[
         styles.button,
         {

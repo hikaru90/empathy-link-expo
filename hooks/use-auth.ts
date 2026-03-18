@@ -280,8 +280,8 @@ export function useAuthProviderStateOnly(initialLoading: boolean = false): AuthC
     // On native, use Linking.createURL so Expo Go gets exp://... and dev builds get empathy-link://
     const callbackURL =
       Platform.OS === 'web'
-        ? `${EXPO_APP_URL}/`
-        : Linking.createURL('/');
+        ? `${EXPO_APP_URL}/login`
+        : Linking.createURL('/login');
     const result = await authClient.signIn.social({
       provider,
       callbackURL,
