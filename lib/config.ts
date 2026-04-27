@@ -2,8 +2,7 @@
  * Environment configuration
  *
  * Single source of truth for backend URL: EXPO_PUBLIC_BACKEND in .env.
- * Dev = Tailscale URL, prod = real backend URL. Used everywhere (API + Better Auth).
- * For production builds set EXPO_PUBLIC_BACKEND in EAS env.
+ * Must match server BETTER_AUTH_URL (see empathy-link-backend README).
  */
 
 import { Platform } from 'react-native';
@@ -136,12 +135,14 @@ export function getBetterAuthURL(): string {
 export const BETTER_AUTH_URL = stringProxy(getBetterAuthURL);
 
 /**
- * Get the Expo app URL for callback URLs (e.g., email verification links)
- * For web: uses EXPO_PUBLIC_APP_URL/EXPO_PUBLIC_FRONTEND_URL, otherwise window.location.origin
- * For native: uses deep link scheme (empathy-link://)
+ * Get the Expo app URL for callback URLs (e.g., email verification, OAuth return to /login)
+ * For web: EXPO_PUBLIC_APP_URL / EXPO_PUBLIC_FRONTEND_URL if set, else window.location.origin
+ * For native: deep link scheme (empathy-link://)
  */
 export function getExpoAppURL(): string {
   if (Platform.OS === 'web') {
+    const override = getFrontendURLOverride();
+    if (override) return override;
     // Web runtime should always have a location/origin. Do not hardcode localhost fallbacks.
     if (typeof window !== 'undefined' && window.location?.origin) {
       return window.location.origin;

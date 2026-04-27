@@ -1,4 +1,5 @@
 // @ts-nocheck
+// Backend reference only: betterAuth baseURL must match EXPO_PUBLIC_BACKEND; trustedOrigins must include the web app origin (and localhost in dev).
 import { betterAuth } from "better-auth";
 import { bearer } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";

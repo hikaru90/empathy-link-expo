@@ -19,7 +19,9 @@ const STORAGE_PREFIX = "empathy-link";
 
 /**
  * Web only: Bearer token for cross-origin API calls (cookie cannot be set from JS).
- * Backend must: (1) add bearer() plugin to betterAuth, (2) use auth.api.getSession({ headers }) on protected routes.
+ * Backend must: (1) bearer() plugin on betterAuth, (2) auth.api.getSession({ headers }) on protected routes,
+ * (3) betterAuth baseURL === EXPO_PUBLIC_BACKEND, (4) trustedOrigins includes the web app origin,
+ * (5) Google OAuth redirect URI = {baseURL}/api/auth/callback/google for that same baseURL.
  */
 const BEARER_TOKEN_KEY = `${STORAGE_PREFIX}_bearer_token`;
 
