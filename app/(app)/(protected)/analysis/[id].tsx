@@ -110,7 +110,7 @@ export default function AnalysisDetailScreen() {
               }
             }}
           >
-            <Text style={styles.backButtonText}>Zurück</Text>
+            <ChevronLeft size={16} color="#000" />
           </TouchableOpacity>
         </View>
       </View>
@@ -133,7 +133,6 @@ export default function AnalysisDetailScreen() {
           }}
         >
           <ChevronLeft size={16} color="#000" />
-          <Text style={styles.backButtonInlineText}>zurück</Text>
         </TouchableOpacity>
 
         <View style={{ paddingHorizontal: 20, flex: 1, gap: 22 }}>
@@ -416,15 +415,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   backButton: {
-    backgroundColor: '#000',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: baseColors.white+'22',
+    boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)',
   },
   scrollView: {
     flex: 1,
@@ -434,22 +431,16 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 120 : 110, // Extra padding for tab bar
   },
   backButtonInline: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 6,
-    paddingLeft: 8,
-    paddingRight: 16,
+    justifyContent: 'center',
+    width: 32,
+    height: 32,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: baseColors.white+'22',
+    boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)',
     alignSelf: 'flex-start',
     marginHorizontal: 20,
     marginBottom: 24,
-  },
-  backButtonInlineText: {
-    fontSize: 14,
-    color: '#000',
   },
   headerRow: {
     flexDirection: 'row',

@@ -706,9 +706,11 @@ const styles = StyleSheet.create({
   backButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: baseColors.white+'22',
+    boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)',
   },
   statsContainer: {
     flexDirection: 'row',

@@ -118,7 +118,6 @@ export default function AnalysesListScreen() {
           }}
         >
           <ChevronLeft size={16} color="#000" />
-          <Text style={styles.backButtonText}>zurück</Text>
         </TouchableOpacity>
 
         <View style={styles.contentContainer}>
@@ -192,22 +191,16 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 120 : 110,
   },
   backButton: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 6,
-    paddingLeft: 8,
-    paddingRight: 16,
+    justifyContent: 'center',
+    width: 32,
+    height: 32,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: baseColors.white+'22',
+    boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)',
     alignSelf: 'flex-start',
     marginHorizontal: 20,
     marginBottom: 24,
-  },
-  backButtonText: {
-    fontSize: 14,
-    color: '#000',
   },
   contentContainer: {
     paddingHorizontal: 20,

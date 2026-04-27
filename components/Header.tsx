@@ -13,7 +13,7 @@ import { authClient } from '@/lib/auth';
 import { API_BASE_URL, EXPO_APP_URL } from '@/lib/config';
 import { calculateSuperCommunicatorData } from '@/lib/utils/super-communicator-calculator';
 import * as Clipboard from 'expo-clipboard';
-import { Image, ImageBackground } from 'expo-image';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Bell, Brain, FileText, LogOut, RotateCcw, RotateCcwSquare, UserPlus, UserRoundCog } from 'lucide-react-native';
@@ -233,7 +233,7 @@ function Header({ className }: HeaderProps) {
             colors={[baseColors.background, baseColors.background+'ee', baseColors.background+'00']}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
-            style={{ height: 100, position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: -1 }}
+            style={{ height: 160, position: 'absolute', left: 0, right: 0, top: 0, zIndex: -1 }}
           >
           </LinearGradient>
         </View>
