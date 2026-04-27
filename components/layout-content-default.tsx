@@ -55,6 +55,7 @@ export function RootLayoutContentNoPostHog() {
 function RootLayoutContentInner() {
   const authProvider = useAuthProvider();
   const posthogClient = usePostHog();
+  const isLoggedIn = !!authProvider.user;
   useEffect(() => {
     if (!posthogClient) return;
     if (authProvider.user) {
@@ -66,7 +67,6 @@ function RootLayoutContentInner() {
       posthogClient.reset();
     }
   }, [authProvider.user, posthogClient]);
-  const isLoggedIn = !!authProvider.user;
   return (
     <AuthContext.Provider value={authProvider}>
       <NotificationWrapper>

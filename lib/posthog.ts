@@ -22,7 +22,6 @@ const host = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
 
 // On Android in dev, do not create the client at all so lifecycle/error handlers don't trigger reload loops.
 const skipPostHogInstance = __DEV__ && Platform.OS === 'android';
-
 export const posthog =
   !skipPostHogInstance && apiKey && apiKey.length > 0
     ? new PostHog(apiKey, {

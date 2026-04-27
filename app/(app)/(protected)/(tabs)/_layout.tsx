@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { Platform, StatusBar, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,8 @@ import TabBar from '@/components/TabBar';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const hasPrefetchedRef = React.useRef(false);
   
   // Use a ref to store the bottom inset, but only lock it after we get a non-zero value
   // This prevents locking to 0 on first render when insets haven't initialized yet
@@ -34,6 +36,20 @@ export default function TabLayout() {
       willUpdate: bottomInsetRef.current === 0 && insets.bottom > 0,
     });
   }, [insets.bottom, tabBarBottom]);
+
+  React.useEffect(() => {
+    if (hasPrefetchedRef.current) return;
+    hasPrefetchedRef.current = true;
+
+    const timeout = setTimeout(() => {
+      // Keep chat as first paint, then warm up other tabs in background.
+      (router as any).prefetch?.('/(protected)/(tabs)/stats');
+      (router as any).prefetch?.('/(protected)/(tabs)/learn');
+      (router as any).prefetch?.('/(protected)/(tabs)/feedback');
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [router]);
   
   return (
     <View style={{ flex: 1 }}>

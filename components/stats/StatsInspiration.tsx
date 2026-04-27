@@ -61,7 +61,7 @@ export default function StatsInspiration() {
       style={{ position: 'relative' }}
     >
       <Image 
-        source={require('@/assets/images/background-lilac-highres.png')} 
+        source={require('@/assets/images/background-lilac.png')} 
         style={{ 
           position: 'absolute', 
           top: 0, 

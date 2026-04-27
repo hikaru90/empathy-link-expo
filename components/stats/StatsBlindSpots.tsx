@@ -204,7 +204,7 @@ export default function StatsBlindSpots() {
           className="rounded-xl mb-4 overflow-hidden"
           style={{ backgroundColor: baseColors.lilac }}
         >
-          <ImageBackground source={require('@/assets/images/background-lilac-highres.png')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}></ImageBackground>
+          <ImageBackground source={require('@/assets/images/background-lilac.png')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}></ImageBackground>
             <View className="px-4 py-3">
               <Text className="text-sm leading-[18px]" style={{ color: baseColors.black }}>
                 Nächste Analyse {insight.daysUntilNext === 1

@@ -166,7 +166,6 @@ export default function StatsScreen() {
       }));
   };
 
-
   if (isLoading || loadingData) {
     return (
       <View className="flex-1" style={{ backgroundColor: baseColors.background }}>

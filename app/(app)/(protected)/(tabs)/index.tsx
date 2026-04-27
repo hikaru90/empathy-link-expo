@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 
 import jungleImage from '@/assets/images/Jungle.jpg';
 import baseColors from '@/baseColors.config';
@@ -46,6 +46,7 @@ function ChatContent() {
   const [analysisFailed, setAnalysisFailed] = useState(false);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [appealInProgress, setAppealInProgress] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const itemHeights = useRef<Map<number, number>>(new Map());
   const hasInitialized = useRef(false);
 
@@ -79,6 +80,18 @@ function ChatContent() {
       initializeChat('de', 'idle');
     }
   }, [initializeChat, chatId]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Load crisis resources when safety status indicates we should show them
   useEffect(() => {
@@ -214,7 +227,7 @@ function ChatContent() {
     <>
       <TokenLimitModal visible={error === getTokenLimitMessage()} onClose={clearError} />
       <KeyboardAvoidingView
-        style={{ flex: 1, paddingBottom: 70 }}
+        style={{ flex: 1, paddingBottom: 70, marginBottom: keyboardVisible ? 32 : 0 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'android' ? 70 : 0}
       >
@@ -270,7 +283,7 @@ function ChatContent() {
             {
               paddingBottom: (feelingSelectorVisible || needSelectorVisible)
                 ? Platform.OS === 'web' ? 200 : Platform.OS === 'ios' ? 380 : 320  // Extra padding when selectors are open
-                : Platform.OS === 'web' ? 60 : Platform.OS === 'ios' ? 260 : 180
+                : Platform.OS === 'web' ? 60 : Platform.OS === 'ios' ? 260 : 180,
             }
           ]}
           getItemLayout={getItemLayout}
